@@ -20,12 +20,12 @@ Kocoa Beam 是 Beam Klipper 的全面升級，包含三大改進：
 - **智慧轉換和窮舉檢查** — Bug 在編譯時捕獲，而非執行時
 
 ### 2. 體積大幅減小
-Kocoa Beam 比原始 Beam Klipper 小很多（138 MB → 約 36 MB）：
+Kocoa Beam 比原始 Beam Klipper 小很多（138 MB → 約 38 MB）：
 
 | 組件 | Beam Klipper | Kocoa Beam |
 |------|-------------|------------|
 | FFmpeg 延時攝影 | 捆綁二進位檔案（約 40 MB） | Android MediaCodec API（內建） |
-| 應用大小（arm64） | 約 138 MB | 約 36 MB |
+| 應用大小（arm64） | 約 138 MB | 約 38 MB |
 
 FFmpeg 延時攝影組件已被 Android 原生 MediaCodec API 取代，每個架構節省約 40 MB。
 
