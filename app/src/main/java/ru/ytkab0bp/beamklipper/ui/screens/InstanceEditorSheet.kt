@@ -50,6 +50,7 @@ import ru.ytkab0bp.beamklipper.KlipperInstance
 import ru.ytkab0bp.beamklipper.R
 import ru.ytkab0bp.beamklipper.ui.components.BrutalButton
 import ru.ytkab0bp.beamklipper.ui.components.BrutalSwitch
+import ru.ytkab0bp.beamklipper.ui.components.brutalScrollbar
 import ru.ytkab0bp.beamklipper.ui.state.InstanceEditorViewModel
 import ru.ytkab0bp.beamklipper.ui.theme.Accent
 import ru.ytkab0bp.beamklipper.ui.theme.Ink
@@ -130,10 +131,12 @@ fun InstanceEditorSheet(
                     )
                 }
 
+                val formScrollState = rememberScrollState()
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
+                        .brutalScrollbar(formScrollState)
+                        .verticalScroll(formScrollState)
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 28.dp, top = 4.dp)
                 ) {
@@ -334,11 +337,13 @@ fun InstanceEditorSheet(
                             )
                         }
                         Spacer(Modifier.height(12.dp))
+                        val filesScrollState = rememberScrollState()
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f, fill = false)
-                                .verticalScroll(rememberScrollState())
+                                .brutalScrollbar(filesScrollState)
+                                .verticalScroll(filesScrollState)
                                 .padding(bottom = 12.dp)
                         ) {
                             filesList.forEach { f ->

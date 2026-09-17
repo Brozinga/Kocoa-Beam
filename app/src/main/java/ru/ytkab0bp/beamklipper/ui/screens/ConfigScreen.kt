@@ -54,6 +54,7 @@ import ru.ytkab0bp.beamklipper.serial.UsbSerialManager
 import ru.ytkab0bp.beamklipper.ui.components.BrutalButton
 import ru.ytkab0bp.beamklipper.ui.components.BrutalSwitch
 import ru.ytkab0bp.beamklipper.ui.components.BrutalTile
+import ru.ytkab0bp.beamklipper.ui.components.brutalScrollbar
 import ru.ytkab0bp.beamklipper.ui.state.SettingsViewModel
 import ru.ytkab0bp.beamklipper.ui.theme.Accent
 import ru.ytkab0bp.beamklipper.ui.theme.Ink
@@ -91,10 +92,12 @@ fun ConfigScreen(
         viewModel.refreshCameraSwitch(granted)
     }
 
+    val scrollState = rememberScrollState()
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
+            .brutalScrollbar(scrollState)
+            .verticalScroll(scrollState)
             .padding(horizontal = 20.dp)
             .padding(top = 8.dp, bottom = 40.dp)
     ) {
