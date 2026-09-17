@@ -10,6 +10,8 @@ systemd service it normally installs as — see
 [whats-new.md](whats-new.md#octoeverywhere-remote-access) for the technical
 summary.
 
+<p align="center"><img src="images/camera-octoeverywhere-settings.png" alt="Settings screen showing the Camera and Remote access sections" width="280"></p>
+
 ## Enabling it
 
 1. Start a printer profile (it has to be **running** — OctoEverywhere links

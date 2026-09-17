@@ -10,6 +10,8 @@ rodar direto no aparelho em vez do serviço systemd que ele normalmente
 instala — veja [whats-new.md](../whats-new.md) (seção "OctoEverywhere
 remote access") para o resumo técnico.
 
+<p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="Tela de configurações mostrando as seções Câmera e Acesso remoto" width="280"></p>
+
 ## Ativando
 
 1. Inicie um perfil de impressora (ele precisa estar **rodando** — o

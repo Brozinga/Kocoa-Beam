@@ -53,7 +53,13 @@ Fluidd 和 Mainsail 的静态资源以正确的 MIME 类型提供，因此两个
 
 这依赖设备通过 Android 标准 Camera2 API 将 USB 摄像头暴露为外部摄像头
 （`LENS_FACING_EXTERNAL`），大多数基于 AOSP 的设备自 Android 9 起支持此特性，
-但部分厂商定制的相机框架可能不会暴露它。本项目尚未在真实 UVC 摄像头硬件上测试过。
+但部分厂商定制的相机框架可能不会暴露它。**已在真实硬件上验证：**三星 Galaxy
+S10+（One UI，Android 12）在系统/USB 层面能正确识别 USB UVC 摄像头，但**不会**
+通过 Camera2 暴露它——三星自家的相机 HAL 没有实现外部摄像头 provider。这种情况
+下应用会正常回退到内置摄像头；更接近原生 AOSP 的设备（Pixel、部分 Android
+电视盒/平板）预计能真正暴露该摄像头。
+
+<p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="设置页面显示摄像头与远程访问区块" width="280"></p>
 
 ## OctoEverywhere 远程访问
 
@@ -61,15 +67,21 @@ Fluidd 和 Mainsail 的静态资源以正确的 MIME 类型提供，因此两个
 [OctoEverywhere](https://octoeverywhere.com) Klipper 伴生程序，源码来自上游并
 经过改造，以独立进程的形式运行在 Android 上，而不是它通常安装的 systemd 服务
 和 venv。它通过与 Fluidd/Mainsail 相同的本地 Moonraker 连接，接入当前正在运行
-的打印机配置——Moonraker 一侧无需额外配置。
+的打印机配置——Moonraker 一侧无需额外配置。**已在真实硬件上验证端到端可用**，
+包括与 octoeverywhere.com 正式生产服务器的关联。
 
 - 打开开关会启动伴生程序；**关联打印机**随后会显示一个二维码（伴生程序生成打印
   机 ID 后即可使用，通常只需几秒钟），用于完成 OctoEverywhere 账号的关联，这与
-  其他任何安装方式的一次性步骤相同。
+  其他任何安装方式的一次性步骤相同。如果关联完成后 octoeverywhere.com 上的
+  "Go to Klipper" 仍提示未连接，把 OctoEverywhere 关闭再打开一次——它只在连接
+  那一刻检查关联状态，不会实时更新。
 - 它自带的崩溃遥测（Sentry）已被禁用；与 octoeverywhere.com 的实际远程访问连接
   不受影响。
 - 如果你也启用了上面的摄像头服务器，只要在 Fluidd 或 Mainsail 中把它添加为摄像
   头，OctoEverywhere 就能自动使用同一路 USB/内置摄像头画面，无需单独配置摄像头。
+  默认的摄像头分辨率/帧率特意调低，以保证在远程连接下仍然可用（实测 640x480、
+  约 14fps 时约为 117KB/s，而原来 720p 默认值约为 1.25MB/s——后者慢到会拖慢共
+  享同一中继连接的指令执行）。
 - 即使同时运行多个打印机配置，同一时间也只有一个配置能关联到 OctoEverywhere。
 
 ## 应用内日志查看器

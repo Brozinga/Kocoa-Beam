@@ -61,8 +61,15 @@ próprio aparelho:
 Isso depende do aparelho expor a webcam USB pela API Camera2 padrão do
 Android como câmera externa (`LENS_FACING_EXTERNAL`), suportada pela maioria
 dos aparelhos baseados em AOSP desde o Android 9, mas que algumas camadas de
-câmera de fabricantes podem não expor. Não foi testado em hardware real com
-uma webcam UVC neste projeto.
+câmera de fabricantes podem não expor. **Confirmado em hardware real:** um
+Galaxy S10+ da Samsung (One UI, Android 12) detecta corretamente uma webcam
+USB UVC no nível do sistema/USB, mas **não** a expõe pela Camera2 — o HAL de
+câmera da Samsung não implementa o provedor de câmera externa. O app volta
+para a câmera embutida sem problemas nesse caso; aparelhos mais próximos do
+AOSP puro (Pixel, algumas TV boxes/tablets Android) devem de fato expor a
+webcam.
+
+<p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="Tela de configurações mostrando as seções Câmera e Acesso remoto" width="280"></p>
 
 ## Acesso remoto via OctoEverywhere
 
@@ -72,18 +79,27 @@ Klipper, vendorizado a partir da fonte original e adaptado para rodar como
 processo próprio no Android, em vez do serviço systemd/venv que ele
 normalmente instala. Ele se conecta ao perfil de impressora que estiver
 rodando no momento, pela mesma conexão local com o Moonraker que Fluidd e
-Mainsail usam — sem configuração extra no lado do Moonraker.
+Mainsail usam — sem configuração extra no lado do Moonraker. **Confirmado
+funcionando de ponta a ponta em hardware real**, inclusive vinculando contra
+os servidores reais de produção do octoeverywhere.com.
 
 - Ativar o botão inicia o companion; **Vincular impressora** então mostra um
   QR code (assim que o companion gerar o ID da impressora, geralmente em
   poucos segundos) para concluir a vinculação da sua conta OctoEverywhere,
-  o mesmo passo único de qualquer instalação.
+  o mesmo passo único de qualquer instalação. Se o "Go to Klipper" no
+  octoeverywhere.com continuar dizendo que não está conectado logo após
+  vincular, desative e reative o OctoEverywhere uma vez — ele só verifica o
+  status de vinculação no momento em que conecta, não ao vivo.
 - A telemetria de erros própria dele (Sentry) fica desativada; a conexão real
   de acesso remoto com o octoeverywhere.com não é afetada.
 - Se você também ativar o servidor de câmera acima, o OctoEverywhere pode
   usar automaticamente essa mesma webcam (USB ou embutida) assim que ela for
   adicionada como câmera no Fluidd ou Mainsail — não precisa de uma
-  configuração de câmera separada.
+  configuração de câmera separada. A resolução/taxa de quadros padrão da
+  câmera são reduzidas de propósito para isso continuar utilizável numa
+  conexão remota (medido ~117KB/s a 640x480/~14fps, contra ~1,25MB/s no
+  padrão original de 720p, que era lento a ponto de atrasar também a
+  execução de comandos por compartilhar a mesma conexão retransmitida).
 - Apenas um perfil de impressora pode ficar vinculado ao OctoEverywhere por
   vez, mesmo rodando vários perfis ao mesmo tempo.
 

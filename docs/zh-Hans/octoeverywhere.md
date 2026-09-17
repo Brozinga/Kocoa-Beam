@@ -8,6 +8,8 @@ Kocoa Beam 运行的是真实的 OctoEverywhere Klipper/Moonraker 伴生程序�
 直接在设备上运行，而不是它通常安装的 systemd 服务——技术细节参见
 [whats-new.md](../whats-new.md) 中的 "OctoEverywhere remote access" 一节。
 
+<p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="设置页面显示摄像头与远程访问区块" width="280"></p>
+
 ## 启用步骤
 
 1. 启动一个打印机配置（必须处于**运行中**状态——OctoEverywhere 会连接当前正在

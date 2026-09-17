@@ -59,8 +59,14 @@ stream from a generic USB UVC webcam, not just the device's own camera:
 This relies on the device exposing the USB webcam through Android's standard
 Camera2 API as an external camera (`LENS_FACING_EXTERNAL`), which most
 AOSP-based devices support since Android 9 but which some OEM camera stacks
-may not expose. It has not been hardware-tested against a real UVC webcam in
-this project.
+may not expose. **Confirmed on real hardware:** a Samsung Galaxy S10+ (One
+UI, Android 12) correctly detects a USB UVC webcam at the OS/USB level but
+does **not** expose it through Camera2 at all — Samsung's camera HAL doesn't
+implement the external-camera provider. The app falls back to the built-in
+camera cleanly in that case; more AOSP-stock devices (Pixels, some
+Android TV boxes/tablets) are expected to actually expose the webcam.
+
+<p align="center"><img src="images/camera-octoeverywhere-settings.png" alt="Settings screen showing the Camera and Remote access sections" width="280"></p>
 
 ## OctoEverywhere remote access
 
@@ -70,17 +76,24 @@ its upstream source and adapted to run as its own background process on
 Android instead of the systemd service/venv it normally installs as. It talks
 to whichever printer profile is currently running over the same local
 Moonraker connection Fluidd/Mainsail use — no extra setup on the Moonraker
-side.
+side. **Confirmed working end-to-end on real hardware**, including linking
+against the real octoeverywhere.com production servers.
 
 - Turning it on starts the companion; **Link printer** then shows a QR code
   (once the companion has generated its printer ID, usually within a few
   seconds) to finish linking your OctoEverywhere account, the same one-time
-  step as any other install.
+  step as any other install. If "Go to Klipper" on octoeverywhere.com still
+  says it's not connected right after linking, toggle OctoEverywhere off and
+  back on once — it only checks its link status when it connects, not live.
 - Its own crash telemetry (Sentry) is disabled; the actual remote-access
   connection to octoeverywhere.com is unaffected.
 - If you also enable the camera server above, OctoEverywhere can pick up that
   same USB/built-in webcam feed automatically once it's added as a webcam in
-  Fluidd or Mainsail — it does not need a separate camera setup.
+  Fluidd or Mainsail — it does not need a separate camera setup. The default
+  camera resolution/framerate are tuned down specifically so this stays usable
+  over a remote connection (measured ~117KB/s at 640x480/~14fps, vs. ~1.25MB/s
+  at the original 720p default, which was slow enough to also delay command
+  execution sharing the same relayed connection).
 - Only one printer profile can be linked to OctoEverywhere at a time, even if
   you run multiple profiles concurrently.
 
