@@ -69,6 +69,9 @@ object AppState {
     private val _cameraSourceId = MutableStateFlow(Prefs.cameraId)
     val cameraSourceId: StateFlow<String?> = _cameraSourceId.distinct()
 
+    private val _cameraRotation = MutableStateFlow(Prefs.cameraRotation)
+    val cameraRotation: StateFlow<Int> = _cameraRotation.distinct()
+
     private val _octoEverywhereEnabled = MutableStateFlow(Prefs.isOctoEverywhereEnabled)
     val octoEverywhereEnabled: StateFlow<Boolean> = _octoEverywhereEnabled.distinct()
 
@@ -84,6 +87,7 @@ object AppState {
         _usbNaming.value = Prefs.usbDeviceNaming
         _cameraEnabled.value = Prefs.isCameraEnabled
         _cameraSourceId.value = Prefs.cameraId
+        _cameraRotation.value = Prefs.cameraRotation
         _octoEverywhereEnabled.value = Prefs.isOctoEverywhereEnabled
         KlipperApp.EVENT_BUS.registerListener(this)
         refreshInstances()
@@ -144,6 +148,7 @@ object AppState {
     @EventHandler(runOnMainThread = true)
     fun onCameraSourceChanged(e: CameraSourceChangedEvent) {
         _cameraSourceId.value = Prefs.cameraId
+        _cameraRotation.value = Prefs.cameraRotation
         KlipperInstance.onCameraSourceChanged()
     }
 
@@ -157,6 +162,7 @@ object AppState {
 
     fun updateCameraSourceId() {
         _cameraSourceId.value = Prefs.cameraId
+        _cameraRotation.value = Prefs.cameraRotation
     }
 
     fun updateOctoEverywhereEnabled() {

@@ -187,6 +187,19 @@ object Prefs {
             KlipperApp.EVENT_BUS.fireEvent(CameraSourceChangedEvent())
         }
 
+    // Clockwise degrees applied to every frame before it's served, for a
+    // camera mounted sideways/upside-down. Only 0/90/180/270 are valid;
+    // anything else is normalized. Same cross-process restart story as
+    // cameraId above.
+    var cameraRotation: Int
+        get() = ((getSafeInt("camera_rotation", 0) % 360) + 360) % 360
+        set(value) {
+            val normalized = ((value % 360) + 360) % 360
+            mPrefs.edit().putInt("camera_rotation", normalized).apply()
+            AppState.updateCameraSourceId()
+            KlipperApp.EVENT_BUS.fireEvent(CameraSourceChangedEvent())
+        }
+
     var isCameraEnabled: Boolean
         get() = (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || KlipperApp.INSTANCE.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) &&
                 getSafeBoolean("camera_enabled", false)

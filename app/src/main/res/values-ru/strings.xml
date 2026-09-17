@@ -56,6 +56,9 @@
     <string name="CameraSourceBuiltInBack">Встроенная задняя камера (%1$s)</string>
     <string name="CameraSourceBuiltInFront">Встроенная передняя камера (%1$s)</string>
     <string name="CameraSourceOther">Камера %1$s</string>
+    <string name="CameraSourceBackN">Задняя камера %1$d</string>
+    <string name="CameraSourceFrontN">Передняя камера %1$d</string>
+    <string name="CameraRotation">Поворот камеры</string>
     <string name="OctoEverywhereDescription">Клиент OctoEverywhere работает в фоне…</string>
     <string name="RemoteAccess">Удалённый доступ</string>
     <string name="LinkOctoEverywhere">Привязать принтер</string>

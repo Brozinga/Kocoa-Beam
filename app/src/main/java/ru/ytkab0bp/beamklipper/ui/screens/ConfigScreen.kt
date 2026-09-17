@@ -73,6 +73,7 @@ fun ConfigScreen(
     val usbNaming by viewModel.usbNaming.collectAsStateWithLifecycle()
     val cameraEnabled by viewModel.cameraEnabled.collectAsStateWithLifecycle()
     val cameraSourceId by viewModel.cameraSourceId.collectAsStateWithLifecycle()
+    val cameraRotation by viewModel.cameraRotation.collectAsStateWithLifecycle()
     val octoEverywhereEnabled by viewModel.octoEverywhereEnabled.collectAsStateWithLifecycle()
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -222,6 +223,12 @@ fun ConfigScreen(
             title = stringResource(R.string.CameraSource),
             value = viewModel.cameraSourceTitle(cameraSourceId),
             onClick = { showCameraSource = true }
+        )
+        Spacer(Modifier.height(8.dp))
+        BrutalValueRow(
+            title = stringResource(R.string.CameraRotation),
+            value = "$cameraRotation°",
+            onClick = { viewModel.cycleCameraRotation() }
         )
 
         Spacer(Modifier.height(28.dp))

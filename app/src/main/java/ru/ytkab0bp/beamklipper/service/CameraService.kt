@@ -8,7 +8,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
+import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.YuvImage
 import android.hardware.camera2.CameraAccessException
@@ -247,6 +250,22 @@ class CameraService : Service() {
         }
     }
 
+    private fun rotateJpeg(data: ByteArray, degrees: Int): ByteArray {
+        return try {
+            val src = BitmapFactory.decodeByteArray(data, 0, data.size) ?: return data
+            val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
+            val rotated = Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, true)
+            val out = ByteArrayOutputStream()
+            rotated.compress(Bitmap.CompressFormat.JPEG, 75, out)
+            if (rotated != src) rotated.recycle()
+            src.recycle()
+            out.toByteArray()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to rotate frame", e)
+            data
+        }
+    }
+
     private fun deliverFrame(data: ByteArray, size: Int, onRelease: () -> Unit) {
         val done = AtomicInteger()
         val total = handlerThreads.size
@@ -378,7 +397,13 @@ class CameraService : Service() {
                         yuvImage.compressToJpeg(Rect(0, 0, img.width, img.height), 75, conv)
                         bufferStack.push(buffer)
 
-                        val converted = conv.toByteArray()
+                        // Rotation is the uncommon case (mounting-dependent),
+                        // so it's an extra decode/re-encode pass only when
+                        // actually configured — the 0° fast path (nearly
+                        // every user) is untouched.
+                        val converted = Prefs.cameraRotation.let { deg ->
+                            if (deg == 0) conv.toByteArray() else rotateJpeg(conv.toByteArray(), deg)
+                        }
                         deliverFrame(converted, converted.size) {}
 
                         img.close()

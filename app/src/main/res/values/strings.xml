@@ -57,6 +57,9 @@
     <string name="CameraSourceBuiltInBack">Built-in back camera (%1$s)</string>
     <string name="CameraSourceBuiltInFront">Built-in front camera (%1$s)</string>
     <string name="CameraSourceOther">Camera %1$s</string>
+    <string name="CameraSourceBackN">Back camera %1$d</string>
+    <string name="CameraSourceFrontN">Front camera %1$d</string>
+    <string name="CameraRotation">Camera rotation</string>
     <string name="OctoEverywhereTitle" translatable="false">OctoEverywhere</string>
     <string name="OctoEverywhereDescription">OctoEverywhere companion is running in background…</string>
     <string name="RemoteAccess">Remote access</string>

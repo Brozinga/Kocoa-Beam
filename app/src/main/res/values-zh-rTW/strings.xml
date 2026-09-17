@@ -56,6 +56,9 @@
     <string name="CameraSourceBuiltInBack">內建後置相機（%1$s）</string>
     <string name="CameraSourceBuiltInFront">內建前置相機（%1$s）</string>
     <string name="CameraSourceOther">相機 %1$s</string>
+    <string name="CameraSourceBackN">後置相機 %1$d</string>
+    <string name="CameraSourceFrontN">前置相機 %1$d</string>
+    <string name="CameraRotation">相機旋轉</string>
     <string name="OctoEverywhereDescription">OctoEverywhere 伴生程式正在背景執行…</string>
     <string name="RemoteAccess">遠端存取</string>
     <string name="LinkOctoEverywhere">連結印表機</string>
