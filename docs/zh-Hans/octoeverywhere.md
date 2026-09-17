@@ -1,0 +1,58 @@
+# 使用 OctoEverywhere
+
+**语言: [English](../octoeverywhere.md) · [Português (BR)](../pt-br/octoeverywhere.md) · [简体中文](octoeverywhere.md)**
+
+[OctoEverywhere](https://octoeverywhere.com) 让你无需在路由器上开放端口，就能
+通过 octoeverywhere.com 网站或手机应用远程访问打印机（摄像头、状态、控制）。
+Kocoa Beam 运行的是真实的 OctoEverywhere Klipper/Moonraker 伴生程序，经过改造
+直接在设备上运行，而不是它通常安装的 systemd 服务——技术细节参见
+[whats-new.md](../whats-new.md) 中的 "OctoEverywhere remote access" 一节。
+
+## 启用步骤
+
+1. 启动一个打印机配置（必须处于**运行中**状态——OctoEverywhere 会连接当前正在
+   运行的那个配置）。
+2. 进入**设置 → 远程访问**，打开 **Enable OctoEverywhere**。
+3. 等几秒钟让它生成打印机 ID，然后点击**关联打印机**。会出现一个二维码——用手
+   机摄像头扫描它（或者直接在本机打开链接），完成与你的 OctoEverywhere 账号的
+   关联，和其他任何 OctoEverywhere 安装方式一样。
+   - 如果显示 "Not ready yet"，说明伴生程序还没启动完成——稍等片刻再点一次
+     **关联打印机**。
+4. 关联完成后，你的打印机就会出现在 octoeverywhere.com 和 OctoEverywhere 手机
+   应用中。
+
+## 摄像头
+
+OctoEverywhere 查找摄像头画面的方式和 Fluidd/Mainsail 一样：通过 Moonraker 自
+己的摄像头列表，而不是 Kocoa Beam 自动注册的内容。如果你也想通过 OctoEverywhere
+推送打印机摄像头画面：
+
+1. 打开**设置 → 摄像头 → Enable camera server**（参见
+   [whats-new.md](../whats-new.md)，其中也涵盖了插入 USB 摄像头的方法）。
+2. 在 Fluidd 或 Mainsail 自己的摄像头设置中添加一路摄像头，指向：
+   - 流地址：`http://127.0.0.1:8889/`
+   - 快照地址：`http://127.0.0.1:8889/snapshot`
+3. OctoEverywhere 下次刷新摄像头列表时会自动识别它——OctoEverywhere 一侧无需
+   任何额外配置。
+
+## 注意事项与限制
+
+- 同一时间只能有**一个**打印机配置被关联，即使同时运行多个配置也是如此——
+  OctoEverywhere 会跟随最先进入"运行中"状态的那个配置。切换配置后需要先关闭
+  再打开开关，才能把关联转移过去。
+- OctoEverywhere 自带的崩溃遥测（Sentry）默认已禁用；与 octoeverywhere.com 的
+  实际远程访问连接不受影响。
+- 这个功能尚未经过端到端的硬件测试（也就是用真实账号完成关联并通过
+  octoeverywhere.com 实际使用）——伴生程序本身能正常运行并正确连接 Moonraker，
+  但如果在关联或远程使用中遇到问题，请反馈。
+
+## 故障排查
+
+- **日志**：`octoeverywhere.log` 和该配置的 `klippy.log`/`moonraker.log` 放在
+  同一个 `logs` 文件夹里——可以通过 Kocoa Beam 自身在系统中注册的存储入口
+  （Android 文件管理器 App → "Kocoa Beam"）用文件管理器查看，就是你平时查看
+  Klipper/Moonraker 日志的那个位置。
+- **重新关联**：关闭 OctoEverywhere，删除该配置在应用私有存储中的
+  `octoeverywhere` 文件夹（不是上面提到的公开文件夹——需要有 root 权限的文件
+  管理器，或使用 `adb shell run-as`），然后重新打开开关以生成新的打印机 ID 并
+  重新关联。你也可以直接在 octoeverywhere.com 的账号设置里解除/重新关联打印机。
