@@ -49,6 +49,18 @@
     <string name="Settings">设置</string>
     <string name="Camera">摄像头</string>
     <string name="EnableCamera">启用摄像头服务器</string>
+    <string name="CameraSource">摄像头来源</string>
+    <string name="CameraSourceTitle">选择摄像头来源</string>
+    <string name="CameraSourceAuto">自动（优先使用 USB 摄像头）</string>
+    <string name="CameraSourceUsbWebcam">USB 摄像头（%1$s）</string>
+    <string name="CameraSourceBuiltInBack">内置后置摄像头（%1$s）</string>
+    <string name="CameraSourceBuiltInFront">内置前置摄像头（%1$s）</string>
+    <string name="CameraSourceOther">摄像头 %1$s</string>
+    <string name="OctoEverywhereDescription">OctoEverywhere 伴生程序正在后台运行…</string>
+    <string name="RemoteAccess">远程访问</string>
+    <string name="LinkOctoEverywhere">关联打印机</string>
+    <string name="LinkOctoEverywhereHint">扫描二维码以连接您的 OctoEverywhere 账号</string>
+    <string name="LinkOctoEverywhereNotReady">还没准备好——启用后请等几秒钟再试一次</string>
     <string name="ListUSB">列出 USB 设备</string>
     <string name="ListUSBTitle">USB 设备</string>
     <string name="ListUSBNoDevices">未找到 USB 设备</string>
@@ -64,6 +76,7 @@
     <string name="AppLanguage">应用语言</string>
     <string name="LanguageSystem">跟随系统</string>
     <string name="LanguageEnglish">English</string>
+    <string name="LanguagePortuguese">Português (BR)</string>
     <string name="LanguageRussian">Русский</string>
     <string name="LanguageChineseSimplified">简体中文</string>
     <string name="LanguageChineseTraditional">繁體中文</string>

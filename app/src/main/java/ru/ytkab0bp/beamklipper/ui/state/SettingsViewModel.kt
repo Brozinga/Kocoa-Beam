@@ -150,6 +150,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     fun languageTitle(language: String): String = KlipperApp.INSTANCE.getString(
         when (language) {
             Prefs.LANGUAGE_ENGLISH -> ru.ytkab0bp.beamklipper.R.string.LanguageEnglish
+            Prefs.LANGUAGE_PORTUGUESE_BRAZIL -> ru.ytkab0bp.beamklipper.R.string.LanguagePortuguese
             Prefs.LANGUAGE_RUSSIAN -> ru.ytkab0bp.beamklipper.R.string.LanguageRussian
             Prefs.LANGUAGE_CHINESE_SIMPLIFIED -> ru.ytkab0bp.beamklipper.R.string.LanguageChineseSimplified
             Prefs.LANGUAGE_CHINESE_TRADITIONAL -> ru.ytkab0bp.beamklipper.R.string.LanguageChineseTraditional

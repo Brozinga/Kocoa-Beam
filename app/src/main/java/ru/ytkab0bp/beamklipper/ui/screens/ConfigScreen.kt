@@ -679,6 +679,7 @@ private fun LanguageDialog(onDismiss: () -> Unit) {
     val options = listOf(
         KlipperApp.INSTANCE.getString(R.string.LanguageSystem),
         KlipperApp.INSTANCE.getString(R.string.LanguageEnglish),
+        KlipperApp.INSTANCE.getString(R.string.LanguagePortuguese),
         KlipperApp.INSTANCE.getString(R.string.LanguageRussian),
         KlipperApp.INSTANCE.getString(R.string.LanguageChineseSimplified),
         KlipperApp.INSTANCE.getString(R.string.LanguageChineseTraditional)
@@ -697,8 +698,9 @@ private fun LanguageDialog(onDismiss: () -> Unit) {
                                 Prefs.appLanguage = when (index) {
                                     0 -> Prefs.LANGUAGE_SYSTEM
                                     1 -> Prefs.LANGUAGE_ENGLISH
-                                    2 -> Prefs.LANGUAGE_RUSSIAN
-                                    3 -> Prefs.LANGUAGE_CHINESE_SIMPLIFIED
+                                    2 -> Prefs.LANGUAGE_PORTUGUESE_BRAZIL
+                                    3 -> Prefs.LANGUAGE_RUSSIAN
+                                    4 -> Prefs.LANGUAGE_CHINESE_SIMPLIFIED
                                     else -> Prefs.LANGUAGE_CHINESE_TRADITIONAL
                                 }
                                 Prefs.applyAppLanguage()

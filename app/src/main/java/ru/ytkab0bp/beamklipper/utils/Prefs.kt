@@ -27,6 +27,7 @@ object Prefs {
     const val FRONTEND_KALICO = "kalico_frontend"
     const val LANGUAGE_SYSTEM = "system"
     const val LANGUAGE_ENGLISH = "en"
+    const val LANGUAGE_PORTUGUESE_BRAZIL = "pt-BR"
     const val LANGUAGE_RUSSIAN = "ru"
     const val LANGUAGE_CHINESE_SIMPLIFIED = "zh-CN"
     const val LANGUAGE_CHINESE_TRADITIONAL = "zh-TW"
