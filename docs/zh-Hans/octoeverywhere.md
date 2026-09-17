@@ -20,6 +20,10 @@ Kocoa Beam 运行的是真实的 OctoEverywhere Klipper/Moonraker 伴生程序�
      **关联打印机**。
 4. 关联完成后，你的打印机就会出现在 octoeverywhere.com 和 OctoEverywhere 手机
    应用中。
+   - 伴生程序只在连接时检查一次是否已关联——对于已经打开的会话，不会收到实时
+     更新。如果刚完成关联后，octoeverywhere.com 上的 "Go to Klipper" 仍然提示
+     打印机未连接，把 **Enable OctoEverywhere** 关闭再打开一次，强制重新连接
+     即可。
 
 ## 摄像头
 

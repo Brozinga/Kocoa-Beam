@@ -25,6 +25,12 @@ remote access") para o resumo técnico.
      de novo.
 4. Depois de vinculada, sua impressora aparece no octoeverywhere.com e no
    app mobile do OctoEverywhere.
+   - O companion só verifica se está vinculado uma vez, no momento em que
+     conecta — não recebe uma atualização ao vivo para uma sessão que já
+     está aberta. Se o "Go to Klipper" no octoeverywhere.com continuar
+     dizendo que a impressora não está conectada logo depois de você
+     terminar a vinculação, desative e reative o **Enable OctoEverywhere**
+     uma vez para forçar uma reconexão.
 
 ## Webcam
 

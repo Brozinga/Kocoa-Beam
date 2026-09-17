@@ -23,6 +23,11 @@ summary.
      starting — wait a moment and tap **Link printer** again.
 4. Once linked, your printer shows up at octoeverywhere.com and in the
    OctoEverywhere mobile app.
+   - The companion only checks whether it's linked once, at connect time —
+     it doesn't get a live update for a session that's already open. If
+     "Go to Klipper" on octoeverywhere.com still says the printer isn't
+     connected right after you finish linking, turn **Enable
+     OctoEverywhere** off and back on once to force a reconnect.
 
 ## Webcam
 
