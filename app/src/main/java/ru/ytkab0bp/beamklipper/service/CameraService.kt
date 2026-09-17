@@ -396,14 +396,17 @@ class CameraService : Service() {
                             // crashed the :camera process otherwise. Just skip it if absent.
                             val rangeArray = chars.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
                             if (rangeArray != null && rangeArray.isNotEmpty()) {
-                                var selectedRange: Range<Int>? = null
-                                for (r in rangeArray) {
-                                    if (r.upper < 25) {
-                                        selectedRange = r
-                                        break
-                                    }
-                                }
-                                if (selectedRange == null) selectedRange = rangeArray[0]
+                                // Fastest range that still caps at a sane
+                                // ceiling for a remote-monitoring feed — not
+                                // the sensor's absolute max, which can be
+                                // 60fps+ and would undo the bandwidth work in
+                                // cameraWidth/cameraHeight (Prefs.kt). Falls
+                                // back to the slowest available range if
+                                // every one exceeds the cap.
+                                val targetFpsCap = 30
+                                val selectedRange = rangeArray.filter { it.upper <= targetFpsCap }.maxByOrNull { it.upper }
+                                    ?: rangeArray.minByOrNull { it.upper }
+                                    ?: rangeArray[0]
                                 captureRequestBuilder!!.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, selectedRange)
                             }
                             captureRequestBuilder!!.set(CaptureRequest.FLASH_MODE,
