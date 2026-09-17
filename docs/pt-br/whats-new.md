@@ -49,8 +49,13 @@ URL ativa. Os endpoints de câmera continuam em `:8889`.
 
 O servidor de câmera agora também transmite de uma webcam USB UVC genérica
 (além da câmera do próprio aparelho), com troca a quente ao vivo, um
-seletor que diferencia várias lentes, e um controle de rotação. Guia
-completo, incluindo como adicionar no Fluidd/Mainsail:
+seletor que diferencia várias lentes, um controle de rotação, e uma
+configuração de resolução (Baixa/Média/Alta). A transmissão também ficou
+mais resiliente numa conexão fraca: um espectador lento não trava mais o
+feed para todo mundo (backpressure por espectador), e a qualidade JPEG
+agora se ajusta automaticamente ao que a rede consegue realmente carregar,
+em vez de um tamanho fixo que simplesmente é descartado sob congestionamento.
+Guia completo, incluindo como adicionar no Fluidd/Mainsail:
 [`webcam.md`](webcam.md).
 
 ## Acesso remoto via OctoEverywhere
@@ -84,6 +89,35 @@ os servidores reais de produção do octoeverywhere.com.
   execução de comandos por compartilhar a mesma conexão retransmitida).
 - Apenas um perfil de impressora pode ficar vinculado ao OctoEverywhere por
   vez, mesmo rodando vários perfis ao mesmo tempo.
+
+## Acesso remoto via Obico
+
+**Configurações → Acesso remoto → Obico** executa o companion real do
+[Obico](https://www.obico.io) (`moonraker-obico`), vendorizado a partir da
+fonte original e adaptado para rodar como processo próprio no Android, em
+vez do serviço systemd que ele normalmente instala. Ele se conecta ao Obico
+Cloud ou a um Obico Server auto-hospedado — o que estiver definido em
+**Servidor Obico** — pela mesma conexão local com o Moonraker que
+Fluidd/Mainsail usam, sem configuração extra do lado do Moonraker.
+
+- Ativar o botão inicia o companion (que fica parado, sem fazer nada, até
+  ser vinculado — sem descoberta na rede local nem prompt interativo de
+  terminal, que é como o script de instalação do próprio Obico normalmente
+  vincula). **Vincular impressora** abre uma caixa de diálogo para um
+  código de 6 dígitos, que você obtém no app/site do Obico ao adicionar uma
+  impressora manualmente; digitá-lo troca o código pelo mesmo auth token
+  que o fluxo de vinculação original do Obico produziria. **A chamada de
+  API para isso foi verificada contra os servidores reais do Obico Cloud.**
+- A telemetria de erros própria dele (Sentry) fica desativada por padrão, e
+  sempre desativada para um servidor auto-hospedado independente dessa
+  configuração; a conexão real com o servidor escolhido não é afetada.
+- Só está disponível um snapshot periódico (~10s) da webcam, não a
+  pré-visualização ao vivo via WebRTC do Obico — que precisa de um processo
+  `janus-gateway` nativo e `ffmpeg`, ambos compilados para desktop
+  Linux/Raspberry Pi no projeto original e não incluídos aqui. Veja
+  [`obico.md`](obico.md) para detalhes.
+- Apenas um perfil de impressora pode ficar vinculado ao Obico por vez,
+  mesmo rodando vários perfis ao mesmo tempo.
 
 ## Visualizador de logs no app
 

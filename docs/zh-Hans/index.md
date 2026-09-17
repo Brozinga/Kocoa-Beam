@@ -6,6 +6,7 @@
 |---|---|
 | [whats-new.md](whats-new.md) | 本项目在基础应用之上所做的变更。 |
 | [octoeverywhere.md](octoeverywhere.md) | 如何使用内置的 OctoEverywhere 伴生程序进行远程访问——启用与关联。 |
+| [obico.md](obico.md) | 如何使用内置的 Obico 伴生程序进行远程访问——启用与关联，Obico Cloud 或自建服务器。 |
 | [webcam.md](webcam.md) | 摄像头 / USB 摄像头——来源选择器、旋转、如何添加到 Fluidd 和 Mainsail。 |
 | [build-app.md](build-app.md) | 构建 APK —— 一键设置脚本（Linux/macOS/Windows）加手动步骤。 |
 | [build-firmware.md](build-firmware.md) | 为任意受支持的主板构建 MCU 固件 —— 脚本或 Docker。 |

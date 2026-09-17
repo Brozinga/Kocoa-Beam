@@ -71,6 +71,26 @@
     <string name="LinkOctoEverywhere">Link printer</string>
     <string name="LinkOctoEverywhereHint">Scan the QR code to connect your OctoEverywhere account</string>
     <string name="LinkOctoEverywhereNotReady">Not ready yet — give it a few seconds after enabling, then try again</string>
+    <string name="ObicoTitle" translatable="false">Obico</string>
+    <string name="ObicoDescription">Obico companion is running in background…</string>
+    <string name="Obico" translatable="false">Obico</string>
+    <string name="EnableObico" translatable="false">Enable Obico</string>
+    <string name="ObicoServer">Obico server</string>
+    <string name="ObicoServerHint">Connect to Obico Cloud, or a self-hosted Obico Server</string>
+    <string name="ObicoServerCloud">Obico Cloud (app.obico.io)</string>
+    <string name="ObicoServerSelfHosted">Self-hosted</string>
+    <string name="ObicoServerSelfHostedHint">https://your-obico-server.example.com</string>
+    <string name="ObicoLink">Link printer</string>
+    <string name="ObicoLinked">Linked ✓</string>
+    <string name="ObicoNotLinked">Not linked</string>
+    <string name="ObicoLinkHint">Get a 6-digit code from the Obico app or website (add printer manually) and enter it below</string>
+    <string name="ObicoAlreadyLinkedHint">This printer is already linked to your Obico account.</string>
+    <string name="ObicoLinkCodeHint">6-digit code</string>
+    <string name="ObicoLinkAction">Link</string>
+    <string name="ObicoLinking">Linking…</string>
+    <string name="ObicoUnlink">Unlink</string>
+    <string name="ObicoInvalidCode">Invalid or expired code</string>
+    <string name="ObicoNetworkError">Couldn\'t reach the server</string>
     <string name="USB" translatable="false">USB</string>
     <string name="ListUSB">List USB devices</string>
     <string name="ListUSBTitle">USB devices</string>

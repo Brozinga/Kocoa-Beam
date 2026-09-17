@@ -20,6 +20,7 @@ local.properties
 /app/src/main/assets/fluidd/
 /app/src/main/assets/moonraker/moonraker/
 /app/src/main/assets/octoeverywhere/
+/app/src/main/assets/obico/
 /app/release/
 /app/src/main/assets/moonraker/timelapse.cfg
 /app/src/main/assets/update.json

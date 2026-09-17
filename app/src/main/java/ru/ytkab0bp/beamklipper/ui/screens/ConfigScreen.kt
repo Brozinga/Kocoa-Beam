@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -34,20 +35,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.MainActivity
 import ru.ytkab0bp.beamklipper.R
@@ -79,6 +84,9 @@ fun ConfigScreen(
     val cameraRotation by viewModel.cameraRotation.collectAsStateWithLifecycle()
     val cameraResolution by viewModel.cameraResolution.collectAsStateWithLifecycle()
     val octoEverywhereEnabled by viewModel.octoEverywhereEnabled.collectAsStateWithLifecycle()
+    val obicoEnabled by viewModel.obicoEnabled.collectAsStateWithLifecycle()
+    val obicoServerUrl by viewModel.obicoServerUrl.collectAsStateWithLifecycle()
+    val obicoLinked by viewModel.obicoLinked.collectAsStateWithLifecycle()
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -88,6 +96,8 @@ fun ConfigScreen(
     var showCameraSource by remember { mutableStateOf(false) }
     var octoEverywhereLinkUrl by remember { mutableStateOf<String?>(null) }
     var showOctoEverywhereNotReady by remember { mutableStateOf(false) }
+    var showObicoServer by remember { mutableStateOf(false) }
+    var showObicoLink by remember { mutableStateOf(false) }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -259,6 +269,28 @@ fun ConfigScreen(
                     val url = viewModel.octoEverywhereLinkUrl()
                     if (url != null) octoEverywhereLinkUrl = url else showOctoEverywhereNotReady = true
                 }
+            )
+        }
+
+        Spacer(Modifier.height(28.dp))
+        BrutalSectionHeader(stringResource(R.string.Obico))
+        BrutalSwitchRow(
+            title = stringResource(R.string.EnableObico),
+            checked = obicoEnabled,
+            onCheckedChange = { checked -> viewModel.setObicoEnabled(checked) }
+        )
+        if (obicoEnabled) {
+            Spacer(Modifier.height(8.dp))
+            BrutalValueRow(
+                title = stringResource(R.string.ObicoServer),
+                value = viewModel.obicoServerLabel(obicoServerUrl),
+                onClick = { showObicoServer = true }
+            )
+            Spacer(Modifier.height(8.dp))
+            BrutalValueRow(
+                title = stringResource(R.string.ObicoLink),
+                value = stringResource(if (obicoLinked) R.string.ObicoLinked else R.string.ObicoNotLinked),
+                onClick = { showObicoLink = true }
             )
         }
 
@@ -498,6 +530,20 @@ fun ConfigScreen(
             confirmButton = {
                 BrutalButton(text = stringResource(android.R.string.ok), onClick = { showOctoEverywhereNotReady = false })
             }
+        )
+    }
+    if (showObicoServer) {
+        ObicoServerDialog(
+            viewModel = viewModel,
+            currentUrl = obicoServerUrl,
+            onDismiss = { showObicoServer = false }
+        )
+    }
+    if (showObicoLink) {
+        ObicoLinkDialog(
+            viewModel = viewModel,
+            linked = obicoLinked,
+            onDismiss = { showObicoLink = false }
         )
     }
 }
@@ -752,6 +798,181 @@ private fun LanguageDialog(onDismiss: () -> Unit) {
                 text = stringResource(android.R.string.cancel),
                 onClick = onDismiss
             )
+        }
+    )
+}
+
+@Composable
+private fun BrutalTextField(
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
+    placeholder: String
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        cursorBrush = SolidColor(Ink),
+        textStyle = MaterialTheme.typography.bodyLarge.copy(color = Ink),
+        decorationBox = { innerTextField ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Paper, RectangleShape)
+                    .border(2.dp, Ink, RectangleShape)
+                    .padding(horizontal = 14.dp, vertical = 12.dp)
+            ) {
+                if (value.text.isEmpty()) {
+                    Text(text = placeholder, style = MaterialTheme.typography.bodyLarge, color = InkMuted)
+                }
+                innerTextField()
+            }
+        }
+    )
+}
+
+@Composable
+private fun ObicoServerDialog(
+    viewModel: SettingsViewModel,
+    currentUrl: String,
+    onDismiss: () -> Unit
+) {
+    var cloud by remember { mutableStateOf(viewModel.isObicoCloud(currentUrl)) }
+    var selfHostedUrl by remember {
+        mutableStateOf(TextFieldValue(if (viewModel.isObicoCloud(currentUrl)) "" else currentUrl))
+    }
+    BrutalAlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.ObicoServer), style = MaterialTheme.typography.titleLarge, color = Ink) },
+        text = {
+            Column {
+                Text(stringResource(R.string.ObicoServerHint), style = MaterialTheme.typography.bodyMedium, color = InkMuted)
+                Spacer(Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RectangleShape)
+                        .clickable { cloud = true }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(R.string.ObicoServerCloud),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (cloud) Accent else Ink,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RectangleShape)
+                        .clickable { cloud = false }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(R.string.ObicoServerSelfHosted),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (!cloud) Accent else Ink,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (!cloud) {
+                    Spacer(Modifier.height(8.dp))
+                    BrutalTextField(
+                        value = selfHostedUrl,
+                        onValueChange = { selfHostedUrl = it },
+                        placeholder = stringResource(R.string.ObicoServerSelfHostedHint)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            BrutalButton(
+                text = stringResource(android.R.string.ok),
+                onClick = {
+                    viewModel.setObicoServer(cloud, selfHostedUrl.text)
+                    onDismiss()
+                }
+            )
+        },
+        dismissButton = {
+            BrutalButton(text = stringResource(android.R.string.cancel), onClick = onDismiss)
+        }
+    )
+}
+
+@Composable
+private fun ObicoLinkDialog(
+    viewModel: SettingsViewModel,
+    linked: Boolean,
+    onDismiss: () -> Unit
+) {
+    var code by remember { mutableStateOf(TextFieldValue("")) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    val invalidCodeText = stringResource(R.string.ObicoInvalidCode)
+    val networkErrorText = stringResource(R.string.ObicoNetworkError)
+
+    BrutalAlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.ObicoLink), style = MaterialTheme.typography.titleLarge, color = Ink) },
+        text = {
+            Column {
+                if (linked) {
+                    Text(stringResource(R.string.ObicoAlreadyLinkedHint), color = Ink)
+                } else {
+                    Text(stringResource(R.string.ObicoLinkHint), style = MaterialTheme.typography.bodyMedium, color = InkMuted)
+                    Spacer(Modifier.height(12.dp))
+                    BrutalTextField(
+                        value = code,
+                        onValueChange = { code = it; error = null },
+                        placeholder = stringResource(R.string.ObicoLinkCodeHint)
+                    )
+                    error?.let {
+                        Spacer(Modifier.height(8.dp))
+                        Text(it, color = Accent, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (linked) {
+                BrutalButton(
+                    text = stringResource(R.string.ObicoUnlink),
+                    onClick = {
+                        viewModel.unlinkObico()
+                        onDismiss()
+                    }
+                )
+            } else {
+                BrutalButton(
+                    text = if (loading) stringResource(R.string.ObicoLinking) else stringResource(R.string.ObicoLinkAction),
+                    onClick = {
+                        if (loading) return@BrutalButton
+                        loading = true
+                        error = null
+                        scope.launch {
+                            when (val result = viewModel.linkObico(code.text)) {
+                                is SettingsViewModel.ObicoLinkResult.Success -> onDismiss()
+                                is SettingsViewModel.ObicoLinkResult.InvalidCode -> {
+                                    loading = false
+                                    error = invalidCodeText
+                                }
+                                is SettingsViewModel.ObicoLinkResult.NetworkError -> {
+                                    loading = false
+                                    error = result.message?.let { "$networkErrorText: $it" } ?: networkErrorText
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+        },
+        dismissButton = {
+            BrutalButton(text = stringResource(android.R.string.cancel), onClick = onDismiss)
         }
     )
 }

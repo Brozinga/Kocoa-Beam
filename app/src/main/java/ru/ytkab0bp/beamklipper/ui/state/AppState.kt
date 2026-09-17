@@ -19,6 +19,7 @@ import ru.ytkab0bp.beamklipper.events.InstanceDestroyedEvent
 import ru.ytkab0bp.beamklipper.events.InstancesRefreshedEvent
 import ru.ytkab0bp.beamklipper.events.InstanceStateChangedEvent
 import ru.ytkab0bp.beamklipper.events.InstanceUpdatedEvent
+import ru.ytkab0bp.beamklipper.events.ObicoConfigChangedEvent
 import ru.ytkab0bp.beamklipper.events.WebFrontendChangedEvent
 import ru.ytkab0bp.beamklipper.events.WebStateChangedEvent
 import ru.ytkab0bp.beamklipper.utils.Prefs
@@ -78,6 +79,15 @@ object AppState {
     private val _octoEverywhereEnabled = MutableStateFlow(Prefs.isOctoEverywhereEnabled)
     val octoEverywhereEnabled: StateFlow<Boolean> = _octoEverywhereEnabled.distinct()
 
+    private val _obicoEnabled = MutableStateFlow(Prefs.isObicoEnabled)
+    val obicoEnabled: StateFlow<Boolean> = _obicoEnabled.distinct()
+
+    private val _obicoServerUrl = MutableStateFlow(Prefs.obicoServerUrl)
+    val obicoServerUrl: StateFlow<String> = _obicoServerUrl.distinct()
+
+    private val _obicoLinked = MutableStateFlow(Prefs.isObicoLinked)
+    val obicoLinked: StateFlow<Boolean> = _obicoLinked.distinct()
+
     private val _appLanguage = MutableStateFlow(Prefs.appLanguage)
     val appLanguage: StateFlow<String> = _appLanguage.distinct()
 
@@ -93,6 +103,9 @@ object AppState {
         _cameraRotation.value = Prefs.cameraRotation
         _cameraResolution.value = Prefs.cameraResolution
         _octoEverywhereEnabled.value = Prefs.isOctoEverywhereEnabled
+        _obicoEnabled.value = Prefs.isObicoEnabled
+        _obicoServerUrl.value = Prefs.obicoServerUrl
+        _obicoLinked.value = Prefs.isObicoLinked
         KlipperApp.EVENT_BUS.registerListener(this)
         refreshInstances()
     }
@@ -173,6 +186,22 @@ object AppState {
 
     fun updateOctoEverywhereEnabled() {
         _octoEverywhereEnabled.value = Prefs.isOctoEverywhereEnabled
+    }
+
+    fun updateObicoEnabled() {
+        _obicoEnabled.value = Prefs.isObicoEnabled
+    }
+
+    fun updateObicoServer() {
+        _obicoServerUrl.value = Prefs.obicoServerUrl
+        _obicoLinked.value = Prefs.isObicoLinked
+    }
+
+    @EventHandler(runOnMainThread = true)
+    fun onObicoConfigChanged(e: ObicoConfigChangedEvent) {
+        _obicoServerUrl.value = Prefs.obicoServerUrl
+        _obicoLinked.value = Prefs.isObicoLinked
+        KlipperInstance.onObicoRelink()
     }
 
     fun updateAppLanguage() {

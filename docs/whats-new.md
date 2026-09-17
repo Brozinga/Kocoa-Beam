@@ -48,8 +48,13 @@ active URL. Camera endpoints remain on `:8889`.
 
 The camera server can now also stream from a generic USB UVC webcam (not
 just the device's own camera), with live hot-plug switching, a picker that
-tells multiple lenses apart, and a rotation control. Full guide, including
-how to add it to Fluidd/Mainsail: [`webcam.md`](webcam.md).
+tells multiple lenses apart, a rotation control, and a resolution setting
+(Low/Medium/High). Streaming is also more resilient on a weak connection:
+a slow viewer can no longer stall the feed for everyone (per-viewer
+backpressure), and JPEG quality now adapts automatically to what the
+network can actually carry instead of a fixed size that just gets dropped
+under congestion. Full guide, including how to add it to Fluidd/Mainsail:
+[`webcam.md`](webcam.md).
 
 ## OctoEverywhere remote access
 
@@ -79,6 +84,34 @@ against the real octoeverywhere.com production servers.
   execution sharing the same relayed connection).
 - Only one printer profile can be linked to OctoEverywhere at a time, even if
   you run multiple profiles concurrently.
+
+## Obico remote access
+
+**Settings → Remote access → Obico** runs the real
+[Obico](https://www.obico.io) `moonraker-obico` companion, vendored from its
+upstream source and adapted to run as its own background process on Android
+instead of the systemd service it normally installs as. It connects to
+either Obico Cloud or a self-hosted Obico Server, whichever URL is set in
+**Obico server**, over the same local Moonraker connection Fluidd/Mainsail
+use — no extra setup on the Moonraker side.
+
+- Turning it on starts the companion (it waits, doing nothing, until
+  linked — no local-network discovery or interactive terminal prompt, which
+  is how Obico's own install script normally links). **Link printer** opens
+  a dialog for a 6-digit code, which you get from the Obico app/website by
+  adding a printer manually; entering it exchanges it for the same
+  auth token Obico's own linking flow would produce. **The API call for this
+  has been verified against the real Obico Cloud servers.**
+- Its own crash telemetry (Sentry) is disabled by default, and always
+  disabled for a self-hosted server regardless of that setting; the actual
+  connection to whichever server you picked is unaffected.
+- Only a periodic (~10s) snapshot of the webcam feed is available, not
+  Obico's real-time WebRTC preview — that needs a native `janus-gateway`
+  process and `ffmpeg`, both built for desktop Linux/Raspberry Pi in the
+  upstream project and not bundled here. See [`obico.md`](obico.md) for
+  details.
+- Only one printer profile can be linked to Obico at a time, even if you run
+  multiple profiles concurrently.
 
 ## In-app log viewer
 

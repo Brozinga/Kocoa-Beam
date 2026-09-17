@@ -492,6 +492,21 @@ class KlipperInstance {
                         )
                     }
                 }
+
+                // Same one-companion-for-the-app story as OctoEverywhere above.
+                if (Prefs.isObicoEnabled && obicoConnection == null) {
+                    val iid = id
+                    if (iid != null) {
+                        KlipperApp.INSTANCE.bindService(
+                            Intent(KlipperApp.INSTANCE, ObicoService::class.java).putExtra(BasePythonService.KEY_INSTANCE, iid),
+                            object : ServiceConnection {
+                                override fun onServiceConnected(name: ComponentName, service: IBinder) {}
+                                override fun onServiceDisconnected(name: ComponentName) {}
+                            }.also { obicoConnection = it },
+                            Context.BIND_AUTO_CREATE
+                        )
+                    }
+                }
             }
         }
     }
@@ -519,6 +534,7 @@ class KlipperInstance {
         private var webServerConnection: ServiceConnection? = null
         private var cameraServerConnection: ServiceConnection? = null
         private var octoEverywhereConnection: ServiceConnection? = null
+        private var obicoConnection: ServiceConnection? = null
         private var instances: List<KlipperInstance> = emptyList()
         private val instanceMap = object : HashMap<String, KlipperInstance>() {
             override fun get(key: String): KlipperInstance? {
@@ -672,6 +688,11 @@ class KlipperInstance {
                 try { KlipperApp.INSTANCE.stopService(Intent(KlipperApp.INSTANCE, OctoEverywhereService::class.java)) } catch (_: Throwable) {}
                 octoEverywhereConnection = null
             }
+            if (obicoConnection != null) {
+                try { KlipperApp.INSTANCE.unbindService(obicoConnection!!) } catch (_: Throwable) {}
+                try { KlipperApp.INSTANCE.stopService(Intent(KlipperApp.INSTANCE, ObicoService::class.java)) } catch (_: Throwable) {}
+                obicoConnection = null
+            }
         }
 
         @JvmStatic
@@ -733,6 +754,59 @@ class KlipperInstance {
         }
 
         @JvmStatic
+        fun onObicoConfigChanged(enable: Boolean) {
+            mainHandler.post {
+                if (obicoConnection == null && enable) {
+                    val inst = instanceBySlotId.values.firstOrNull { it.getState() == State.RUNNING } ?: return@post
+                    val iid = inst.id ?: return@post
+                    KlipperApp.INSTANCE.bindService(
+                        Intent(KlipperApp.INSTANCE, ObicoService::class.java).putExtra(BasePythonService.KEY_INSTANCE, iid),
+                        object : ServiceConnection {
+                            override fun onServiceConnected(name: ComponentName, service: IBinder) {}
+                            override fun onServiceDisconnected(name: ComponentName) {}
+                        }.also { obicoConnection = it },
+                        Context.BIND_AUTO_CREATE
+                    )
+                } else if (obicoConnection != null && !enable) {
+                    try { KlipperApp.INSTANCE.unbindService(obicoConnection!!) } catch (_: Throwable) {}
+                    try { KlipperApp.INSTANCE.stopService(Intent(KlipperApp.INSTANCE, ObicoService::class.java)) } catch (_: Throwable) {}
+                    obicoConnection = null
+                }
+            }
+        }
+
+        @JvmStatic
+        fun onObicoRelink() {
+            mainHandler.post {
+                // ObicoService lives in its own ":obico" process, so it never
+                // observes a SharedPreferences write made from here — only a
+                // fresh process start reads the new server URL / auth_token
+                // truthfully. Bounce it so a just-completed link (or a
+                // changed server) takes effect immediately, same story as
+                // onCameraSourceChanged.
+                if (obicoConnection != null) {
+                    try { KlipperApp.INSTANCE.unbindService(obicoConnection!!) } catch (_: Throwable) {}
+                    try { KlipperApp.INSTANCE.stopService(Intent(KlipperApp.INSTANCE, ObicoService::class.java)) } catch (_: Throwable) {}
+                    obicoConnection = null
+                    if (Prefs.isObicoEnabled) {
+                        val inst = instanceBySlotId.values.firstOrNull { it.getState() == State.RUNNING }
+                        val iid = inst?.id
+                        if (iid != null) {
+                            KlipperApp.INSTANCE.bindService(
+                                Intent(KlipperApp.INSTANCE, ObicoService::class.java).putExtra(BasePythonService.KEY_INSTANCE, iid),
+                                object : ServiceConnection {
+                                    override fun onServiceConnected(name: ComponentName, service: IBinder) {}
+                                    override fun onServiceDisconnected(name: ComponentName) {}
+                                }.also { obicoConnection = it },
+                                Context.BIND_AUTO_CREATE
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        @JvmStatic
         fun resetSlotsForFreshStart() {
             Log.i(TAG, "resetSlotsForFreshStart: clearing slotById (was size=${slotById.size}), webServerConnection=${webServerConnection != null}, cameraServerConnection=${cameraServerConnection != null}")
             slotById.clear()
@@ -741,6 +815,7 @@ class KlipperInstance {
             webServerConnection = null
             cameraServerConnection = null
             octoEverywhereConnection = null
+            obicoConnection = null
         }
 
         @JvmStatic

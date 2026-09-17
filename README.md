@@ -132,6 +132,7 @@ Bundled component versions in this project:
 | Mainsail | 2.19.0 |
 | Happy Hare | v4.0.0 |
 | OctoEverywhere | vendored companion, adapted to run natively on Android |
+| Obico | vendored companion, adapted to run natively on Android (Cloud or self-hosted) |
 
 Opt-in Klipper add-ons are also bundled (KAMP, LED Effect, Z Calibration, Auto Speed, TMC Autotune) — see [`docs/mods/klipper-addons.md`](docs/mods/klipper-addons.md). Full change list: [`docs/whats-new.md`](docs/whats-new.md).
 
@@ -151,6 +152,16 @@ Opt-in Klipper add-ons are also bundled (KAMP, LED Effect, Z Calibration, Auto S
   language, alongside English/Russian/Chinese (Simplified & Traditional).
 - **In-app OctoEverywhere logs** — its log now shows up in the Logs tab
   alongside Klipper/Moonraker, for troubleshooting without adb.
+- **Camera resolution setting + streaming stability** — a configurable
+  resolution (Low/Medium/High) alongside the rotation control, plus fixes
+  for choppy/laggy streaming on congested WiFi (per-viewer backpressure so
+  a slow connection can't stall the feed, and JPEG quality that adapts
+  automatically to network conditions).
+- **Obico remote access** — the real Obico Klipper/Moonraker companion,
+  vendored and adapted to run natively as an Android process, connecting to
+  Obico Cloud or a self-hosted Obico Server. Toggle in Settings → Remote
+  access, link via a 6-digit code from the Obico app/website. Guide:
+  [`docs/obico.md`](docs/obico.md).
 
 # Android Extensions
 
