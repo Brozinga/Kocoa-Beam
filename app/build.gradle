@@ -98,6 +98,23 @@ android {
 
                 install "numpy==1.26.2"
                 install "click==8.1.8"
+
+                // OctoEverywhere companion (app/src/main/octoeverywhere), vendored
+                // from github.com/QuinnDamerell/OctoPrint-OctoEverywhere. Versions
+                // match its requirements.txt; "configparser" and "zstandard" are
+                // deliberately omitted (stdlib-already / optional-and-gracefully-
+                // skipped-when-absent, see moonraker_octoeverywhere/README notes).
+                install "octowebsocket_client==1.9.1"
+                install "requests>=2.31.0"
+                install "octoflatbuffers==24.3.27"
+                install "certifi>=2026.7.22"
+                install "rsa>=4.9"
+                install "dnspython>=2.3.0"
+                install "httpx>=0.24.1"
+                install "urllib3>=2.0.7"
+                install "sentry-sdk>=2.20.0,<3"
+                install "pybind11"
+                install "qrcode<=8.0.0"
             }
             pyc {
                 src true
@@ -365,12 +382,14 @@ tasks.register('bundleKlipper') {
         var kalicoHash = file('src/main/kalico').exists() ? getGitCommitHash(file('src/main/kalico')) : 'none'
         var addonsVersionFile = file('src/main/assets/klipper/addons_version')
         var addonsVersion = addonsVersionFile.exists() ? addonsVersionFile.text.trim() : '0'
-        var version = 'klipper-' + getGitCommitHash(file('src/main/klipper')) + '_kalico-' + kalicoHash + '_moonraker-' + getGitCommitHash(file('src/main/moonraker')) + '_happyhare-' + getGitCommitHash(file('src/main/happyhare')) + '_klipper_tmc_autotune-' + getGitCommitHash(file('src/main/klipper_tmc_autotune')) + '_moonraker_timelapse-' + getGitCommitHash(file('src/main/moonraker_timelapse')) + '_beamext-' + file('src/main/assets/klipper/beam_ext/ext_version').text + '_addons-' + addonsVersion
+        var octoeverywhereVersion = file('src/main/octoeverywhere/vendor_version').exists() ? file('src/main/octoeverywhere/vendor_version').text.trim() : 'none'
+        var version = 'klipper-' + getGitCommitHash(file('src/main/klipper')) + '_kalico-' + kalicoHash + '_moonraker-' + getGitCommitHash(file('src/main/moonraker')) + '_happyhare-' + getGitCommitHash(file('src/main/happyhare')) + '_klipper_tmc_autotune-' + getGitCommitHash(file('src/main/klipper_tmc_autotune')) + '_moonraker_timelapse-' + getGitCommitHash(file('src/main/moonraker_timelapse')) + '_beamext-' + file('src/main/assets/klipper/beam_ext/ext_version').text + '_addons-' + addonsVersion + '_octoeverywhere-' + octoeverywhereVersion
         if (!versionFile.exists() || versionFile.text != version) {
             var files = new ArrayList<File>()
             collectFiles(file('src/main/assets/klipper/klippy'), files)
             collectFiles(file('src/main/assets/kalico/klippy'), files)
             collectFiles(file('src/main/assets/moonraker/moonraker'), files)
+            collectFiles(file('src/main/assets/octoeverywhere'), files)
             files.each {
                 it.delete()
             }
@@ -561,6 +580,28 @@ tasks.register('bundleKlipper') {
             Files.copy(file('src/main/moonraker_timelapse/klipper_macro/timelapse.cfg').toPath(), new File(assets, 'moonraker/timelapse.cfg').toPath(), StandardCopyOption.REPLACE_EXISTING)
 
             index.put('moonraker', arr)
+
+            // OctoEverywhere companion (real vendored source, see docs). Copied
+            // wholesale, unlike klipper/moonraker above, since it isn't filtered
+            // to just klippy/moonraker component subfolders — RepoRootFolder
+            // needs a real pyproject.toml at its root and moonraker_octoeverywhere
+            // ships its own static/ web assets.
+            arr = new JSONArray()
+            var octoRoot = file('src/main/octoeverywhere')
+            if (octoRoot.exists()) {
+                files.clear()
+                collectFiles(octoRoot, files)
+                files.each {
+                    if (it.getName() == 'vendor_version') return
+                    var sub = it.getAbsolutePath().substring(octoRoot.getAbsolutePath().length() + 1).replace('\\', '/')
+                    if (sub.startsWith('.') || sub.contains('/.')) return
+                    arr.put(sub)
+                    var f = new File(assets, 'octoeverywhere/' + sub)
+                    f.getParentFile().mkdirs()
+                    Files.copy(it.toPath(), f.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                }
+                index.put('octoeverywhere', arr)
+            }
 
             var indexFile = file('src/main/assets/index.json')
             if (!indexFile.exists()) indexFile.createNewFile()

@@ -10,6 +10,7 @@ import androidx.core.os.LocaleListCompat
 
 import ru.ytkab0bp.beamklipper.BuildConfig
 import ru.ytkab0bp.beamklipper.KlipperApp
+import ru.ytkab0bp.beamklipper.events.CameraSourceChangedEvent
 import ru.ytkab0bp.beamklipper.events.EngineChangedEvent
 import ru.ytkab0bp.beamklipper.events.WebFrontendChangedEvent
 import ru.ytkab0bp.beamklipper.serial.UsbSerialManager
@@ -163,8 +164,21 @@ object Prefs {
     val cameraHeight: Int
         get() = getSafeInt("camera_height", 720)
 
-    val cameraId: String?
+    // null means "auto": prefer a LENS_FACING_EXTERNAL (USB UVC webcam) camera
+    // when one is plugged in, falling back to the first camera otherwise. See
+    // CameraService.resolveCameraId(). CameraService runs in its own ":camera"
+    // process, so it never observes this write directly — KlipperInstance
+    // (main process, same as this setter) restarts it on CameraSourceChangedEvent
+    // so the new pick is read fresh on the next process start.
+    var cameraId: String?
         get() = getSafeStringNullable("camera_id")
+        set(value) {
+            mPrefs.edit().apply {
+                if (value == null) remove("camera_id") else putString("camera_id", value)
+            }.apply()
+            AppState.updateCameraSourceId()
+            KlipperApp.EVENT_BUS.fireEvent(CameraSourceChangedEvent())
+        }
 
     var isCameraEnabled: Boolean
         get() = (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || KlipperApp.INSTANCE.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) &&
@@ -172,6 +186,13 @@ object Prefs {
         set(value) {
             mPrefs.edit().putBoolean("camera_enabled", value).apply()
             AppState.updateCameraEnabled()
+        }
+
+    var isOctoEverywhereEnabled: Boolean
+        get() = getSafeBoolean("octoeverywhere_enabled", false)
+        set(value) {
+            mPrefs.edit().putBoolean("octoeverywhere_enabled", value).apply()
+            AppState.updateOctoEverywhereEnabled()
         }
 
     var usbDeviceNaming: Int

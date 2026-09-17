@@ -72,12 +72,17 @@ fun ConfigScreen(
     val webFrontend by viewModel.webFrontend.collectAsStateWithLifecycle()
     val usbNaming by viewModel.usbNaming.collectAsStateWithLifecycle()
     val cameraEnabled by viewModel.cameraEnabled.collectAsStateWithLifecycle()
+    val cameraSourceId by viewModel.cameraSourceId.collectAsStateWithLifecycle()
+    val octoEverywhereEnabled by viewModel.octoEverywhereEnabled.collectAsStateWithLifecycle()
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var showListUsb by remember { mutableStateOf(false) }
     var showQr by remember { mutableStateOf(false) }
     var showLanguage by remember { mutableStateOf(false) }
+    var showCameraSource by remember { mutableStateOf(false) }
+    var octoEverywhereLinkUrl by remember { mutableStateOf<String?>(null) }
+    var showOctoEverywhereNotReady by remember { mutableStateOf(false) }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -212,6 +217,31 @@ fun ConfigScreen(
                 }
             }
         )
+        Spacer(Modifier.height(8.dp))
+        BrutalValueRow(
+            title = stringResource(R.string.CameraSource),
+            value = viewModel.cameraSourceTitle(cameraSourceId),
+            onClick = { showCameraSource = true }
+        )
+
+        Spacer(Modifier.height(28.dp))
+        BrutalSectionHeader(stringResource(R.string.RemoteAccess))
+        BrutalSwitchRow(
+            title = stringResource(R.string.EnableOctoEverywhere),
+            checked = octoEverywhereEnabled,
+            onCheckedChange = { checked -> viewModel.setOctoEverywhereEnabled(checked) }
+        )
+        if (octoEverywhereEnabled) {
+            Spacer(Modifier.height(8.dp))
+            BrutalValueRow(
+                title = stringResource(R.string.LinkOctoEverywhere),
+                value = stringResource(R.string.LinkOctoEverywhereHint),
+                onClick = {
+                    val url = viewModel.octoEverywhereLinkUrl()
+                    if (url != null) octoEverywhereLinkUrl = url else showOctoEverywhereNotReady = true
+                }
+            )
+        }
 
         Spacer(Modifier.height(28.dp))
         BrutalSectionHeader(stringResource(R.string.Other))
@@ -430,6 +460,27 @@ fun ConfigScreen(
     if (showLanguage) {
         LanguageDialog(onDismiss = { showLanguage = false })
     }
+    if (showCameraSource) {
+        CameraSourceDialog(
+            options = viewModel.cameraSourceOptions(),
+            selectedId = cameraSourceId,
+            onSelect = { viewModel.setCameraSource(it) },
+            onDismiss = { showCameraSource = false }
+        )
+    }
+    octoEverywhereLinkUrl?.let { url ->
+        QRCodeDialog(link = url, onDismiss = { octoEverywhereLinkUrl = null })
+    }
+    if (showOctoEverywhereNotReady) {
+        BrutalAlertDialog(
+            onDismissRequest = { showOctoEverywhereNotReady = false },
+            title = { Text(stringResource(R.string.LinkOctoEverywhere), style = MaterialTheme.typography.titleLarge, color = Ink) },
+            text = { Text(stringResource(R.string.LinkOctoEverywhereNotReady), color = Ink) },
+            confirmButton = {
+                BrutalButton(text = stringResource(android.R.string.ok), onClick = { showOctoEverywhereNotReady = false })
+            }
+        )
+    }
 }
 
 @Composable
@@ -464,6 +515,45 @@ private fun BrutalSwitchRow(
                 modifier = Modifier.weight(1f)
             )
             BrutalSwitch(checked = checked, onCheckedChange = onCheckedChange)
+        }
+    }
+}
+
+@Composable
+private fun BrutalValueRow(
+    title: String,
+    value: String,
+    onClick: () -> Unit
+) {
+    BrutalTile(
+        modifier = Modifier.fillMaxWidth(),
+        background = Paper,
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Ink
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Icon(
+                painterResource(R.drawable.ic_chevron_right_28),
+                contentDescription = null,
+                tint = Ink,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
@@ -535,6 +625,49 @@ private fun ListUsbDialog(context: Context, onDismiss: () -> Unit) {
         confirmButton = {
             BrutalButton(
                 text = stringResource(android.R.string.ok),
+                onClick = onDismiss
+            )
+        }
+    )
+}
+
+@Composable
+private fun CameraSourceDialog(
+    options: List<SettingsViewModel.CameraSourceOption>,
+    selectedId: String?,
+    onSelect: (String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    BrutalAlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.CameraSourceTitle), style = MaterialTheme.typography.titleLarge, color = Ink) },
+        text = {
+            Column {
+                options.forEach { option ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RectangleShape)
+                            .clickable {
+                                onSelect(option.id)
+                                onDismiss()
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            option.label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (option.id == selectedId) Accent else Ink,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            BrutalButton(
+                text = stringResource(android.R.string.cancel),
                 onClick = onDismiss
             )
         }

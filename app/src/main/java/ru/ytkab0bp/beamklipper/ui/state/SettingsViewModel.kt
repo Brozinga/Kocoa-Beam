@@ -1,6 +1,9 @@
 package ru.ytkab0bp.beamklipper.ui.state
 
 import android.app.Application
+import android.content.Context
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
 import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.flow.StateFlow
 import ru.ytkab0bp.beamklipper.KlipperApp
@@ -13,6 +16,8 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     val webFrontend: StateFlow<String> = AppState.webFrontend
     val usbNaming: StateFlow<Int> = AppState.usbNaming
     val cameraEnabled: StateFlow<Boolean> = AppState.cameraEnabled
+    val cameraSourceId: StateFlow<String?> = AppState.cameraSourceId
+    val octoEverywhereEnabled: StateFlow<Boolean> = AppState.octoEverywhereEnabled
     val appLanguage: StateFlow<String> = AppState.appLanguage
 
     fun cycleEngine() {
@@ -58,6 +63,72 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         if (granted) {
             Prefs.isCameraEnabled = true
             KlipperInstance.onCameraConfigChanged(true)
+        }
+    }
+
+    fun setOctoEverywhereEnabled(enabled: Boolean) {
+        Prefs.isOctoEverywhereEnabled = enabled
+        KlipperInstance.onOctoEverywhereConfigChanged(enabled)
+    }
+
+    // OctoEverywhere writes its generated printer id to an INI-style secrets
+    // file under the instance's own storage dir once it first starts (see
+    // linux_host/secrets.py). Only one instance ever runs the companion at a
+    // time, so scanning all of them for whichever has it is simplest.
+    fun octoEverywhereLinkUrl(): String? {
+        for (inst in KlipperInstance.getInstances()) {
+            val secrets = File(inst.directory, "octoeverywhere/octoeverywhere.secrets")
+            if (!secrets.exists()) continue
+            val printerId = try {
+                Regex("(?m)^\\s*printer_id\\s*=\\s*(.+?)\\s*$").find(secrets.readText())?.groupValues?.get(1)
+            } catch (_: Throwable) { null }
+            if (!printerId.isNullOrBlank()) {
+                return "https://octoeverywhere.com/getstarted?printerid=$printerId"
+            }
+        }
+        return null
+    }
+
+    data class CameraSourceOption(val id: String?, val label: String)
+
+    fun setCameraSource(id: String?) {
+        Prefs.cameraId = id
+    }
+
+    fun cameraSourceOptions(): List<CameraSourceOption> {
+        val options = mutableListOf(
+            CameraSourceOption(null, KlipperApp.INSTANCE.getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceAuto))
+        )
+        try {
+            val manager = KlipperApp.INSTANCE.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+            for (id in manager.cameraIdList) {
+                options.add(CameraSourceOption(id, cameraLabel(manager, id)))
+            }
+        } catch (_: Throwable) {}
+        return options
+    }
+
+    fun cameraSourceTitle(id: String?): String {
+        if (id == null) return KlipperApp.INSTANCE.getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceAuto)
+        return try {
+            val manager = KlipperApp.INSTANCE.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+            if (manager.cameraIdList.contains(id)) cameraLabel(manager, id)
+            else KlipperApp.INSTANCE.getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceAuto)
+        } catch (_: Throwable) {
+            KlipperApp.INSTANCE.getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceAuto)
+        }
+    }
+
+    private fun cameraLabel(manager: CameraManager, id: String): String {
+        val ctx = KlipperApp.INSTANCE
+        val facing = try {
+            manager.getCameraCharacteristics(id).get(CameraCharacteristics.LENS_FACING)
+        } catch (_: Throwable) { null }
+        return when (facing) {
+            CameraCharacteristics.LENS_FACING_EXTERNAL -> ctx.getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceUsbWebcam, id)
+            CameraCharacteristics.LENS_FACING_BACK -> ctx.getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceBuiltInBack, id)
+            CameraCharacteristics.LENS_FACING_FRONT -> ctx.getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceBuiltInFront, id)
+            else -> ctx.getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceOther, id)
         }
     }
 

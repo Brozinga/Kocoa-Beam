@@ -45,6 +45,48 @@ Cada front end tem a própria porta, em vez de uma compartilhada:
 A porta acompanha o seletor de front end na tela principal, que também mostra a
 URL ativa. Os endpoints de câmera continuam em `:8889`.
 
+## Suporte a webcam USB
+
+O servidor de câmera (**Configurações → Câmera → Ativar servidor de câmera**)
+agora também transmite de uma webcam USB UVC genérica, além da câmera do
+próprio aparelho:
+
+- Com **Fonte da câmera** em **Automático**, uma webcam USB conectada tem
+  prioridade sobre a câmera embutida, e conectar/desconectar a webcam a
+  quente é detectado em tempo real.
+- **Configurações → Câmera → Fonte da câmera** permite fixar uma câmera
+  específica (frontal/traseira embutida, ou uma webcam USB específica) em vez
+  de depender da detecção automática.
+
+Isso depende do aparelho expor a webcam USB pela API Camera2 padrão do
+Android como câmera externa (`LENS_FACING_EXTERNAL`), suportada pela maioria
+dos aparelhos baseados em AOSP desde o Android 9, mas que algumas camadas de
+câmera de fabricantes podem não expor. Não foi testado em hardware real com
+uma webcam UVC neste projeto.
+
+## Acesso remoto via OctoEverywhere
+
+**Configurações → Acesso remoto → Ativar OctoEverywhere** executa o
+companion real do [OctoEverywhere](https://octoeverywhere.com) para
+Klipper, vendorizado a partir da fonte original e adaptado para rodar como
+processo próprio no Android, em vez do serviço systemd/venv que ele
+normalmente instala. Ele se conecta ao perfil de impressora que estiver
+rodando no momento, pela mesma conexão local com o Moonraker que Fluidd e
+Mainsail usam — sem configuração extra no lado do Moonraker.
+
+- Ativar o botão inicia o companion; **Vincular impressora** então mostra um
+  QR code (assim que o companion gerar o ID da impressora, geralmente em
+  poucos segundos) para concluir a vinculação da sua conta OctoEverywhere,
+  o mesmo passo único de qualquer instalação.
+- A telemetria de erros própria dele (Sentry) fica desativada; a conexão real
+  de acesso remoto com o octoeverywhere.com não é afetada.
+- Se você também ativar o servidor de câmera acima, o OctoEverywhere pode
+  usar automaticamente essa mesma webcam (USB ou embutida) assim que ela for
+  adicionada como câmera no Fluidd ou Mainsail — não precisa de uma
+  configuração de câmera separada.
+- Apenas um perfil de impressora pode ficar vinculado ao OctoEverywhere por
+  vez, mesmo rodando vários perfis ao mesmo tempo.
+
 ## Visualizador de logs no app
 
 Uma aba **Logs** expõe os logs do Klipper, do Moonraker e do aplicativo. Cada um

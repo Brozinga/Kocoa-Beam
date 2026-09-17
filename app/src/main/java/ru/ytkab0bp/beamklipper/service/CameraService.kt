@@ -72,9 +72,39 @@ class CameraService : Service() {
     private var cameraHandler: Handler? = null
     private var captureSession: CameraCaptureSession? = null
     private var captureRequestBuilder: CaptureRequest.Builder? = null
+    private var openCameraDevice: CameraDevice? = null
+    private var imageReader: ImageReader? = null
+    private var activeCameraId: String? = null
+    private var availabilityCallback: CameraManager.AvailabilityCallback? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
     private val stoppedByUser = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    // A USB UVC webcam shows up through Camera2 as a regular camera ID with
+    // LENS_FACING_EXTERNAL once the OS/HAL enumerates it (standard since API 28
+    // on devices whose camera HAL implements the external-camera provider).
+    // When the user hasn't pinned a specific camera (Prefs.cameraId == null),
+    // we prefer that external webcam over the built-in camera for monitoring.
+    private fun isExternal(id: String): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return false
+        return try {
+            cameraManager.getCameraCharacteristics(id)
+                .get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_EXTERNAL
+        } catch (_: CameraAccessException) {
+            false
+        }
+    }
+
+    private fun resolveCameraId(): String? {
+        val ids = try { cameraManager.cameraIdList } catch (_: CameraAccessException) { return null }
+        if (ids.isEmpty()) return null
+        val preferred = Prefs.cameraId
+        if (preferred != null && ids.contains(preferred)) return preferred
+        if (preferred == null) {
+            ids.firstOrNull { isExternal(it) }?.let { return it }
+        }
+        return ids[0]
+    }
 
     private val serviceBinder = object : Binder() {
         override fun getInterfaceDescriptor(): String = DESCRIPTOR
@@ -189,118 +219,25 @@ class CameraService : Service() {
         serverThread = ServerThread().also { it.start() }
 
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        try {
-            val id = cameraManager.cameraIdList[0]
-            cameraManager.openCamera(Prefs.cameraId ?: id, object : CameraDevice.StateCallback() {
-                private val bufferStack = java.util.Stack<ByteArray>()
-                private var bufferSize = 0
-
-                override fun onOpened(camera: CameraDevice) {
-                    try {
-                        var width = Prefs.cameraWidth
-                        var height = Prefs.cameraHeight
-                        val chars = cameraManager.getCameraCharacteristics(camera.id)
-                        val map = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                        val sizes = map?.getOutputSizes(ImageFormat.YUV_420_888) ?: emptyArray()
-                        if (sizes.isNotEmpty()) {
-                            val best = sizes.minByOrNull {
-                                val dw = it.width - width
-                                val dh = it.height - height
-                                dw * dw + dh * dh
-                            }
-                            if (best != null) {
-                                width = best.width
-                                height = best.height
-                            }
-                        }
-                        val targets = ArrayList<Surface>()
-                        val reader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 4)
-                        reader.setOnImageAvailableListener({ r ->
-                            val img = r.acquireLatestImage() ?: return@setOnImageAvailableListener
-                            if (handlerThreads.isEmpty()) {
-                                img.close()
-                                return@setOnImageAvailableListener
-                            }
-                            IO_POOL.submit {
-                                val yBuffer = img.planes[0].buffer
-                                val uBuffer = img.planes[1].buffer
-                                val vBuffer = img.planes[2].buffer
-
-                                val ySize = yBuffer.remaining()
-                                val uSize = uBuffer.remaining()
-                                val vSize = vBuffer.remaining()
-
-                                val bufSize = ySize + uSize + vSize
-                                if (bufferSize < bufSize) {
-                                    bufferStack.clear()
-                                    bufferSize = bufSize
-                                }
-                                val buffer = if (bufferStack.isEmpty()) ByteArray(bufferSize) else bufferStack.pop()
-
-                                yBuffer.get(buffer, 0, ySize)
-                                vBuffer.get(buffer, ySize, vSize)
-                                uBuffer.get(buffer, ySize + vSize, uSize)
-
-                                val yuvImage = YuvImage(buffer, ImageFormat.NV21, img.width, img.height, null)
-                                val conv = ByteArrayOutputStream()
-                                yuvImage.compressToJpeg(Rect(0, 0, img.width, img.height), 85, conv)
-                                bufferStack.push(buffer)
-
-                                val converted = conv.toByteArray()
-                                deliverFrame(converted, converted.size) {}
-
-                                img.close()
-                            }
-                        }, cameraHandler)
-                        targets.add(reader.surface)
-                        camera.createCaptureSession(targets, object : CameraCaptureSession.StateCallback() {
-                            override fun onConfigured(session: CameraCaptureSession) {
-                                Log.d(TAG, "Configured")
-                                captureSession = session
-                                try {
-                                    captureRequestBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                                    val rangeArray = chars.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES) ?: throw RuntimeException("No FPS ranges")
-                                    var selectedRange: Range<Int>? = null
-                                    for (r in rangeArray) {
-                                        if (r.upper < 25) {
-                                            selectedRange = r
-                                            break
-                                        }
-                                    }
-                                    if (selectedRange == null) selectedRange = rangeArray[0]
-                                    captureRequestBuilder!!.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, selectedRange)
-                                    captureRequestBuilder!!.set(CaptureRequest.FLASH_MODE,
-                                        if (Prefs.isFlashlightEnabled) CaptureRequest.FLASH_MODE_TORCH else CaptureRequest.FLASH_MODE_OFF)
-                                    captureRequestBuilder!!.set(CaptureRequest.LENS_FOCUS_DISTANCE, Prefs.focusDistance)
-                                    captureRequestBuilder!!.set(CaptureRequest.CONTROL_AF_MODE,
-                                        if (Prefs.isAutofocusEnabled) CaptureRequest.CONTROL_AF_MODE_AUTO else CaptureRequest.CONTROL_AF_MODE_OFF)
-                                    captureRequestBuilder!!.addTarget(reader.surface)
-                                    session.setRepeatingRequest(captureRequestBuilder!!.build(), null, null)
-                                } catch (e: CameraAccessException) {
-                                    throw RuntimeException(e)
-                                }
-                            }
-
-                            override fun onConfigureFailed(session: CameraCaptureSession) {
-                                Log.d(TAG, "Configure failed")
-                            }
-                        }, cameraHandler)
-                    } catch (e: CameraAccessException) {
-                        throw RuntimeException(e)
-                    }
+        availabilityCallback = object : CameraManager.AvailabilityCallback() {
+            override fun onCameraAvailable(cameraId: String) {
+                // Only auto-switch in "auto" mode (no camera pinned by the user):
+                // when a USB webcam is plugged in, prefer it for monitoring.
+                if (Prefs.cameraId != null) return
+                if (cameraId == activeCameraId) return
+                if (!isExternal(cameraId)) return
+                cameraHandler?.post {
+                    Log.i(TAG, "USB webcam $cameraId attached, switching to it")
+                    openSelectedCamera()
                 }
-
-                override fun onDisconnected(camera: CameraDevice) {
-                    Log.d(TAG, "Disconnected")
-                }
-
-                override fun onError(camera: CameraDevice, error: Int) {
-                    Log.d(TAG, "Error $error")
-                }
-            }, cameraHandler)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to open camera")
+            }
         }
+        try {
+            cameraManager.registerAvailabilityCallback(availabilityCallback!!, cameraHandler)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to register camera availability callback", t)
+        }
+        cameraHandler?.post { openSelectedCamera() }
 
         val filter = IntentFilter(ACTION_TOGGLE_FLASHLIGHT).apply { addAction(ACTION_TOGGLE_FOCUS) }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -342,11 +279,172 @@ class CameraService : Service() {
         }
     }
 
+    @SuppressLint("MissingPermission")
+    private fun openSelectedCamera() {
+        val id = resolveCameraId()
+        if (id == null) {
+            Log.e(TAG, "No camera available to open")
+            return
+        }
+        if (id == activeCameraId && openCameraDevice != null) return
+        closeActiveCamera()
+        activeCameraId = id
+        try {
+            cameraManager.openCamera(id, CaptureStateCallback(), cameraHandler)
+        } catch (e: CameraAccessException) {
+            Log.e(TAG, "Failed to open camera $id", e)
+            activeCameraId = null
+        }
+    }
+
+    private fun closeActiveCamera() {
+        try { captureSession?.close() } catch (_: Exception) {}
+        captureSession = null
+        captureRequestBuilder = null
+        try { openCameraDevice?.close() } catch (_: Exception) {}
+        openCameraDevice = null
+        try { imageReader?.close() } catch (_: Exception) {}
+        imageReader = null
+    }
+
+    private inner class CaptureStateCallback : CameraDevice.StateCallback() {
+        private val bufferStack = java.util.Stack<ByteArray>()
+        private var bufferSize = 0
+
+        override fun onOpened(camera: CameraDevice) {
+            // openCamera() is async: a rapid hot-plug (webcam attached then
+            // immediately detached, or two openSelectedCamera() calls in a row)
+            // can let this fire after activeCameraId has already moved on to a
+            // different id. Close the now-unwanted device instead of adopting it.
+            if (camera.id != activeCameraId) {
+                try { camera.close() } catch (_: Exception) {}
+                return
+            }
+            openCameraDevice = camera
+            try {
+                var width = Prefs.cameraWidth
+                var height = Prefs.cameraHeight
+                val chars = cameraManager.getCameraCharacteristics(camera.id)
+                val map = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+                val sizes = map?.getOutputSizes(ImageFormat.YUV_420_888) ?: emptyArray()
+                if (sizes.isNotEmpty()) {
+                    val best = sizes.minByOrNull {
+                        val dw = it.width - width
+                        val dh = it.height - height
+                        dw * dw + dh * dh
+                    }
+                    if (best != null) {
+                        width = best.width
+                        height = best.height
+                    }
+                }
+                val targets = ArrayList<Surface>()
+                val reader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 4)
+                imageReader = reader
+                reader.setOnImageAvailableListener({ r ->
+                    val img = r.acquireLatestImage() ?: return@setOnImageAvailableListener
+                    if (handlerThreads.isEmpty()) {
+                        img.close()
+                        return@setOnImageAvailableListener
+                    }
+                    IO_POOL.submit {
+                        val yBuffer = img.planes[0].buffer
+                        val uBuffer = img.planes[1].buffer
+                        val vBuffer = img.planes[2].buffer
+
+                        val ySize = yBuffer.remaining()
+                        val uSize = uBuffer.remaining()
+                        val vSize = vBuffer.remaining()
+
+                        val bufSize = ySize + uSize + vSize
+                        if (bufferSize < bufSize) {
+                            bufferStack.clear()
+                            bufferSize = bufSize
+                        }
+                        val buffer = if (bufferStack.isEmpty()) ByteArray(bufferSize) else bufferStack.pop()
+
+                        yBuffer.get(buffer, 0, ySize)
+                        vBuffer.get(buffer, ySize, vSize)
+                        uBuffer.get(buffer, ySize + vSize, uSize)
+
+                        val yuvImage = YuvImage(buffer, ImageFormat.NV21, img.width, img.height, null)
+                        val conv = ByteArrayOutputStream()
+                        yuvImage.compressToJpeg(Rect(0, 0, img.width, img.height), 85, conv)
+                        bufferStack.push(buffer)
+
+                        val converted = conv.toByteArray()
+                        deliverFrame(converted, converted.size) {}
+
+                        img.close()
+                    }
+                }, cameraHandler)
+                targets.add(reader.surface)
+                camera.createCaptureSession(targets, object : CameraCaptureSession.StateCallback() {
+                    override fun onConfigured(session: CameraCaptureSession) {
+                        Log.d(TAG, "Configured")
+                        captureSession = session
+                        try {
+                            captureRequestBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+                            // Not every UVC webcam reports AE target FPS ranges — unlike the
+                            // built-in camera path this used to assume one always exists and
+                            // crashed the :camera process otherwise. Just skip it if absent.
+                            val rangeArray = chars.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
+                            if (rangeArray != null && rangeArray.isNotEmpty()) {
+                                var selectedRange: Range<Int>? = null
+                                for (r in rangeArray) {
+                                    if (r.upper < 25) {
+                                        selectedRange = r
+                                        break
+                                    }
+                                }
+                                if (selectedRange == null) selectedRange = rangeArray[0]
+                                captureRequestBuilder!!.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, selectedRange)
+                            }
+                            captureRequestBuilder!!.set(CaptureRequest.FLASH_MODE,
+                                if (Prefs.isFlashlightEnabled) CaptureRequest.FLASH_MODE_TORCH else CaptureRequest.FLASH_MODE_OFF)
+                            captureRequestBuilder!!.set(CaptureRequest.LENS_FOCUS_DISTANCE, Prefs.focusDistance)
+                            captureRequestBuilder!!.set(CaptureRequest.CONTROL_AF_MODE,
+                                if (Prefs.isAutofocusEnabled) CaptureRequest.CONTROL_AF_MODE_AUTO else CaptureRequest.CONTROL_AF_MODE_OFF)
+                            captureRequestBuilder!!.addTarget(reader.surface)
+                            session.setRepeatingRequest(captureRequestBuilder!!.build(), null, null)
+                        } catch (e: CameraAccessException) {
+                            Log.e(TAG, "Failed to start repeating request", e)
+                        }
+                    }
+
+                    override fun onConfigureFailed(session: CameraCaptureSession) {
+                        Log.d(TAG, "Configure failed")
+                    }
+                }, cameraHandler)
+            } catch (e: CameraAccessException) {
+                Log.e(TAG, "Failed to configure opened camera ${camera.id}", e)
+            }
+        }
+
+        override fun onDisconnected(camera: CameraDevice) {
+            Log.d(TAG, "Disconnected: ${camera.id}")
+            if (camera.id == activeCameraId) {
+                closeActiveCamera()
+                activeCameraId = null
+                cameraHandler?.post { openSelectedCamera() }
+            }
+        }
+
+        override fun onError(camera: CameraDevice, error: Int) {
+            Log.d(TAG, "Error $error on ${camera.id}")
+            if (camera.id == activeCameraId) {
+                closeActiveCamera()
+                activeCameraId = null
+                cameraHandler?.post { openSelectedCamera() }
+            }
+        }
+    }
+
     override fun onDestroy() {
         stoppedByUser.set(true)
         super.onDestroy()
-        captureSession?.close()
-        captureSession = null
+        try { availabilityCallback?.let { cameraManager.unregisterAvailabilityCallback(it) } } catch (_: Throwable) {}
+        closeActiveCamera()
         for (h in handlerThreads) h.quit()
         handlerThreads.clear()
         serverThread?.interrupt()

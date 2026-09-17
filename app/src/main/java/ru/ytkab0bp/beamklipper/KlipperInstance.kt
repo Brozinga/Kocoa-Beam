@@ -474,6 +474,24 @@ class KlipperInstance {
                         }.also { cameraServerConnection = it }, Context.BIND_AUTO_CREATE)
                     }
                 }
+
+                // OctoEverywhere is one companion process for the whole app (like the
+                // camera server), bound to whichever instance happened to reach RUNNING
+                // first. It links to that one instance's Moonraker; a second concurrent
+                // instance doesn't get its own companion.
+                if (Prefs.isOctoEverywhereEnabled && octoEverywhereConnection == null) {
+                    val iid = id
+                    if (iid != null) {
+                        KlipperApp.INSTANCE.bindService(
+                            Intent(KlipperApp.INSTANCE, OctoEverywhereService::class.java).putExtra(BasePythonService.KEY_INSTANCE, iid),
+                            object : ServiceConnection {
+                                override fun onServiceConnected(name: ComponentName, service: IBinder) {}
+                                override fun onServiceDisconnected(name: ComponentName) {}
+                            }.also { octoEverywhereConnection = it },
+                            Context.BIND_AUTO_CREATE
+                        )
+                    }
+                }
             }
         }
     }
@@ -500,6 +518,7 @@ class KlipperInstance {
         private val instanceBySlotId = HashMap<String, KlipperInstance>()
         private var webServerConnection: ServiceConnection? = null
         private var cameraServerConnection: ServiceConnection? = null
+        private var octoEverywhereConnection: ServiceConnection? = null
         private var instances: List<KlipperInstance> = emptyList()
         private val instanceMap = object : HashMap<String, KlipperInstance>() {
             override fun get(key: String): KlipperInstance? {
@@ -648,6 +667,11 @@ class KlipperInstance {
                 try { KlipperApp.INSTANCE.stopService(Intent(KlipperApp.INSTANCE, CameraService::class.java)) } catch (_: Throwable) {}
                 cameraServerConnection = null
             }
+            if (octoEverywhereConnection != null) {
+                try { KlipperApp.INSTANCE.unbindService(octoEverywhereConnection!!) } catch (_: Throwable) {}
+                try { KlipperApp.INSTANCE.stopService(Intent(KlipperApp.INSTANCE, OctoEverywhereService::class.java)) } catch (_: Throwable) {}
+                octoEverywhereConnection = null
+            }
         }
 
         @JvmStatic
@@ -667,6 +691,48 @@ class KlipperInstance {
         }
 
         @JvmStatic
+        fun onCameraSourceChanged() {
+            mainHandler.post {
+                // CameraService lives in its own :camera process, so it never observes a
+                // SharedPreferences write made from here — only a fresh process start reads
+                // Prefs.cameraId truthfully. Bounce it so the new pick takes effect.
+                if (cameraServerConnection != null) {
+                    try { KlipperApp.INSTANCE.unbindService(cameraServerConnection!!) } catch (_: Throwable) {}
+                    try { KlipperApp.INSTANCE.stopService(Intent(KlipperApp.INSTANCE, CameraService::class.java)) } catch (_: Throwable) {}
+                    cameraServerConnection = null
+                    if (slotById.isNotEmpty() && Prefs.isCameraEnabled) {
+                        KlipperApp.INSTANCE.bindService(Intent(KlipperApp.INSTANCE, CameraService::class.java), object : ServiceConnection {
+                            override fun onServiceConnected(name: ComponentName, service: IBinder) {}
+                            override fun onServiceDisconnected(name: ComponentName) {}
+                        }.also { cameraServerConnection = it }, Context.BIND_AUTO_CREATE)
+                    }
+                }
+            }
+        }
+
+        @JvmStatic
+        fun onOctoEverywhereConfigChanged(enable: Boolean) {
+            mainHandler.post {
+                if (octoEverywhereConnection == null && enable) {
+                    val inst = instanceBySlotId.values.firstOrNull { it.getState() == State.RUNNING } ?: return@post
+                    val iid = inst.id ?: return@post
+                    KlipperApp.INSTANCE.bindService(
+                        Intent(KlipperApp.INSTANCE, OctoEverywhereService::class.java).putExtra(BasePythonService.KEY_INSTANCE, iid),
+                        object : ServiceConnection {
+                            override fun onServiceConnected(name: ComponentName, service: IBinder) {}
+                            override fun onServiceDisconnected(name: ComponentName) {}
+                        }.also { octoEverywhereConnection = it },
+                        Context.BIND_AUTO_CREATE
+                    )
+                } else if (octoEverywhereConnection != null && !enable) {
+                    try { KlipperApp.INSTANCE.unbindService(octoEverywhereConnection!!) } catch (_: Throwable) {}
+                    try { KlipperApp.INSTANCE.stopService(Intent(KlipperApp.INSTANCE, OctoEverywhereService::class.java)) } catch (_: Throwable) {}
+                    octoEverywhereConnection = null
+                }
+            }
+        }
+
+        @JvmStatic
         fun resetSlotsForFreshStart() {
             Log.i(TAG, "resetSlotsForFreshStart: clearing slotById (was size=${slotById.size}), webServerConnection=${webServerConnection != null}, cameraServerConnection=${cameraServerConnection != null}")
             slotById.clear()
@@ -674,6 +740,7 @@ class KlipperInstance {
             slots.clear()
             webServerConnection = null
             cameraServerConnection = null
+            octoEverywhereConnection = null
         }
 
         @JvmStatic

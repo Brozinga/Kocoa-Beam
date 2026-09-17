@@ -44,6 +44,46 @@ Each front end has its own port instead of a shared one:
 The port follows the front-end toggle on the main screen, which also shows the
 active URL. Camera endpoints remain on `:8889`.
 
+## USB webcam support
+
+The camera server (**Settings → Camera → Enable camera server**) can now also
+stream from a generic USB UVC webcam, not just the device's own camera:
+
+- With **Camera source** left on **Automatic**, a plugged-in USB webcam is
+  preferred over the built-in camera, and hot-plugging it in or out is picked
+  up live.
+- **Settings → Camera → Camera source** lets you pin a specific camera
+  (built-in front/back, or a specific USB webcam) instead of relying on
+  auto-detection.
+
+This relies on the device exposing the USB webcam through Android's standard
+Camera2 API as an external camera (`LENS_FACING_EXTERNAL`), which most
+AOSP-based devices support since Android 9 but which some OEM camera stacks
+may not expose. It has not been hardware-tested against a real UVC webcam in
+this project.
+
+## OctoEverywhere remote access
+
+**Settings → Remote access → Enable OctoEverywhere** runs the real
+[OctoEverywhere](https://octoeverywhere.com) Klipper companion, vendored from
+its upstream source and adapted to run as its own background process on
+Android instead of the systemd service/venv it normally installs as. It talks
+to whichever printer profile is currently running over the same local
+Moonraker connection Fluidd/Mainsail use — no extra setup on the Moonraker
+side.
+
+- Turning it on starts the companion; **Link printer** then shows a QR code
+  (once the companion has generated its printer ID, usually within a few
+  seconds) to finish linking your OctoEverywhere account, the same one-time
+  step as any other install.
+- Its own crash telemetry (Sentry) is disabled; the actual remote-access
+  connection to octoeverywhere.com is unaffected.
+- If you also enable the camera server above, OctoEverywhere can pick up that
+  same USB/built-in webcam feed automatically once it's added as a webcam in
+  Fluidd or Mainsail — it does not need a separate camera setup.
+- Only one printer profile can be linked to OctoEverywhere at a time, even if
+  you run multiple profiles concurrently.
+
 ## In-app log viewer
 
 A **Logs** tab exposes the Klipper, Moonraker and application logs. Each can be

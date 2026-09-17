@@ -41,6 +41,37 @@ Fluidd 和 Mainsail 的静态资源以正确的 MIME 类型提供，因此两个
 
 端口跟随主界面上的前端切换开关，主界面也会显示当前生效的 URL。摄像头端点仍在 `:8889`。
 
+## USB 摄像头支持
+
+摄像头服务器（**设置 → 摄像头 → 启用摄像头服务器**）现在除了设备自带摄像头外，
+也可以从通用 USB UVC 摄像头推流：
+
+- **摄像头来源**保持**自动**时，插入的 USB 摄像头会优先于内置摄像头，热插拔也会
+  被实时检测到。
+- **设置 → 摄像头 → 摄像头来源**可以固定某一台摄像头（内置前/后摄像头，或指定的
+  USB 摄像头），而不依赖自动检测。
+
+这依赖设备通过 Android 标准 Camera2 API 将 USB 摄像头暴露为外部摄像头
+（`LENS_FACING_EXTERNAL`），大多数基于 AOSP 的设备自 Android 9 起支持此特性，
+但部分厂商定制的相机框架可能不会暴露它。本项目尚未在真实 UVC 摄像头硬件上测试过。
+
+## OctoEverywhere 远程访问
+
+**设置 → 远程访问 → 启用 OctoEverywhere** 运行真实的
+[OctoEverywhere](https://octoeverywhere.com) Klipper 伴生程序，源码来自上游并
+经过改造，以独立进程的形式运行在 Android 上，而不是它通常安装的 systemd 服务
+和 venv。它通过与 Fluidd/Mainsail 相同的本地 Moonraker 连接，接入当前正在运行
+的打印机配置——Moonraker 一侧无需额外配置。
+
+- 打开开关会启动伴生程序；**关联打印机**随后会显示一个二维码（伴生程序生成打印
+  机 ID 后即可使用，通常只需几秒钟），用于完成 OctoEverywhere 账号的关联，这与
+  其他任何安装方式的一次性步骤相同。
+- 它自带的崩溃遥测（Sentry）已被禁用；与 octoeverywhere.com 的实际远程访问连接
+  不受影响。
+- 如果你也启用了上面的摄像头服务器，只要在 Fluidd 或 Mainsail 中把它添加为摄像
+  头，OctoEverywhere 就能自动使用同一路 USB/内置摄像头画面，无需单独配置摄像头。
+- 即使同时运行多个打印机配置，同一时间也只有一个配置能关联到 OctoEverywhere。
+
 ## 应用内日志查看器
 
 一个 **Logs** 标签页提供 Klipper、Moonraker 和应用日志。每个都可以查看、复制、下载到设备的 `Downloads/` 目录或分享 —— 不需要 PC 或 `adb`。
