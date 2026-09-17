@@ -39,6 +39,7 @@ import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.R
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import ru.ytkab0bp.beamklipper.utils.ViewUtils
+import java.io.BufferedOutputStream
 import java.io.BufferedReader
 import java.io.ByteArrayOutputStream
 import java.io.InputStreamReader
@@ -48,6 +49,8 @@ import java.net.Socket
 import java.nio.ByteBuffer
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 
@@ -64,7 +67,21 @@ class CameraService : Service() {
         private val PATH_PATTERN = Pattern.compile("GET ([^\\r\\n]+) HTTP/1\\.[0-1]")
         private const val PORT = 8889
         private const val ID = 400000
+        private const val WRITE_TIMEOUT_MS = 4000L
+        private const val BASE_JPEG_QUALITY = 75
+        private const val MIN_JPEG_QUALITY = 35
+        // ~25fps-equivalent slack over the 33ms a true 30fps frame budget
+        // would allow — avoids reacting to normal jitter, only sustained
+        // congestion (2x this, i.e. <12.5fps-equivalent for one write).
+        private const val FRAME_BUDGET_MS = 40L
         private val IO_POOL = Executors.newSingleThreadExecutor()
+        // Only used to force-close a socket whose write() has been blocking
+        // past WRITE_TIMEOUT_MS (a client on a bad/dead connection) — plain
+        // java.net.Socket has no write timeout of its own, and without this a
+        // single stalled viewer parks its handler thread forever.
+        private val WRITE_WATCHDOG = Executors.newSingleThreadScheduledExecutor { r ->
+            Thread(r, "beam_camera_watchdog").apply { isDaemon = true }
+        }
         private val handlerThreads = CopyOnWriteArrayList<CameraHandlerThread>()
     }
 
@@ -82,6 +99,46 @@ class CameraService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
     private val stoppedByUser = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    // Shrinks new frames automatically when a viewer's network can't keep
+    // up (e.g. a congested 2.4GHz network) instead of leaving the frame
+    // size fixed and letting the per-viewer backpressure in deliverFrame()
+    // just drop whichever frames miss the send-timing window — which is
+    // what turns a transient WiFi hiccup into a hard FPS cliff (30 -> 10 or
+    // less) instead of a smaller, smoother dip. Read from the IO_POOL
+    // encode thread, written from client handler threads (guarded below).
+    @Volatile
+    private var jpegQuality = BASE_JPEG_QUALITY
+    // A per-call streak (reset by any single fast sample) turned out not to
+    // work on real hardware: the OS socket send buffer absorbs a burst of
+    // frames almost instantly even while the client is genuinely
+    // bandwidth-starved, so write() only blocks for real once that buffer
+    // fills — individual samples come back bimodal (near-0ms, then one very
+    // long one), and a streak resets on every fast sample in between even
+    // though the client is consistently only draining ~150KB/s. An EWMA
+    // over ALL samples still converges to the true sustained rate despite
+    // that noise, so react to it instead.
+    private var writeTimeEwmaMs = FRAME_BUDGET_MS.toDouble()
+    private var framesSinceAdjust = 0
+
+    private fun onFrameWriteTiming(elapsedMs: Long) {
+        synchronized(this) {
+            writeTimeEwmaMs = writeTimeEwmaMs * 0.8 + elapsedMs * 0.2
+            framesSinceAdjust++
+            // Let a handful of samples fold into the average before acting
+            // on it, so one adjustment doesn't immediately chase the next.
+            if (framesSinceAdjust < 5) return@synchronized
+            if (writeTimeEwmaMs > FRAME_BUDGET_MS * 1.5 && jpegQuality > MIN_JPEG_QUALITY) {
+                jpegQuality = (jpegQuality - 10).coerceAtLeast(MIN_JPEG_QUALITY)
+                framesSinceAdjust = 0
+                Log.i(TAG, "Sustained slow client writes (avg ${writeTimeEwmaMs.toInt()}ms), lowering JPEG quality to $jpegQuality")
+            } else if (writeTimeEwmaMs < FRAME_BUDGET_MS * 0.5 && jpegQuality < BASE_JPEG_QUALITY) {
+                jpegQuality = (jpegQuality + 5).coerceAtMost(BASE_JPEG_QUALITY)
+                framesSinceAdjust = 0
+                Log.i(TAG, "Client writes fast again (avg ${writeTimeEwmaMs.toInt()}ms), raising JPEG quality to $jpegQuality")
+            }
+        }
+    }
 
     // A USB UVC webcam shows up through Camera2 as a regular camera ID with
     // LENS_FACING_EXTERNAL once the OS/HAL enumerates it (standard since API 28
@@ -256,7 +313,7 @@ class CameraService : Service() {
             val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
             val rotated = Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, true)
             val out = ByteArrayOutputStream()
-            rotated.compress(Bitmap.CompressFormat.JPEG, 75, out)
+            rotated.compress(Bitmap.CompressFormat.JPEG, jpegQuality, out)
             if (rotated != src) rotated.recycle()
             src.recycle()
             out.toByteArray()
@@ -267,10 +324,28 @@ class CameraService : Service() {
     }
 
     private fun deliverFrame(data: ByteArray, size: Int, onRelease: () -> Unit) {
+        // A viewer that hasn't finished writing the previous frame yet (slow
+        // client, backgrounded tab, congested WiFi) is skipped instead of
+        // queued: without this, every new frame just piles another Runnable
+        // onto that viewer's Handler, and a viewer that can't keep up in
+        // real time never catches up — the backlog (and the lag) only grows.
+        // This caps every viewer to at most one frame in flight; oneShot
+        // (snapshot) requests always get delivered since there's only ever one.
+        val recipients = handlerThreads.filter { it.oneShot || it.framesInFlight.compareAndSet(false, true) }
+        if (recipients.isEmpty()) {
+            onRelease()
+            return
+        }
         val done = AtomicInteger()
-        val total = handlerThreads.size
-        for (t in handlerThreads) {
+        val total = recipients.size
+        for (t in recipients) {
             t.handler.post {
+                val watchdog = WRITE_WATCHDOG.schedule({
+                    Log.w(TAG, "Client write stalled past ${WRITE_TIMEOUT_MS}ms, dropping it")
+                    try { t.socket.close() } catch (_: Exception) {}
+                }, WRITE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                var failed = false
+                val writeStart = System.nanoTime()
                 try {
                     val out = t.out
                     if (!t.oneShot) {
@@ -284,14 +359,25 @@ class CameraService : Service() {
                         out.write("\r\n\r\n".toByteArray())
                     }
                     out.flush()
-                    if (t.oneShot) {
-                        t.quit()
-                    }
                 } catch (e: Exception) {
-                    if (t.socket.isClosed) {
-                        Log.e(TAG, "Failed to deliver frame", e)
-                        t.quit()
-                    }
+                    failed = true
+                } finally {
+                    watchdog.cancel(false)
+                }
+                // Any failure (not just an already-observed closed socket —
+                // a broken pipe from a remote disconnect throws without ever
+                // marking the local Socket as closed) must tear this client
+                // down. Leaving it in handlerThreads otherwise leaks a dead
+                // HandlerThread that keeps "receiving" (and re-failing on)
+                // every future frame forever.
+                if (t.oneShot || failed) {
+                    t.quit()
+                } else {
+                    t.framesInFlight.set(false)
+                    // Snapshot (oneShot) fetches aren't part of the
+                    // continuous stream cadence — only feed live-stream
+                    // write timing into the adaptive quality controller.
+                    onFrameWriteTiming((System.nanoTime() - writeStart) / 1_000_000)
                 }
                 if (done.incrementAndGet() == total) {
                     onRelease()
@@ -310,6 +396,12 @@ class CameraService : Service() {
         if (id == activeCameraId && openCameraDevice != null) return
         closeActiveCamera()
         activeCameraId = id
+        // Start each fresh session at the base quality rather than
+        // carrying over whatever a previous, possibly-congested session
+        // had throttled down to.
+        jpegQuality = BASE_JPEG_QUALITY
+        writeTimeEwmaMs = FRAME_BUDGET_MS.toDouble()
+        framesSinceAdjust = 0
         try {
             cameraManager.openCamera(id, CaptureStateCallback(), cameraHandler)
         } catch (e: CameraAccessException) {
@@ -390,11 +482,15 @@ class CameraService : Service() {
 
                         val yuvImage = YuvImage(buffer, ImageFormat.NV21, img.width, img.height, null)
                         val conv = ByteArrayOutputStream()
-                        // 75 rather than 85: this feed can be relayed through
-                        // OctoEverywhere's cloud connection, not just served
-                        // over LAN — see the cameraWidth/cameraHeight comment
-                        // in Prefs.kt for the measured bandwidth reasoning.
-                        yuvImage.compressToJpeg(Rect(0, 0, img.width, img.height), 75, conv)
+                        // Base quality 75 rather than 85: this feed can be
+                        // relayed through OctoEverywhere's cloud connection,
+                        // not just served over LAN — see the
+                        // cameraWidth/cameraHeight comment in Prefs.kt for
+                        // the measured bandwidth reasoning. jpegQuality can
+                        // drop further (down to MIN_JPEG_QUALITY) on its own
+                        // when a viewer's network is struggling — see
+                        // onFrameWriteTiming().
+                        yuvImage.compressToJpeg(Rect(0, 0, img.width, img.height), jpegQuality, conv)
                         bufferStack.push(buffer)
 
                         // Rotation is the uncommon case (mounting-dependent),
@@ -503,6 +599,11 @@ class CameraService : Service() {
                 val socket = ServerSocket(PORT)
                 while (!isInterrupted) {
                     val sock = socket.accept()
+                    // Nagle's algorithm batches small writes to wait for an
+                    // ACK, adding latency to every single frame (headers +
+                    // JPEG body are separate write() calls below) — not
+                    // needed on a streaming connection like this one.
+                    try { sock.tcpNoDelay = true } catch (_: Exception) {}
                     CameraHandlerThread(sock)
                 }
                 socket.close()
@@ -529,9 +630,15 @@ class CameraService : Service() {
         }
 
         val socket: Socket = sock
-        val out: OutputStream = sock.outputStream
+        // Buffered so the boundary/headers/JPEG-body writes for one frame
+        // coalesce into a single flush() instead of 3-4 separate small
+        // writes (each its own TCP segment without Nagle) — fewer syscalls,
+        // less latency variance. 64KB comfortably covers a whole frame at
+        // any of the resolution presets, so the buffer is rarely bypassed.
+        val out: OutputStream = BufferedOutputStream(sock.outputStream, 64 * 1024)
         val oneShot: Boolean
         val handler: Handler
+        val framesInFlight = AtomicBoolean(false)
 
         init {
             val input = sock.getInputStream()

@@ -59,6 +59,10 @@
     <string name="CameraSourceBackN">后置摄像头 %1$d</string>
     <string name="CameraSourceFrontN">前置摄像头 %1$d</string>
     <string name="CameraRotation">摄像头旋转</string>
+    <string name="CameraResolution">摄像头分辨率</string>
+    <string name="CameraResolutionLow">低（640×480）——远程/OctoEverywhere 最佳</string>
+    <string name="CameraResolutionMedium">中（1280×720）</string>
+    <string name="CameraResolutionHigh">高（1920×1080）——局域网信号良好时最佳</string>
     <string name="OctoEverywhereDescription">OctoEverywhere 伴生程序正在后台运行…</string>
     <string name="RemoteAccess">远程访问</string>
     <string name="LinkOctoEverywhere">关联打印机</string>

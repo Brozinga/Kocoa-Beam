@@ -72,6 +72,9 @@ object AppState {
     private val _cameraRotation = MutableStateFlow(Prefs.cameraRotation)
     val cameraRotation: StateFlow<Int> = _cameraRotation.distinct()
 
+    private val _cameraResolution = MutableStateFlow(Prefs.cameraResolution)
+    val cameraResolution: StateFlow<Int> = _cameraResolution.distinct()
+
     private val _octoEverywhereEnabled = MutableStateFlow(Prefs.isOctoEverywhereEnabled)
     val octoEverywhereEnabled: StateFlow<Boolean> = _octoEverywhereEnabled.distinct()
 
@@ -88,6 +91,7 @@ object AppState {
         _cameraEnabled.value = Prefs.isCameraEnabled
         _cameraSourceId.value = Prefs.cameraId
         _cameraRotation.value = Prefs.cameraRotation
+        _cameraResolution.value = Prefs.cameraResolution
         _octoEverywhereEnabled.value = Prefs.isOctoEverywhereEnabled
         KlipperApp.EVENT_BUS.registerListener(this)
         refreshInstances()
@@ -149,6 +153,7 @@ object AppState {
     fun onCameraSourceChanged(e: CameraSourceChangedEvent) {
         _cameraSourceId.value = Prefs.cameraId
         _cameraRotation.value = Prefs.cameraRotation
+        _cameraResolution.value = Prefs.cameraResolution
         KlipperInstance.onCameraSourceChanged()
     }
 
@@ -163,6 +168,7 @@ object AppState {
     fun updateCameraSourceId() {
         _cameraSourceId.value = Prefs.cameraId
         _cameraRotation.value = Prefs.cameraRotation
+        _cameraResolution.value = Prefs.cameraResolution
     }
 
     fun updateOctoEverywhereEnabled() {
