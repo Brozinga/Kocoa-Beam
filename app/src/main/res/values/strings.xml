@@ -83,7 +83,7 @@
     <string name="ObicoLink">Link printer</string>
     <string name="ObicoLinked">Linked ✓</string>
     <string name="ObicoNotLinked">Not linked</string>
-    <string name="ObicoLinkHint">Get a 6-digit code from the Obico app or website (add printer manually) and enter it below</string>
+    <string name="ObicoLinkHint">Open the Obico app or website, add a printer, choose Klipper (self-installed), and enter the code below when asked</string>
     <string name="ObicoAlreadyLinkedHint">This printer is already linked to your Obico account.</string>
     <string name="ObicoLinkCodeHint">6-digit code</string>
     <string name="ObicoLinkAction">Link</string>
@@ -91,6 +91,12 @@
     <string name="ObicoUnlink">Unlink</string>
     <string name="ObicoInvalidCode">Invalid or expired code</string>
     <string name="ObicoNetworkError">Couldn\'t reach the server</string>
+    <string name="ObicoGeneratedCodeLabel">Your printer\'s code</string>
+    <string name="ObicoCodeTapToCopy">Tap the code to copy it</string>
+    <string name="ObicoCodeCopied">Copied</string>
+    <string name="ObicoOpenLink">Open link</string>
+    <string name="ObicoWaitingForCode">Waiting for the companion to generate a code… make sure Enable Obico is on and a printer is running</string>
+    <string name="ObicoManualCodeHint">Already have a code from Obico instead (e.g. OctoPrint-style setup)? Enter it here</string>
     <string name="USB" translatable="false">USB</string>
     <string name="ListUSB">List USB devices</string>
     <string name="ListUSBTitle">USB devices</string>

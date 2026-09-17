@@ -77,7 +77,7 @@
     <string name="ObicoLink">Привязать принтер</string>
     <string name="ObicoLinked">Привязан ✓</string>
     <string name="ObicoNotLinked">Не привязан</string>
-    <string name="ObicoLinkHint">Получите 6-значный код в приложении или на сайте Obico (добавить принтер вручную) и введите его ниже</string>
+    <string name="ObicoLinkHint">Откройте приложение или сайт Obico, добавьте принтер, выберите Klipper (self-installed) и введите код ниже, когда будет запрошено</string>
     <string name="ObicoAlreadyLinkedHint">Этот принтер уже привязан к вашей учётной записи Obico.</string>
     <string name="ObicoLinkCodeHint">6-значный код</string>
     <string name="ObicoLinkAction">Привязать</string>
@@ -85,6 +85,12 @@
     <string name="ObicoUnlink">Отвязать</string>
     <string name="ObicoInvalidCode">Неверный или истёкший код</string>
     <string name="ObicoNetworkError">Не удалось подключиться к серверу</string>
+    <string name="ObicoGeneratedCodeLabel">Код вашего принтера</string>
+    <string name="ObicoCodeTapToCopy">Нажмите на код, чтобы скопировать</string>
+    <string name="ObicoCodeCopied">Скопировано</string>
+    <string name="ObicoOpenLink">Открыть ссылку</string>
+    <string name="ObicoWaitingForCode">Ожидание генерации кода компаньоном… убедитесь, что Enable Obico включён и принтер запущен</string>
+    <string name="ObicoManualCodeHint">Уже есть код от Obico (например, из настройки в стиле OctoPrint)? Введите его здесь</string>
     <string name="ListUSB">Отобразить список USB устройств</string>
     <string name="ListUSBTitle">USB устройства</string>
     <string name="ListUSBNoDevices">USB устройства не найдены</string>

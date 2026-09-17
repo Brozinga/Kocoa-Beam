@@ -23,14 +23,24 @@ normalmente instala.
      [Obico Server](https://www.obico.io/docs/server-guides/).
    - Trocar de servidor limpa qualquer vinculação existente, já que ela só
      vale para o servidor que a emitiu.
-4. Toque em **Vincular impressora**. No app ou site do Obico, adicione uma
-   impressora manualmente para obter um código de verificação de 6 dígitos,
-   depois digite esse código na caixa de diálogo e toque em **Vincular**.
-   - Esse é um caminho de vinculação diferente (mas equivalente) do que o
-     script de instalação do próprio Obico oferece: ele ou espera você tocar
-     em "Link Now" num celular na mesma rede local, ou cai de volta no mesmo
-     código de 6 dígitos. O Kocoa Beam sempre usa o código, já que não há
-     terminal para rodar a ferramenta interativa.
+4. Toque em **Vincular impressora**. O Kocoa Beam gera seu próprio código e
+   mostra ele ali mesmo (pode levar alguns segundos, depois de ativar o
+   Obico, até o companion iniciar e gerar um). No app ou site do Obico,
+   adicione uma impressora, escolha **Klipper (auto-instalado)**, e digite
+   esse código quando solicitado — ou toque em **Abrir link** na caixa de
+   diálogo, que abre a página de vinculação do próprio Obico já com o
+   código preenchido.
+   - Isso reproduz exatamente o que o script de instalação do próprio Obico
+     faz numa instalação real de Klipper (`./install.sh` →
+     `python3 -m moonraker_obico.link`): ele consulta o servidor do Obico a
+     cada poucos segundos informando uma impressora não vinculada e um
+     código de uso único, até você digitar esse código no lado do Obico, ou
+     o app do Obico encontrá-la automaticamente por estar na mesma conta.
+     Não envolve nenhum broadcast na rede local, então funciona igual pelo
+     WiFi, por uma VPN, ou pelos dados móveis do celular.
+   - Já tem um código no sentido contrário — um que o Obico te deu, por
+     exemplo de uma configuração manual no estilo OctoPrint? A mesma caixa
+     de diálogo tem um campo para digitar esse código em vez disso.
 5. Depois de vinculada, sua impressora aparece no app/site do Obico. Para
    desvincular, abra **Vincular impressora** de novo — a caixa de diálogo
    mostra uma opção **Desvincular** quando já está vinculada.
@@ -61,12 +71,11 @@ independente dessa flag.
   padrão; a conexão real com o servidor escolhido não é afetada. Ela também
   é desativada automaticamente pelo próprio companion para qualquer servidor
   auto-hospedado, independente dessa configuração.
-- Isso ainda não foi testado em hardware de ponta a ponta com uma conta de
-  verdade — o companion inicia e se conecta ao Moonraker corretamente, e a
-  chamada de API de vinculação foi verificada contra os servidores reais do
-  Obico Cloud (um código propositalmente errado retorna "inválido"
-  corretamente), mas avise se encontrar algum problema ao vincular ou usar
-  com uma conta de verdade.
+- **Confirmado funcionando em hardware real**: o companion se conecta ao
+  Moonraker e gera um código de uso único real, vindo dos servidores reais
+  do Obico Cloud, mostrado ao vivo na caixa de diálogo. O caminho de código
+  manual também foi verificado contra os servidores reais (um código
+  propositalmente errado retorna "inválido" corretamente).
 
 ## Solução de problemas
 

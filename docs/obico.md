@@ -22,14 +22,22 @@ as.
      [Obico Server](https://www.obico.io/docs/server-guides/) instance.
    - Switching servers clears any existing link, since a link is only valid
      for the server that issued it.
-4. Tap **Link printer**. In the Obico app or website, add a printer manually
-   to get a 6-digit verification code, then enter it in the dialog and tap
-   **Link**.
-   - This is a different (but equivalent) linking path than Obico's own
-     install script offers: that one either waits for you to tap "Link Now"
-     on a phone on the same local network, or falls back to the same 6-digit
-     code prompt. Kocoa Beam always uses the code, since there's no terminal
-     to run the interactive tool in.
+4. Tap **Link printer**. Kocoa Beam generates its own code and shows it right
+   there (it can take a few seconds after enabling Obico for the companion to
+   start and produce one). In the Obico app or website, add a printer, choose
+   **Klipper (self-installed)**, and enter that code when asked — or tap
+   **Open link** in the dialog, which opens Obico's own linking page directly
+   with the code pre-filled.
+   - This mirrors exactly what Obico's own install script does on a real
+     Klipper install (`./install.sh` → `python3 -m moonraker_obico.link`):
+     it polls Obico's server every couple of seconds reporting an unlinked
+     printer and a one-time code, until either you enter that code on
+     Obico's side, or Obico's app finds it automatically because you're on
+     the same account. No local-network broadcast is involved, so this works
+     the same over WiFi as it would over a VPN or a phone's mobile data.
+   - Already have a code the *other* way around — one Obico gave you, e.g.
+     from an OctoPrint-style manual setup? The same dialog has a field to
+     enter it instead.
 5. Once linked, your printer shows up in the Obico app/website. To unlink,
    open **Link printer** again — the dialog shows an **Unlink** option once
    linked.
@@ -58,11 +66,11 @@ failure detection, independent of that flag.
   connection to your chosen server is unaffected. It's also automatically
   disabled by the companion itself for any self-hosted server, regardless of
   this setting.
-- This has not been hardware-tested end-to-end against a real account — the
-  companion starts, connects to Moonraker correctly, and the linking API
-  call has been verified against the real Obico Cloud servers (a
-  deliberately wrong code correctly comes back "invalid"), but please report
-  any issues you hit while linking or using it with a real account.
+- **Confirmed working on real hardware**: the companion connects to
+  Moonraker and generates a real one-time code from the real Obico Cloud
+  servers, shown live in the dialog. The manual-code path has also been
+  verified against the real servers (a deliberately wrong code correctly
+  comes back "invalid").
 
 ## Troubleshooting
 

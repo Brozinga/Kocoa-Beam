@@ -77,7 +77,7 @@
     <string name="ObicoLink">Vincular impressora</string>
     <string name="ObicoLinked">Vinculado ✓</string>
     <string name="ObicoNotLinked">Não vinculado</string>
-    <string name="ObicoLinkHint">Obtenha um código de 6 dígitos no app ou site do Obico (adicionar impressora manualmente) e digite abaixo</string>
+    <string name="ObicoLinkHint">Abra o app ou site do Obico, adicione uma impressora, escolha Klipper (auto-instalado), e digite o código abaixo quando solicitado</string>
     <string name="ObicoAlreadyLinkedHint">Esta impressora já está vinculada à sua conta Obico.</string>
     <string name="ObicoLinkCodeHint">Código de 6 dígitos</string>
     <string name="ObicoLinkAction">Vincular</string>
@@ -85,6 +85,12 @@
     <string name="ObicoUnlink">Desvincular</string>
     <string name="ObicoInvalidCode">Código inválido ou expirado</string>
     <string name="ObicoNetworkError">Não foi possível acessar o servidor</string>
+    <string name="ObicoGeneratedCodeLabel">Código da sua impressora</string>
+    <string name="ObicoCodeTapToCopy">Toque no código para copiar</string>
+    <string name="ObicoCodeCopied">Copiado</string>
+    <string name="ObicoOpenLink">Abrir link</string>
+    <string name="ObicoWaitingForCode">Aguardando o companion gerar um código… confirme que Enable Obico está ativo e uma impressora está rodando</string>
+    <string name="ObicoManualCodeHint">Já tem um código vindo do Obico (ex: configuração no estilo OctoPrint)? Digite aqui</string>
     <string name="ListUSB">Listar dispositivos USB</string>
     <string name="ListUSBTitle">Dispositivos USB</string>
     <string name="ListUSBNoDevices">Nenhum dispositivo USB encontrado</string>

@@ -1,12 +1,15 @@
 package ru.ytkab0bp.beamklipper.ui.screens
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.usb.UsbManager
 import android.net.Uri
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -32,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +49,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -52,7 +57,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.MainActivity
 import ru.ytkab0bp.beamklipper.R
@@ -60,6 +68,7 @@ import ru.ytkab0bp.beamklipper.serial.KlipperProbeTable
 import ru.ytkab0bp.beamklipper.serial.UsbSerialManager
 import ru.ytkab0bp.beamklipper.ui.components.BrutalButton
 import ru.ytkab0bp.beamklipper.ui.components.BrutalSwitch
+import ru.ytkab0bp.beamklipper.ui.components.BrutalTextButton
 import ru.ytkab0bp.beamklipper.ui.components.BrutalTile
 import ru.ytkab0bp.beamklipper.ui.components.brutalScrollbar
 import ru.ytkab0bp.beamklipper.ui.state.SettingsViewModel
@@ -912,20 +921,106 @@ private fun ObicoLinkDialog(
     var code by remember { mutableStateOf(TextFieldValue("")) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var discoveryStatus by remember { mutableStateOf<SettingsViewModel.ObicoDiscoveryStatus?>(null) }
+    var justLinked by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val invalidCodeText = stringResource(R.string.ObicoInvalidCode)
     val networkErrorText = stringResource(R.string.ObicoNetworkError)
+
+    // moonraker_obico generates its own one-time passcode on the server's
+    // side (PrinterDiscovery, running inside ObicoService as soon as Obico
+    // is enabled) — the code Obico's "Klipper (self-installed)" onboarding
+    // actually expects. It refreshes every couple seconds and the process
+    // may take a moment to come up after enabling the toggle, so this polls
+    // rather than reading it once.
+    LaunchedEffect(linked) {
+        if (linked) return@LaunchedEffect
+        while (true) {
+            val status = withContext(Dispatchers.IO) { viewModel.syncObicoLinkStatus() }
+            discoveryStatus = status
+            if (status?.isLinked == true) {
+                justLinked = true
+                delay(1200)
+                onDismiss()
+                break
+            }
+            delay(2000)
+        }
+    }
 
     BrutalAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.ObicoLink), style = MaterialTheme.typography.titleLarge, color = Ink) },
         text = {
             Column {
-                if (linked) {
+                if (linked || justLinked) {
                     Text(stringResource(R.string.ObicoAlreadyLinkedHint), color = Ink)
                 } else {
                     Text(stringResource(R.string.ObicoLinkHint), style = MaterialTheme.typography.bodyMedium, color = InkMuted)
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(16.dp))
+
+                    val passcode = discoveryStatus?.passcode
+                    if (!passcode.isNullOrBlank()) {
+                        Text(
+                            text = stringResource(R.string.ObicoGeneratedCodeLabel),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = InkMuted
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RectangleShape)
+                                .background(PaperAlt, RectangleShape)
+                                .border(2.dp, Ink, RectangleShape)
+                                .clickable {
+                                    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    cm.setPrimaryClip(ClipData.newPlainText("Obico code", passcode))
+                                    Toast.makeText(context, context.getString(R.string.ObicoCodeCopied), Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(vertical = 14.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = passcode,
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = Ink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(R.string.ObicoCodeTapToCopy),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkMuted
+                        )
+                        val passlink = discoveryStatus?.passlink
+                        if (!passlink.isNullOrBlank()) {
+                            Spacer(Modifier.height(10.dp))
+                            BrutalTextButton(
+                                text = stringResource(R.string.ObicoOpenLink),
+                                onClick = {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(passlink)))
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = stringResource(R.string.ObicoWaitingForCode),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = InkMuted
+                        )
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+                    Text(
+                        text = stringResource(R.string.ObicoManualCodeHint),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = InkMuted
+                    )
+                    Spacer(Modifier.height(8.dp))
                     BrutalTextField(
                         value = code,
                         onValueChange = { code = it; error = null },
@@ -939,14 +1034,16 @@ private fun ObicoLinkDialog(
             }
         },
         confirmButton = {
-            if (linked) {
-                BrutalButton(
-                    text = stringResource(R.string.ObicoUnlink),
-                    onClick = {
-                        viewModel.unlinkObico()
-                        onDismiss()
-                    }
-                )
+            if (linked || justLinked) {
+                if (linked) {
+                    BrutalButton(
+                        text = stringResource(R.string.ObicoUnlink),
+                        onClick = {
+                            viewModel.unlinkObico()
+                            onDismiss()
+                        }
+                    )
+                }
             } else {
                 BrutalButton(
                     text = if (loading) stringResource(R.string.ObicoLinking) else stringResource(R.string.ObicoLinkAction),

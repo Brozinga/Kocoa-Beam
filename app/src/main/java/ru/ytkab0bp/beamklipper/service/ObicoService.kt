@@ -20,6 +20,22 @@ import java.util.concurrent.atomic.AtomicBoolean
 // as its own Chaquopy process, the same way OctoEverywhereService runs its
 // own vendored companion. Single app-wide instance bound to whichever
 // KlipperInstance first reaches RUNNING — see KlipperInstance.onObicoConfigChanged.
+//
+// Started as soon as Obico is enabled, linked or not: without an auth_token,
+// moonraker_obico.app runs its own PrinterDiscovery — NOT local UDP/mDNS
+// broadcast (that was a wrong assumption in an earlier version of this
+// file), but polling POSTs to the configured server's /api/v1/octo/unlinked/
+// every couple seconds, reporting this printer's device id/local IP/a
+// one-time passcode, plus a small local Flask server (port 46793) the Obico
+// app can hit directly if it's on the same LAN. This is what actually
+// backs the "Link Obico" flow Obico's own touchscreen/LCD docs describe for
+// a self-installed Klipper setup, and it's what makes the printer
+// discoverable in the Obico app/website at all — a token obtained only via
+// the manual 6-digit-code dialog below (SettingsViewModel.linkObico) was
+// not enough on its own for the server to ever mark it online. The
+// discovery loop itself also re-reads this config file every iteration and
+// stops cleanly as soon as either path produces an auth_token, so both
+// coexist without conflict.
 class ObicoService : BasePythonService() {
     companion object {
         private const val TAG = "beam_obico"
@@ -92,19 +108,6 @@ class ObicoService : BasePythonService() {
         val inst = instance ?: return
         try {
             val authToken = Prefs.obicoAuthToken
-            if (authToken.isNullOrBlank()) {
-                // moonraker_obico.app, when started without an auth_token,
-                // launches its own local-network discovery flow (Flask HTTP
-                // server + UDP broadcast, blocking for up to two hours) to
-                // support the "tap Link Now in the Obico app" pairing story.
-                // We use a different flow entirely (a 6-digit code the user
-                // enters in Settings, exchanged for the token directly via
-                // SettingsViewModel.linkObico, before this service ever
-                // starts) — so just don't start the companion until that's
-                // already done, rather than let it fall into discovery.
-                Log.i(TAG, "Not linked yet, not starting the Obico companion")
-                return
-            }
 
             val obicoDir = File(KlipperApp.INSTANCE.filesDir, "obico")
             if (!File(obicoDir, "moonraker_obico/app.py").exists()) {
@@ -139,7 +142,13 @@ class ObicoService : BasePythonService() {
                 buildString {
                     append("[server]\n")
                     append("url = ").append(Prefs.obicoServerUrl).append('\n')
-                    append("auth_token = ").append(authToken).append('\n')
+                    // Left unset when not yet linked: moonraker_obico.app
+                    // reacts to that itself by running its own linking flow
+                    // (PrinterDiscovery — see the class doc below), rather
+                    // than us needing to gate starting it at all.
+                    if (!authToken.isNullOrBlank()) {
+                        append("auth_token = ").append(authToken).append('\n')
+                    }
                     append('\n')
                     append("[moonraker]\n")
                     append("host = 127.0.0.1\n")
