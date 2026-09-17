@@ -27,7 +27,7 @@ O Kocoa Beam é bem menor que o Beam Klipper original:
 | Componente | Beam Klipper | Kocoa Beam |
 |-----------|-------------|------------|
 | Timelapse com FFmpeg | Binário embutido (~40 MB) | API MediaCodec do Android (nativo) |
-| Tamanho do app | ~138 MB (arm64) | ~64 MB (arm64 / armv7), ~71 MB (x86_64) |
+| Tamanho do app | ~138 MB (arm64) | ~38 MB (arm64 / armv7), ~41 MB (x86_64) |
 
 O componente de timelapse com FFmpeg foi substituído pela API MediaCodec nativa do Android, economizando ~40 MB por arquitetura.
 

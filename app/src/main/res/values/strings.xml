@@ -50,6 +50,23 @@
     <string name="Settings">Settings</string>
     <string name="Camera">Camera</string>
     <string name="EnableCamera">Enable camera server</string>
+    <string name="CameraSource">Camera source</string>
+    <string name="CameraSourceTitle">Select camera source</string>
+    <string name="CameraSourceAuto">Automatic (prefer USB webcam)</string>
+    <string name="CameraSourceUsbWebcam">USB webcam (%1$s)</string>
+    <string name="CameraSourceBuiltInBack">Built-in back camera (%1$s)</string>
+    <string name="CameraSourceBuiltInFront">Built-in front camera (%1$s)</string>
+    <string name="CameraSourceOther">Camera %1$s</string>
+    <string name="CameraSourceBackN">Back camera %1$d</string>
+    <string name="CameraSourceFrontN">Front camera %1$d</string>
+    <string name="CameraRotation">Camera rotation</string>
+    <string name="OctoEverywhereTitle" translatable="false">OctoEverywhere</string>
+    <string name="OctoEverywhereDescription">OctoEverywhere companion is running in background…</string>
+    <string name="RemoteAccess">Remote access</string>
+    <string name="EnableOctoEverywhere" translatable="false">Enable OctoEverywhere</string>
+    <string name="LinkOctoEverywhere">Link printer</string>
+    <string name="LinkOctoEverywhereHint">Scan the QR code to connect your OctoEverywhere account</string>
+    <string name="LinkOctoEverywhereNotReady">Not ready yet — give it a few seconds after enabling, then try again</string>
     <string name="USB" translatable="false">USB</string>
     <string name="ListUSB">List USB devices</string>
     <string name="ListUSBTitle">USB devices</string>
@@ -71,6 +88,7 @@
     <string name="AppLanguage">App language</string>
     <string name="LanguageSystem">Follow system</string>
     <string name="LanguageEnglish">English</string>
+    <string name="LanguagePortuguese">Português (BR)</string>
     <string name="LanguageRussian">Русский</string>
     <string name="LanguageChineseSimplified">简体中文</string>
     <string name="LanguageChineseTraditional">繁體中文</string>

@@ -59,6 +59,9 @@ object BeamLogs {
             list += Source("moonraker_${inst.id}", "Moonraker · $name") {
                 readInstanceLog(File(logs, "moonraker.log"))
             }
+            list += Source("octoeverywhere_${inst.id}", "OctoEverywhere · $name") {
+                readInstanceLog(File(logs, "octoeverywhere.log"))
+            }
         }
         return list
     }

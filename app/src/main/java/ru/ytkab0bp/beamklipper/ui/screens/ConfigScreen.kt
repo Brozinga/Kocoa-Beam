@@ -14,12 +14,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -54,6 +56,7 @@ import ru.ytkab0bp.beamklipper.serial.UsbSerialManager
 import ru.ytkab0bp.beamklipper.ui.components.BrutalButton
 import ru.ytkab0bp.beamklipper.ui.components.BrutalSwitch
 import ru.ytkab0bp.beamklipper.ui.components.BrutalTile
+import ru.ytkab0bp.beamklipper.ui.components.brutalScrollbar
 import ru.ytkab0bp.beamklipper.ui.state.SettingsViewModel
 import ru.ytkab0bp.beamklipper.ui.theme.Accent
 import ru.ytkab0bp.beamklipper.ui.theme.Ink
@@ -72,12 +75,18 @@ fun ConfigScreen(
     val webFrontend by viewModel.webFrontend.collectAsStateWithLifecycle()
     val usbNaming by viewModel.usbNaming.collectAsStateWithLifecycle()
     val cameraEnabled by viewModel.cameraEnabled.collectAsStateWithLifecycle()
+    val cameraSourceId by viewModel.cameraSourceId.collectAsStateWithLifecycle()
+    val cameraRotation by viewModel.cameraRotation.collectAsStateWithLifecycle()
+    val octoEverywhereEnabled by viewModel.octoEverywhereEnabled.collectAsStateWithLifecycle()
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var showListUsb by remember { mutableStateOf(false) }
     var showQr by remember { mutableStateOf(false) }
     var showLanguage by remember { mutableStateOf(false) }
+    var showCameraSource by remember { mutableStateOf(false) }
+    var octoEverywhereLinkUrl by remember { mutableStateOf<String?>(null) }
+    var showOctoEverywhereNotReady by remember { mutableStateOf(false) }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -85,10 +94,12 @@ fun ConfigScreen(
         viewModel.refreshCameraSwitch(granted)
     }
 
+    val scrollState = rememberScrollState()
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
+            .brutalScrollbar(scrollState)
+            .verticalScroll(scrollState)
             .padding(horizontal = 20.dp)
             .padding(top = 8.dp, bottom = 40.dp)
     ) {
@@ -212,6 +223,37 @@ fun ConfigScreen(
                 }
             }
         )
+        Spacer(Modifier.height(8.dp))
+        BrutalValueRow(
+            title = stringResource(R.string.CameraSource),
+            value = viewModel.cameraSourceTitle(cameraSourceId),
+            onClick = { showCameraSource = true }
+        )
+        Spacer(Modifier.height(8.dp))
+        BrutalValueRow(
+            title = stringResource(R.string.CameraRotation),
+            value = "$cameraRotation°",
+            onClick = { viewModel.cycleCameraRotation() }
+        )
+
+        Spacer(Modifier.height(28.dp))
+        BrutalSectionHeader(stringResource(R.string.RemoteAccess))
+        BrutalSwitchRow(
+            title = stringResource(R.string.EnableOctoEverywhere),
+            checked = octoEverywhereEnabled,
+            onCheckedChange = { checked -> viewModel.setOctoEverywhereEnabled(checked) }
+        )
+        if (octoEverywhereEnabled) {
+            Spacer(Modifier.height(8.dp))
+            BrutalValueRow(
+                title = stringResource(R.string.LinkOctoEverywhere),
+                value = stringResource(R.string.LinkOctoEverywhereHint),
+                onClick = {
+                    val url = viewModel.octoEverywhereLinkUrl()
+                    if (url != null) octoEverywhereLinkUrl = url else showOctoEverywhereNotReady = true
+                }
+            )
+        }
 
         Spacer(Modifier.height(28.dp))
         BrutalSectionHeader(stringResource(R.string.Other))
@@ -430,6 +472,27 @@ fun ConfigScreen(
     if (showLanguage) {
         LanguageDialog(onDismiss = { showLanguage = false })
     }
+    if (showCameraSource) {
+        CameraSourceDialog(
+            options = viewModel.cameraSourceOptions(),
+            selectedId = cameraSourceId,
+            onSelect = { viewModel.setCameraSource(it) },
+            onDismiss = { showCameraSource = false }
+        )
+    }
+    octoEverywhereLinkUrl?.let { url ->
+        QRCodeDialog(link = url, onDismiss = { octoEverywhereLinkUrl = null })
+    }
+    if (showOctoEverywhereNotReady) {
+        BrutalAlertDialog(
+            onDismissRequest = { showOctoEverywhereNotReady = false },
+            title = { Text(stringResource(R.string.LinkOctoEverywhere), style = MaterialTheme.typography.titleLarge, color = Ink) },
+            text = { Text(stringResource(R.string.LinkOctoEverywhereNotReady), color = Ink) },
+            confirmButton = {
+                BrutalButton(text = stringResource(android.R.string.ok), onClick = { showOctoEverywhereNotReady = false })
+            }
+        )
+    }
 }
 
 @Composable
@@ -469,6 +532,45 @@ private fun BrutalSwitchRow(
 }
 
 @Composable
+private fun BrutalValueRow(
+    title: String,
+    value: String,
+    onClick: () -> Unit
+) {
+    BrutalTile(
+        modifier = Modifier.fillMaxWidth(),
+        background = Paper,
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Ink
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Icon(
+                painterResource(R.drawable.ic_chevron_right_28),
+                contentDescription = null,
+                tint = Ink,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+@Composable
 private fun BrutalAlertDialog(
     onDismissRequest: () -> Unit,
     title: @Composable () -> Unit,
@@ -477,17 +579,32 @@ private fun BrutalAlertDialog(
     dismissButton: @Composable (() -> Unit)? = null
 ) {
     Dialog(onDismissRequest = onDismissRequest) {
-        Box(modifier = Modifier.padding(20.dp)) {
+        // Dialog windows are bounded to the screen, but a plain wrap-content
+        // Column doesn't know that — on a short viewport (landscape) content
+        // that doesn't fit just gets clipped by the window edge with no way
+        // to reach it, since nothing here was scrollable. BoxWithConstraints
+        // gives the real available height so the middle (text()) can be
+        // capped and scrolled while title/buttons stay fully visible.
+        BoxWithConstraints(modifier = Modifier.padding(20.dp)) {
+            val dialogMaxHeight = maxHeight
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = dialogMaxHeight)
                     .background(Paper, RectangleShape)
                     .border(2.dp, Ink, RectangleShape)
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
                     title()
                     Spacer(Modifier.height(8.dp))
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                    val scrollState = rememberScrollState()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false)
+                            .brutalScrollbar(scrollState)
+                            .verticalScroll(scrollState)
+                    ) {
                         text()
                     }
                     Spacer(Modifier.height(20.dp))
@@ -542,13 +659,57 @@ private fun ListUsbDialog(context: Context, onDismiss: () -> Unit) {
 }
 
 @Composable
+private fun CameraSourceDialog(
+    options: List<SettingsViewModel.CameraSourceOption>,
+    selectedId: String?,
+    onSelect: (String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    BrutalAlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.CameraSourceTitle), style = MaterialTheme.typography.titleLarge, color = Ink) },
+        text = {
+            Column {
+                options.forEach { option ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RectangleShape)
+                            .clickable {
+                                onSelect(option.id)
+                                onDismiss()
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            option.label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (option.id == selectedId) Accent else Ink,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            BrutalButton(
+                text = stringResource(android.R.string.cancel),
+                onClick = onDismiss
+            )
+        }
+    )
+}
+
+@Composable
 private fun LanguageDialog(onDismiss: () -> Unit) {
     val options = listOf(
-        KlipperApp.INSTANCE.getString(R.string.LanguageSystem),
-        KlipperApp.INSTANCE.getString(R.string.LanguageEnglish),
-        KlipperApp.INSTANCE.getString(R.string.LanguageRussian),
-        KlipperApp.INSTANCE.getString(R.string.LanguageChineseSimplified),
-        KlipperApp.INSTANCE.getString(R.string.LanguageChineseTraditional)
+        stringResource(R.string.LanguageSystem),
+        stringResource(R.string.LanguageEnglish),
+        stringResource(R.string.LanguagePortuguese),
+        stringResource(R.string.LanguageRussian),
+        stringResource(R.string.LanguageChineseSimplified),
+        stringResource(R.string.LanguageChineseTraditional)
     )
     BrutalAlertDialog(
         onDismissRequest = onDismiss,
@@ -564,8 +725,9 @@ private fun LanguageDialog(onDismiss: () -> Unit) {
                                 Prefs.appLanguage = when (index) {
                                     0 -> Prefs.LANGUAGE_SYSTEM
                                     1 -> Prefs.LANGUAGE_ENGLISH
-                                    2 -> Prefs.LANGUAGE_RUSSIAN
-                                    3 -> Prefs.LANGUAGE_CHINESE_SIMPLIFIED
+                                    2 -> Prefs.LANGUAGE_PORTUGUESE_BRAZIL
+                                    3 -> Prefs.LANGUAGE_RUSSIAN
+                                    4 -> Prefs.LANGUAGE_CHINESE_SIMPLIFIED
                                     else -> Prefs.LANGUAGE_CHINESE_TRADITIONAL
                                 }
                                 Prefs.applyAppLanguage()

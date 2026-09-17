@@ -10,6 +10,7 @@ import androidx.core.os.LocaleListCompat
 
 import ru.ytkab0bp.beamklipper.BuildConfig
 import ru.ytkab0bp.beamklipper.KlipperApp
+import ru.ytkab0bp.beamklipper.events.CameraSourceChangedEvent
 import ru.ytkab0bp.beamklipper.events.EngineChangedEvent
 import ru.ytkab0bp.beamklipper.events.WebFrontendChangedEvent
 import ru.ytkab0bp.beamklipper.serial.UsbSerialManager
@@ -26,6 +27,7 @@ object Prefs {
     const val FRONTEND_KALICO = "kalico_frontend"
     const val LANGUAGE_SYSTEM = "system"
     const val LANGUAGE_ENGLISH = "en"
+    const val LANGUAGE_PORTUGUESE_BRAZIL = "pt-BR"
     const val LANGUAGE_RUSSIAN = "ru"
     const val LANGUAGE_CHINESE_SIMPLIFIED = "zh-CN"
     const val LANGUAGE_CHINESE_TRADITIONAL = "zh-TW"
@@ -157,14 +159,46 @@ object Prefs {
             AppState.updateAppLanguage()
         }
 
+    // 640x480 rather than 720p: this feed gets relayed through OctoEverywhere's
+    // cloud connection (shared with command/API traffic) when remote access is
+    // on, not just served over LAN. Measured on real hardware: 1280x720 @ ~15fps
+    // JPEG q85 pushed ~1.25MB/s continuously, which saturates a typical uplink
+    // and stalls command execution over the same connection, not just the
+    // webcam feed. 640x480 cuts pixel count (and roughly the bitrate) to ~1/3.
     val cameraWidth: Int
-        get() = getSafeInt("camera_width", 1280)
+        get() = getSafeInt("camera_width", 640)
 
     val cameraHeight: Int
-        get() = getSafeInt("camera_height", 720)
+        get() = getSafeInt("camera_height", 480)
 
-    val cameraId: String?
+    // null means "auto": prefer a LENS_FACING_EXTERNAL (USB UVC webcam) camera
+    // when one is plugged in, falling back to the first camera otherwise. See
+    // CameraService.resolveCameraId(). CameraService runs in its own ":camera"
+    // process, so it never observes this write directly — KlipperInstance
+    // (main process, same as this setter) restarts it on CameraSourceChangedEvent
+    // so the new pick is read fresh on the next process start.
+    var cameraId: String?
         get() = getSafeStringNullable("camera_id")
+        set(value) {
+            mPrefs.edit().apply {
+                if (value == null) remove("camera_id") else putString("camera_id", value)
+            }.apply()
+            AppState.updateCameraSourceId()
+            KlipperApp.EVENT_BUS.fireEvent(CameraSourceChangedEvent())
+        }
+
+    // Clockwise degrees applied to every frame before it's served, for a
+    // camera mounted sideways/upside-down. Only 0/90/180/270 are valid;
+    // anything else is normalized. Same cross-process restart story as
+    // cameraId above.
+    var cameraRotation: Int
+        get() = ((getSafeInt("camera_rotation", 0) % 360) + 360) % 360
+        set(value) {
+            val normalized = ((value % 360) + 360) % 360
+            mPrefs.edit().putInt("camera_rotation", normalized).apply()
+            AppState.updateCameraSourceId()
+            KlipperApp.EVENT_BUS.fireEvent(CameraSourceChangedEvent())
+        }
 
     var isCameraEnabled: Boolean
         get() = (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || KlipperApp.INSTANCE.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) &&
@@ -172,6 +206,13 @@ object Prefs {
         set(value) {
             mPrefs.edit().putBoolean("camera_enabled", value).apply()
             AppState.updateCameraEnabled()
+        }
+
+    var isOctoEverywhereEnabled: Boolean
+        get() = getSafeBoolean("octoeverywhere_enabled", false)
+        set(value) {
+            mPrefs.edit().putBoolean("octoeverywhere_enabled", value).apply()
+            AppState.updateOctoEverywhereEnabled()
         }
 
     var usbDeviceNaming: Int

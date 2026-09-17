@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.KlipperInstance
+import ru.ytkab0bp.beamklipper.events.CameraSourceChangedEvent
 import ru.ytkab0bp.beamklipper.events.EngineChangedEvent
 import ru.ytkab0bp.beamklipper.events.InstanceCreatedEvent
 import ru.ytkab0bp.beamklipper.events.InstanceDestroyedEvent
@@ -65,6 +66,15 @@ object AppState {
     private val _cameraEnabled = MutableStateFlow(Prefs.isCameraEnabled)
     val cameraEnabled: StateFlow<Boolean> = _cameraEnabled.distinct()
 
+    private val _cameraSourceId = MutableStateFlow(Prefs.cameraId)
+    val cameraSourceId: StateFlow<String?> = _cameraSourceId.distinct()
+
+    private val _cameraRotation = MutableStateFlow(Prefs.cameraRotation)
+    val cameraRotation: StateFlow<Int> = _cameraRotation.distinct()
+
+    private val _octoEverywhereEnabled = MutableStateFlow(Prefs.isOctoEverywhereEnabled)
+    val octoEverywhereEnabled: StateFlow<Boolean> = _octoEverywhereEnabled.distinct()
+
     private val _appLanguage = MutableStateFlow(Prefs.appLanguage)
     val appLanguage: StateFlow<String> = _appLanguage.distinct()
 
@@ -76,6 +86,9 @@ object AppState {
         _appLanguage.value = Prefs.appLanguage
         _usbNaming.value = Prefs.usbDeviceNaming
         _cameraEnabled.value = Prefs.isCameraEnabled
+        _cameraSourceId.value = Prefs.cameraId
+        _cameraRotation.value = Prefs.cameraRotation
+        _octoEverywhereEnabled.value = Prefs.isOctoEverywhereEnabled
         KlipperApp.EVENT_BUS.registerListener(this)
         refreshInstances()
     }
@@ -132,12 +145,28 @@ object AppState {
         _engine.value = Prefs.engine
     }
 
+    @EventHandler(runOnMainThread = true)
+    fun onCameraSourceChanged(e: CameraSourceChangedEvent) {
+        _cameraSourceId.value = Prefs.cameraId
+        _cameraRotation.value = Prefs.cameraRotation
+        KlipperInstance.onCameraSourceChanged()
+    }
+
     fun updateUsbNaming() {
         _usbNaming.value = Prefs.usbDeviceNaming
     }
 
     fun updateCameraEnabled() {
         _cameraEnabled.value = Prefs.isCameraEnabled
+    }
+
+    fun updateCameraSourceId() {
+        _cameraSourceId.value = Prefs.cameraId
+        _cameraRotation.value = Prefs.cameraRotation
+    }
+
+    fun updateOctoEverywhereEnabled() {
+        _octoEverywhereEnabled.value = Prefs.isOctoEverywhereEnabled
     }
 
     fun updateAppLanguage() {

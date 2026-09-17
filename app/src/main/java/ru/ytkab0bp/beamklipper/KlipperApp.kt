@@ -135,9 +135,35 @@ class KlipperApp : MultiDexApplication() {
         private const val CHAQUOPY_SEED_MARKER = ".chaquopy_seed_v1"
         private const val CHAQUOPY_LOCK_NAME = ".chaquopy_lock"
         private const val MOONRAKER_LOCK_NAME = ".moonraker_port_lock"
+        private const val BUNDLE_INSTALL_LOCK_NAME = ".bundle_install_lock"
 
         fun withChaquopyLock(ctx: Context, action: () -> Unit) {
             val lockFile = File(ctx.filesDir, CHAQUOPY_LOCK_NAME)
+            var raf: RandomAccessFile? = null
+            var lock: FileLock? = null
+            try {
+                raf = RandomAccessFile(lockFile, "rw")
+                lock = raf.channel.lock()
+                action()
+            } finally {
+                try { lock?.release() } catch (_: Throwable) {}
+                try { raf?.close() } catch (_: Throwable) {}
+            }
+        }
+
+        // BundleInstaller.init() unpacks the vendored klipper/kalico/moonraker/
+        // octoeverywhere bundles into shared app storage. Every KlippyService,
+        // MoonrakerService and (now) OctoEverywhereService runs in its own
+        // process and independently races to call it on first bind; bundleInstallJob's
+        // `synchronized` only dedupes within a single process. Without a
+        // cross-process lock, two processes racing to delete+recreate the same
+        // directory at once corrupts each other's unpack (Kotlin's
+        // deleteRecursively() throws "rootDir must be verified to be directory
+        // beforehand" when the directory is mutated mid-walk by another
+        // process) — this crashed KlippyService_0 in practice once
+        // OctoEverywhereService made a 3-way race common instead of a 2-way one.
+        fun withBundleInstallLock(ctx: Context, action: () -> Unit) {
+            val lockFile = File(ctx.filesDir, BUNDLE_INSTALL_LOCK_NAME)
             var raf: RandomAccessFile? = null
             var lock: FileLock? = null
             try {
@@ -245,7 +271,7 @@ class KlipperApp : MultiDexApplication() {
         val bundleInstallJob: Deferred<Unit>
             get() = _bundleInstallJob ?: synchronized(bundleInstallLock) {
                 _bundleInstallJob ?: appScope.async(Dispatchers.IO) {
-                    BundleInstaller.init(INSTANCE)
+                    withBundleInstallLock(INSTANCE) { BundleInstaller.init(INSTANCE) }
                 }.also { _bundleInstallJob = it }
             }
 

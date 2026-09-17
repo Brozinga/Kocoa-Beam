@@ -1,0 +1,76 @@
+# 使用摄像头 / USB 摄像头
+
+**语言: [English](../webcam.md) · [Português (BR)](../pt-br/webcam.md) · [简体中文](webcam.md)**
+
+Kocoa Beam 可以推送实时摄像头画面用于监控打印——可以是设备自带的摄像头，也可以
+是通过 OTG/集线器连接的 USB UVC 摄像头。
+
+<p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="设置页面显示摄像头区块" width="280"></p>
+
+## 启用
+
+1. **设置 → 摄像头 → 启用摄像头服务器。**
+2. **摄像头来源**可以选择使用哪个摄像头：
+   - **自动**（默认）——优先使用插入的 USB 摄像头而非内置摄像头，服务器运行时
+     插拔摄像头会实时切换。
+   - 或者固定某一个摄像头。对于每个方向有多个镜头的设备（后置的
+     主/超广角/长焦，有时前置也有两个），每个镜头会单独列出，并标注 35mm 等效
+     焦距——例如 "后置摄像头 1（26mm）" 对比 "后置摄像头 2（14mm）"——和手机宣传
+     用的是同一个数字，所以真的能区分开。
+3. **摄像头旋转**在 0°/90°/180°/270° 之间循环，适用于横放或倒置安装的手机。
+
+画面会通过 `http://<设备-ip>:8889/`（推流）和
+`http://<设备-ip>:8889/snapshot`（单张 JPEG）提供，与 Fluidd/Mainsail 自己使用
+的端口无关。
+
+### USB 摄像头支持
+
+这依赖设备通过 Android 标准 Camera2 API 将 USB 摄像头暴露为外部摄像头
+（`LENS_FACING_EXTERNAL`），大多数基于 AOSP 的设备自 Android 9 起支持此特性，
+但部分厂商定制的相机框架不会暴露它。**已在真实硬件上验证：**三星 Galaxy
+S10+（One UI，Android 12）在系统/USB 层面能正确识别 USB UVC 摄像头，但**不会**
+通过 Camera2 暴露它——三星自家的相机 HAL 没有实现外部摄像头 provider。这种情况
+下应用会正常回退到内置摄像头；更接近原生 AOSP 的设备（Pixel、部分 Android
+电视盒/平板）预计能真正暴露该摄像头。
+
+## 添加到 Fluidd 或 Mainsail
+
+Fluidd 和 Mainsail 的摄像头列表来自同一个地方——该打印机配置在 Moonraker 中的
+摄像头设置——所以你只需要在其中**任意一个**里添加一次，两边都会显示。
+
+**在 Fluidd 中：** 齿轮图标（设置）→ **Cameras** → **+ Add Camera**：
+
+<p align="center"><img src="../images/fluidd-cameras-settings.png" alt="Fluidd 的摄像头设置区块" width="640"></p>
+
+| 字段 | 值 |
+|---|---|
+| 名称 | 任意，例如 "USB 摄像头" |
+| Service | `MJPEG-Streamer` |
+| Stream URL | `http://<设备-ip>:8889/` |
+| Snapshot URL | `http://<设备-ip>:8889/snapshot` |
+
+只有在手机本机浏览器中查看 Fluidd 时才用 `127.0.0.1`；从其他设备访问时，使用
+手机的局域网 IP（就是你 Fluidd/Mainsail 网址里已经用的那个）。
+
+**在 Mainsail 中：** 对应的添加摄像头表单在 **Machine → Webcams** 下，使用
+service 类型 `UV4L-MJPEG`，配合上面同样的 stream/snapshot 地址。由于配置是共
+享的，只在 Fluidd 里添加一次就够了——下面是在 Fluidd 添加一次后，同一个摄像头
+已经在 Mainsail 仪表盘上实时显示的效果：
+
+<p align="center"><img src="../images/mainsail-webcam-dashboard.png" alt="Mainsail 仪表盘显示实时摄像头画面" width="420"></p>
+
+一旦在这里配置好，OctoEverywhere 也会自动使用这同一个摄像头——参见
+[`octoeverywhere.md`](octoeverywhere.md)。
+
+## 故障排查
+
+- **Fluidd/Mainsail 拒绝该摄像头/显示错误，但流地址在普通浏览器标签页或 `curl`
+  中都正常：** 这曾是一个真实的 bug（已修复），`/snapshot` 发送了错误的
+  `Content-Type`。确认你使用的版本已包含修复——响应应为
+  `Content-Type: image/jpeg`，而不是 `multipart/x-mixed-replace`。
+- **只有通过 OctoEverywhere 查看时画面卡顿/缓慢（本地正常）：** 默认的
+  分辨率/画质/帧率已经针对此场景做过调整（实测 640x480、约 14fps 时约为
+  117KB/s，而旧的 720p 默认值约为 1.25MB/s）——经云端中继的连接带宽比局域网
+  受限得多。如果对你的上行带宽来说仍然太慢，或者你想要更高画质，FPS 上限和
+  分辨率是可以调整的（源码中的 `CameraService`/`Prefs.cameraWidth`/
+  `cameraHeight`）——目前还没有对应的界面控件。

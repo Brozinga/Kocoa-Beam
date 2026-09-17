@@ -45,6 +45,46 @@ Cada front end tem a própria porta, em vez de uma compartilhada:
 A porta acompanha o seletor de front end na tela principal, que também mostra a
 URL ativa. Os endpoints de câmera continuam em `:8889`.
 
+## Câmera / suporte a webcam USB
+
+O servidor de câmera agora também transmite de uma webcam USB UVC genérica
+(além da câmera do próprio aparelho), com troca a quente ao vivo, um
+seletor que diferencia várias lentes, e um controle de rotação. Guia
+completo, incluindo como adicionar no Fluidd/Mainsail:
+[`webcam.md`](webcam.md).
+
+## Acesso remoto via OctoEverywhere
+
+**Configurações → Acesso remoto → Ativar OctoEverywhere** executa o
+companion real do [OctoEverywhere](https://octoeverywhere.com) para
+Klipper, vendorizado a partir da fonte original e adaptado para rodar como
+processo próprio no Android, em vez do serviço systemd/venv que ele
+normalmente instala. Ele se conecta ao perfil de impressora que estiver
+rodando no momento, pela mesma conexão local com o Moonraker que Fluidd e
+Mainsail usam — sem configuração extra no lado do Moonraker. **Confirmado
+funcionando de ponta a ponta em hardware real**, inclusive vinculando contra
+os servidores reais de produção do octoeverywhere.com.
+
+- Ativar o botão inicia o companion; **Vincular impressora** então mostra um
+  QR code (assim que o companion gerar o ID da impressora, geralmente em
+  poucos segundos) para concluir a vinculação da sua conta OctoEverywhere,
+  o mesmo passo único de qualquer instalação. Se o "Go to Klipper" no
+  octoeverywhere.com continuar dizendo que não está conectado logo após
+  vincular, desative e reative o OctoEverywhere uma vez — ele só verifica o
+  status de vinculação no momento em que conecta, não ao vivo.
+- A telemetria de erros própria dele (Sentry) fica desativada; a conexão real
+  de acesso remoto com o octoeverywhere.com não é afetada.
+- Se você também ativar o servidor de câmera acima, o OctoEverywhere pode
+  usar automaticamente essa mesma webcam (USB ou embutida) assim que ela for
+  adicionada como câmera no Fluidd ou Mainsail — não precisa de uma
+  configuração de câmera separada. A resolução/taxa de quadros padrão da
+  câmera são reduzidas de propósito para isso continuar utilizável numa
+  conexão remota (medido ~117KB/s a 640x480/~14fps, contra ~1,25MB/s no
+  padrão original de 720p, que era lento a ponto de atrasar também a
+  execução de comandos por compartilhar a mesma conexão retransmitida).
+- Apenas um perfil de impressora pode ficar vinculado ao OctoEverywhere por
+  vez, mesmo rodando vários perfis ao mesmo tempo.
+
 ## Visualizador de logs no app
 
 Uma aba **Logs** expõe os logs do Klipper, do Moonraker e do aplicativo. Cada um

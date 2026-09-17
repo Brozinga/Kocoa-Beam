@@ -6,6 +6,7 @@
     <string name="KlippyDescription">Klippy работает в фоне…</string>
     <string name="MoonrakerTitle">Moonraker (%s)</string>
     <string name="MoonrakerDescription">Moonraker работает в фоне…</string>
+    <string name="MoonrakerStartFailed">Не удалось привязаться к порту — перезапустите профиль</string>
     <string name="WebTitle">Веб сервер</string>
     <string name="WebDescription">Веб сервер работает в фоне…</string>
     <string name="CameraTitle">Сервер камеры</string>
@@ -34,6 +35,7 @@
     <string name="InstanceConfig">Конфиг</string>
     <string name="InstanceCreate">Создать</string>
     <string name="InstanceConfigHint">Нажмите для выбора конфига…</string>
+    <string name="InstanceConfigLoading">Подготовка конфигов, подождите…</string>
     <string name="InstanceDelete">Удалить «%s»?</string>
     <string name="InstanceDeleteConfirm">Вы уверены?</string>
     <string name="InstanceOK">ОК</string>
@@ -47,6 +49,21 @@
     <string name="Settings">Настройки</string>
     <string name="Camera">Камера</string>
     <string name="EnableCamera">Включить сервер камеры</string>
+    <string name="CameraSource">Источник камеры</string>
+    <string name="CameraSourceTitle">Выберите источник камеры</string>
+    <string name="CameraSourceAuto">Автоматически (предпочитать USB камеру)</string>
+    <string name="CameraSourceUsbWebcam">USB камера (%1$s)</string>
+    <string name="CameraSourceBuiltInBack">Встроенная задняя камера (%1$s)</string>
+    <string name="CameraSourceBuiltInFront">Встроенная передняя камера (%1$s)</string>
+    <string name="CameraSourceOther">Камера %1$s</string>
+    <string name="CameraSourceBackN">Задняя камера %1$d</string>
+    <string name="CameraSourceFrontN">Передняя камера %1$d</string>
+    <string name="CameraRotation">Поворот камеры</string>
+    <string name="OctoEverywhereDescription">Клиент OctoEverywhere работает в фоне…</string>
+    <string name="RemoteAccess">Удалённый доступ</string>
+    <string name="LinkOctoEverywhere">Привязать принтер</string>
+    <string name="LinkOctoEverywhereHint">Отсканируйте QR-код, чтобы подключить аккаунт OctoEverywhere</string>
+    <string name="LinkOctoEverywhereNotReady">Ещё не готово — подождите несколько секунд после включения и попробуйте снова</string>
     <string name="ListUSB">Отобразить список USB устройств</string>
     <string name="ListUSBTitle">USB устройства</string>
     <string name="ListUSBNoDevices">USB устройства не найдены</string>
@@ -64,6 +81,7 @@
     <string name="AppLanguage">Язык приложения</string>
     <string name="LanguageSystem">Следовать системе</string>
     <string name="LanguageEnglish">English</string>
+    <string name="LanguagePortuguese">Português (BR)</string>
     <string name="LanguageRussian">Русский</string>
     <string name="LanguageChineseSimplified">简体中文</string>
     <string name="LanguageChineseTraditional">繁體中文</string>

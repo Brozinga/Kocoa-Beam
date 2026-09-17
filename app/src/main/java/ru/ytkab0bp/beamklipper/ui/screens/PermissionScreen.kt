@@ -49,6 +49,7 @@ import ru.ytkab0bp.beamklipper.PermissionsChecker
 import ru.ytkab0bp.beamklipper.R
 import ru.ytkab0bp.beamklipper.ui.components.BrutalButton
 import ru.ytkab0bp.beamklipper.ui.components.BrutalSwitch
+import ru.ytkab0bp.beamklipper.ui.components.brutalScrollbar
 import ru.ytkab0bp.beamklipper.ui.theme.Accent
 import ru.ytkab0bp.beamklipper.ui.theme.Ink
 import ru.ytkab0bp.beamklipper.ui.theme.Paper
@@ -83,13 +84,15 @@ fun PermissionScreen(onNext: () -> Unit) {
     }
 
     val cardShape = RectangleShape
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Paper)
             .windowInsetsPadding(WindowInsets.safeDrawing)
-            .verticalScroll(rememberScrollState())
+            .brutalScrollbar(scrollState)
+            .verticalScroll(scrollState)
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

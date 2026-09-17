@@ -22,6 +22,7 @@ object BundleInstaller {
                 unpack(assets, index, root, "klipper")
                 unpack(assets, index, root, "kalico")
                 unpack(assets, index, root, "moonraker")
+                unpack(assets, index, root, "octoeverywhere")
                 prefs.edit().putString("version", ver).apply()
             }
 

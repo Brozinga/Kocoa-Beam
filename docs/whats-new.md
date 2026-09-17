@@ -44,6 +44,42 @@ Each front end has its own port instead of a shared one:
 The port follows the front-end toggle on the main screen, which also shows the
 active URL. Camera endpoints remain on `:8889`.
 
+## Camera / USB webcam support
+
+The camera server can now also stream from a generic USB UVC webcam (not
+just the device's own camera), with live hot-plug switching, a picker that
+tells multiple lenses apart, and a rotation control. Full guide, including
+how to add it to Fluidd/Mainsail: [`webcam.md`](webcam.md).
+
+## OctoEverywhere remote access
+
+**Settings → Remote access → Enable OctoEverywhere** runs the real
+[OctoEverywhere](https://octoeverywhere.com) Klipper companion, vendored from
+its upstream source and adapted to run as its own background process on
+Android instead of the systemd service/venv it normally installs as. It talks
+to whichever printer profile is currently running over the same local
+Moonraker connection Fluidd/Mainsail use — no extra setup on the Moonraker
+side. **Confirmed working end-to-end on real hardware**, including linking
+against the real octoeverywhere.com production servers.
+
+- Turning it on starts the companion; **Link printer** then shows a QR code
+  (once the companion has generated its printer ID, usually within a few
+  seconds) to finish linking your OctoEverywhere account, the same one-time
+  step as any other install. If "Go to Klipper" on octoeverywhere.com still
+  says it's not connected right after linking, toggle OctoEverywhere off and
+  back on once — it only checks its link status when it connects, not live.
+- Its own crash telemetry (Sentry) is disabled; the actual remote-access
+  connection to octoeverywhere.com is unaffected.
+- If you also enable the camera server above, OctoEverywhere can pick up that
+  same USB/built-in webcam feed automatically once it's added as a webcam in
+  Fluidd or Mainsail — it does not need a separate camera setup. The default
+  camera resolution/framerate are tuned down specifically so this stays usable
+  over a remote connection (measured ~117KB/s at 640x480/~14fps, vs. ~1.25MB/s
+  at the original 720p default, which was slow enough to also delay command
+  execution sharing the same relayed connection).
+- Only one printer profile can be linked to OctoEverywhere at a time, even if
+  you run multiple profiles concurrently.
+
 ## In-app log viewer
 
 A **Logs** tab exposes the Klipper, Moonraker and application logs. Each can be
