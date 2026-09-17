@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -41,6 +42,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ru.ytkab0bp.beamklipper.ui.components.BrutalButton
+import ru.ytkab0bp.beamklipper.ui.components.brutalScrollbarHorizontal
 import ru.ytkab0bp.beamklipper.ui.theme.Accent
 import ru.ytkab0bp.beamklipper.ui.theme.Ink
 import ru.ytkab0bp.beamklipper.ui.theme.InkMuted
@@ -82,11 +84,13 @@ fun LogsScreen(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
         )
 
+        val tabsScrollState = rememberScrollState()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(bottom = 10.dp),
+                .brutalScrollbarHorizontal(tabsScrollState)
+                .horizontalScroll(tabsScrollState)
+                .padding(bottom = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             sources.forEach { src ->
@@ -107,6 +111,10 @@ fun LogsScreen(modifier: Modifier = Modifier) {
                     )
                 }
             }
+            // Without this, the last tab sits flush against the scrollable
+            // viewport's edge — cut off mid-label before you scroll reads as
+            // clipped/broken rather than "there's more, swipe".
+            Spacer(Modifier.width(4.dp))
         }
 
         Box(

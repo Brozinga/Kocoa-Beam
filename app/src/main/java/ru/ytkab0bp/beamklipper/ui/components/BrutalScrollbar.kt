@@ -40,3 +40,29 @@ fun Modifier.brutalScrollbar(
         cornerRadius = CornerRadius(width.toPx() / 2)
     )
 }
+
+// Horizontal counterpart, for a row that overflows sideways (e.g. the Logs
+// tab strip) rather than a column that overflows downward. Same rule: must
+// go BEFORE .horizontalScroll(state) in the modifier chain. The gesture
+// itself already works via a plain .horizontalScroll() with no indicator at
+// all, but a tab cut off mid-label at the viewport edge reads as clipped/
+// broken rather than "there's more, swipe" — this makes that discoverable.
+fun Modifier.brutalScrollbarHorizontal(
+    state: ScrollState,
+    height: Dp = 4.dp,
+    color: Color = Ink.copy(alpha = 0.35f)
+): Modifier = drawWithContent {
+    drawContent()
+    val viewportWidth = size.width
+    val contentWidth = viewportWidth + state.maxValue
+    if (state.maxValue <= 0 || contentWidth <= 0f) return@drawWithContent
+    val thumbWidth = (viewportWidth / contentWidth * viewportWidth).coerceAtLeast(height.toPx() * 4)
+    val maxThumbOffset = viewportWidth - thumbWidth
+    val thumbOffset = (state.value.toFloat() / state.maxValue) * maxThumbOffset
+    drawRoundRect(
+        color = color,
+        topLeft = Offset(thumbOffset, size.height - height.toPx()),
+        size = Size(thumbWidth, height.toPx()),
+        cornerRadius = CornerRadius(height.toPx() / 2)
+    )
+}

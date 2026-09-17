@@ -65,6 +65,24 @@ object BundleInstaller {
             patchBundledFile(root, assets, "kalico", "klippy/mcu.py") {
                 it.replace("\${TTY_PATH}", ttyPath)
             }
+
+            // moonraker_obico.janus_config_builder calls board_id() at MODULE
+            // IMPORT time (not deferred to actual Janus startup, which never
+            // happens here — see docs/obico.md), and board_id() only guards
+            // the devicetree read with os.path.isfile(), not a try/except
+            // around open(). On Android that file exists but reading it is
+            // denied by SELinux (untrusted_app), so the open() throws
+            // PermissionError, which crashes app.py's entire import chain
+            // before it even reaches main() — no log file gets written, the
+            // service just silently never connects. pi_version() one
+            // function above already wraps the identical read in a bare
+            // except; this mirrors that.
+            patchBundledFile(root, assets, "obico", "moonraker_obico/utils.py") {
+                it.replace(
+                    "def board_id():\n    model_file = \"/sys/firmware/devicetree/base/model\"\n    if os.path.isfile(model_file):\n        with open(model_file, 'r') as file:\n            data = file.read()\n            if \"raspberry\" in data.lower():\n                return \"rpi\"\n            elif \"makerbase\" in data.lower() or \"roc-rk3328-cc\" in data:\n                return \"mks\"\n    return \"NA\"",
+                    "def board_id():\n    model_file = \"/sys/firmware/devicetree/base/model\"\n    try:\n        if os.path.isfile(model_file):\n            with open(model_file, 'r') as file:\n                data = file.read()\n                if \"raspberry\" in data.lower():\n                    return \"rpi\"\n                elif \"makerbase\" in data.lower() or \"roc-rk3328-cc\" in data:\n                    return \"mks\"\n    except OSError:\n        pass\n    return \"NA\""
+                )
+            }
         } catch (e: Exception) {
             throw RuntimeException(e)
         }
