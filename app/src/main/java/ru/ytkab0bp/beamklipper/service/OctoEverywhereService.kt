@@ -109,8 +109,18 @@ class OctoEverywhereService : BasePythonService() {
             val configFolder = File(inst.publicDirectory, "config")
             val logFolder = File(inst.publicDirectory, "logs")
             val moonrakerCfg = File(configFolder, "moonraker.conf")
+            // "Moonraker connected" (which is what gates this service being
+            // bound at all, see KlipperInstance.notifyStateChanged) only means
+            // MoonrakerService's process finished binding — BaseMoonrakerService
+            // writes moonraker.conf asynchronously afterward, on its own
+            // pythonHandler thread, so it isn't guaranteed to exist yet the
+            // instant we get here. Poll instead of aborting on the first miss.
+            val deadline = System.currentTimeMillis() + 15_000L
+            while (!moonrakerCfg.exists() && System.currentTimeMillis() < deadline) {
+                try { Thread.sleep(300) } catch (_: InterruptedException) { break }
+            }
             if (!moonrakerCfg.exists()) {
-                Log.e(TAG, "moonraker.conf missing for instance ${inst.id}, aborting")
+                Log.e(TAG, "moonraker.conf missing for instance ${inst.id} after waiting, aborting")
                 return
             }
 
