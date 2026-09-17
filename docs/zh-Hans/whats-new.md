@@ -41,25 +41,11 @@ Fluidd 和 Mainsail 的静态资源以正确的 MIME 类型提供，因此两个
 
 端口跟随主界面上的前端切换开关，主界面也会显示当前生效的 URL。摄像头端点仍在 `:8889`。
 
-## USB 摄像头支持
+## 摄像头 / USB 摄像头支持
 
-摄像头服务器（**设置 → 摄像头 → 启用摄像头服务器**）现在除了设备自带摄像头外，
-也可以从通用 USB UVC 摄像头推流：
-
-- **摄像头来源**保持**自动**时，插入的 USB 摄像头会优先于内置摄像头，热插拔也会
-  被实时检测到。
-- **设置 → 摄像头 → 摄像头来源**可以固定某一台摄像头（内置前/后摄像头，或指定的
-  USB 摄像头），而不依赖自动检测。
-
-这依赖设备通过 Android 标准 Camera2 API 将 USB 摄像头暴露为外部摄像头
-（`LENS_FACING_EXTERNAL`），大多数基于 AOSP 的设备自 Android 9 起支持此特性，
-但部分厂商定制的相机框架可能不会暴露它。**已在真实硬件上验证：**三星 Galaxy
-S10+（One UI，Android 12）在系统/USB 层面能正确识别 USB UVC 摄像头，但**不会**
-通过 Camera2 暴露它——三星自家的相机 HAL 没有实现外部摄像头 provider。这种情况
-下应用会正常回退到内置摄像头；更接近原生 AOSP 的设备（Pixel、部分 Android
-电视盒/平板）预计能真正暴露该摄像头。
-
-<p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="设置页面显示摄像头与远程访问区块" width="280"></p>
+摄像头服务器现在除了设备自带摄像头外，也可以从通用 USB UVC 摄像头推流，支持
+实时热插拔切换、能区分多个镜头的选择器，以及旋转控制。完整指南（含如何添加到
+Fluidd/Mainsail）：[`webcam.md`](webcam.md)。
 
 ## OctoEverywhere 远程访问
 

@@ -38,18 +38,10 @@ remote access") para o resumo técnico.
 
 O OctoEverywhere encontra a webcam do mesmo jeito que o Fluidd/Mainsail:
 pela própria lista de webcams do Moonraker, não por algo que o Kocoa Beam
-registre automaticamente. Se você também quiser transmitir a câmera da
-impressora pelo OctoEverywhere:
-
-1. Ative **Configurações → Câmera → Enable camera server** (veja
-   [whats-new.md](../whats-new.md) — isso também cobre conectar uma webcam
-   USB).
-2. Adicione uma webcam nas configurações de câmera do próprio Fluidd ou
-   Mainsail, apontando para:
-   - URL de stream: `http://127.0.0.1:8889/`
-   - URL de snapshot: `http://127.0.0.1:8889/snapshot`
-3. O OctoEverywhere pega essa webcam automaticamente na próxima vez que
-   atualizar a lista — sem nenhuma configuração extra do lado dele.
+registre automaticamente. Ative o servidor de câmera e adicione no Fluidd
+ou Mainsail uma vez (a config é compartilhada entre eles) e o
+OctoEverywhere pega automaticamente — guia completo com prints:
+[`webcam.md`](webcam.md).
 
 ## Observações e limitações
 

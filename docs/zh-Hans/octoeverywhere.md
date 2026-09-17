@@ -30,16 +30,9 @@ Kocoa Beam 运行的是真实的 OctoEverywhere Klipper/Moonraker 伴生程序�
 ## 摄像头
 
 OctoEverywhere 查找摄像头画面的方式和 Fluidd/Mainsail 一样：通过 Moonraker 自
-己的摄像头列表，而不是 Kocoa Beam 自动注册的内容。如果你也想通过 OctoEverywhere
-推送打印机摄像头画面：
-
-1. 打开**设置 → 摄像头 → Enable camera server**（参见
-   [whats-new.md](../whats-new.md)，其中也涵盖了插入 USB 摄像头的方法）。
-2. 在 Fluidd 或 Mainsail 自己的摄像头设置中添加一路摄像头，指向：
-   - 流地址：`http://127.0.0.1:8889/`
-   - 快照地址：`http://127.0.0.1:8889/snapshot`
-3. OctoEverywhere 下次刷新摄像头列表时会自动识别它——OctoEverywhere 一侧无需
-   任何额外配置。
+己的摄像头列表，而不是 Kocoa Beam 自动注册的内容。启用摄像头服务器，并在
+Fluidd 或 Mainsail 中添加一次（两者共享同一份配置），OctoEverywhere 就会自动
+识别——完整图文指南见 [`webcam.md`](webcam.md)。
 
 ## 注意事项与限制
 

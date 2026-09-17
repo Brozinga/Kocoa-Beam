@@ -45,31 +45,13 @@ Cada front end tem a própria porta, em vez de uma compartilhada:
 A porta acompanha o seletor de front end na tela principal, que também mostra a
 URL ativa. Os endpoints de câmera continuam em `:8889`.
 
-## Suporte a webcam USB
+## Câmera / suporte a webcam USB
 
-O servidor de câmera (**Configurações → Câmera → Ativar servidor de câmera**)
-agora também transmite de uma webcam USB UVC genérica, além da câmera do
-próprio aparelho:
-
-- Com **Fonte da câmera** em **Automático**, uma webcam USB conectada tem
-  prioridade sobre a câmera embutida, e conectar/desconectar a webcam a
-  quente é detectado em tempo real.
-- **Configurações → Câmera → Fonte da câmera** permite fixar uma câmera
-  específica (frontal/traseira embutida, ou uma webcam USB específica) em vez
-  de depender da detecção automática.
-
-Isso depende do aparelho expor a webcam USB pela API Camera2 padrão do
-Android como câmera externa (`LENS_FACING_EXTERNAL`), suportada pela maioria
-dos aparelhos baseados em AOSP desde o Android 9, mas que algumas camadas de
-câmera de fabricantes podem não expor. **Confirmado em hardware real:** um
-Galaxy S10+ da Samsung (One UI, Android 12) detecta corretamente uma webcam
-USB UVC no nível do sistema/USB, mas **não** a expõe pela Camera2 — o HAL de
-câmera da Samsung não implementa o provedor de câmera externa. O app volta
-para a câmera embutida sem problemas nesse caso; aparelhos mais próximos do
-AOSP puro (Pixel, algumas TV boxes/tablets Android) devem de fato expor a
-webcam.
-
-<p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="Tela de configurações mostrando as seções Câmera e Acesso remoto" width="280"></p>
+O servidor de câmera agora também transmite de uma webcam USB UVC genérica
+(além da câmera do próprio aparelho), com troca a quente ao vivo, um
+seletor que diferencia várias lentes, e um controle de rotação. Guia
+completo, incluindo como adicionar no Fluidd/Mainsail:
+[`webcam.md`](webcam.md).
 
 ## Acesso remoto via OctoEverywhere
 

@@ -5,7 +5,8 @@
 | Document | Contents |
 |---|---|
 | [whats-new.md](whats-new.md) | What this project changes on top of the base application. |
-| [octoeverywhere.md](octoeverywhere.md) | Using the bundled OctoEverywhere companion for remote access — enabling, linking, webcam setup. |
+| [octoeverywhere.md](octoeverywhere.md) | Using the bundled OctoEverywhere companion for remote access — enabling and linking. |
+| [webcam.md](webcam.md) | Camera / USB webcam — source picker, rotation, adding it to Fluidd and Mainsail. |
 | [build-app.md](build-app.md) | Building the APK — one-shot setup script (Linux/macOS/Windows) plus manual steps. |
 | [build-firmware.md](build-firmware.md) | Building MCU firmware for any supported board — script or Docker. |
 | [mods/klipper-addons.md](mods/klipper-addons.md) | The bundled Klipper add-ons (KAMP, LED Effect, Z Calibration, Auto Speed, TMC Autotune) and how to enable them. |

@@ -131,8 +131,26 @@ Bundled component versions in this project:
 | Fluidd | 1.37.5 |
 | Mainsail | 2.19.0 |
 | Happy Hare | v4.0.0 |
+| OctoEverywhere | vendored companion, adapted to run natively on Android |
 
 Opt-in Klipper add-ons are also bundled (KAMP, LED Effect, Z Calibration, Auto Speed, TMC Autotune) — see [`docs/mods/klipper-addons.md`](docs/mods/klipper-addons.md). Full change list: [`docs/whats-new.md`](docs/whats-new.md).
+
+### Recent additions
+
+- **Generic USB webcam support** — auto-detects a plugged-in USB UVC
+  webcam and prefers it over the built-in camera, with live hot-plug
+  switching, a picker that tells multiple lenses apart (main/ultra-wide/
+  telephoto, by 35mm-equivalent focal length), and a rotation control.
+  Guide: [`docs/webcam.md`](docs/webcam.md).
+- **OctoEverywhere remote access** — the real OctoEverywhere Klipper
+  companion, vendored and adapted to run natively as an Android process
+  instead of the systemd service it normally installs as. Toggle in
+  Settings → Remote access, link via QR code. Guide:
+  [`docs/octoeverywhere.md`](docs/octoeverywhere.md).
+- **Multi-language app UI** — added Brazilian Portuguese as a full in-app
+  language, alongside English/Russian/Chinese (Simplified & Traditional).
+- **In-app OctoEverywhere logs** — its log now shows up in the Logs tab
+  alongside Klipper/Moonraker, for troubleshooting without adb.
 
 # Android Extensions
 

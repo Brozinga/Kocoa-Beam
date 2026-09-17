@@ -35,17 +35,9 @@ summary.
 
 OctoEverywhere finds its webcam feed the same way Fluidd/Mainsail do: through
 Moonraker's own webcam list, not through anything Kocoa Beam registers
-automatically. If you also want to stream your printer's camera through
-OctoEverywhere:
-
-1. Turn on **Settings → Camera → Enable camera server** (see
-   [whats-new.md](whats-new.md#usb-webcam-support) — this also covers plugging
-   in a USB webcam).
-2. Add a webcam in Fluidd's or Mainsail's own camera settings, pointing at:
-   - Stream URL: `http://127.0.0.1:8889/`
-   - Snapshot URL: `http://127.0.0.1:8889/snapshot`
-3. OctoEverywhere picks it up automatically the next time it refreshes its
-   webcam list — no extra configuration on the OctoEverywhere side.
+automatically. Enable the camera server and add it to Fluidd or Mainsail once
+(config is shared between them) and OctoEverywhere picks it up automatically —
+full walkthrough with screenshots: [`webcam.md`](webcam.md).
 
 ## Notes and limitations
 
