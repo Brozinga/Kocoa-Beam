@@ -257,6 +257,8 @@ class CameraService : Service() {
                     if (!t.oneShot) {
                         out.write("--camera-frame\r\n".toByteArray())
                         out.write("Content-Type: image/jpeg\r\nContent-Length: $size\r\n\r\n".toByteArray())
+                    } else {
+                        out.write(CameraHandlerThread.snapshotHeaders(size).toByteArray())
                     }
                     out.write(data, 0, size)
                     if (!t.oneShot) {
@@ -480,7 +482,18 @@ class CameraService : Service() {
 
     private class CameraHandlerThread(sock: Socket) : HandlerThread("beam_camera_handler", -10) {
         companion object {
-            private const val HEADERS = "HTTP/1.0 200 OK\r\nConnection: close\r\nMax-Age: 0\r\nExpires: 0\r\nCache-Control: no-cache, private\r\nPragma: no-cache\r\nContent-Type: multipart/x-mixed-replace; boundary=camera-frame\r\n\r\n"
+            // Fluidd/Mainsail's webcam preview fetches the snapshot URL to
+            // validate it; a mismatched multipart Content-Type on what's
+            // actually a single raw JPEG body (no boundary at all) made that
+            // fail even though a plain browser tab or curl -o (which doesn't
+            // care about Content-Type) "worked". CORS headers are also needed
+            // since the webcam viewer's origin (Fluidd's own port) differs
+            // from this server's port.
+            private const val CORS_HEADER = "Access-Control-Allow-Origin: *\r\n"
+            private const val HEADERS = "HTTP/1.0 200 OK\r\nConnection: close\r\nMax-Age: 0\r\nExpires: 0\r\nCache-Control: no-cache, private\r\nPragma: no-cache\r\n$CORS_HEADER" +
+                "Content-Type: multipart/x-mixed-replace; boundary=camera-frame\r\n\r\n"
+            fun snapshotHeaders(size: Int) = "HTTP/1.0 200 OK\r\nConnection: close\r\nCache-Control: no-cache, private\r\nPragma: no-cache\r\n$CORS_HEADER" +
+                "Content-Type: image/jpeg\r\nContent-Length: $size\r\n\r\n"
         }
 
         val socket: Socket = sock
@@ -503,8 +516,13 @@ class CameraService : Service() {
             handler = Handler(looper)
             handler.post {
                 try {
-                    out.write(HEADERS.toByteArray())
-                    out.flush()
+                    // The snapshot response's headers need Content-Length, so
+                    // they're written once the frame size is known, in
+                    // deliverFrame() below — not here.
+                    if (!oneShot) {
+                        out.write(HEADERS.toByteArray())
+                        out.flush()
+                    }
                     handlerThreads.add(this@CameraHandlerThread)
                 } catch (e: Exception) {
                     Log.e(name, "Failed to write headers", e)
