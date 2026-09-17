@@ -68,6 +68,12 @@ class CameraService : Service() {
         private const val PORT = 8889
         private const val ID = 400000
         private const val WRITE_TIMEOUT_MS = 4000L
+        private const val BASE_JPEG_QUALITY = 75
+        private const val MIN_JPEG_QUALITY = 35
+        // ~25fps-equivalent slack over the 33ms a true 30fps frame budget
+        // would allow — avoids reacting to normal jitter, only sustained
+        // congestion (2x this, i.e. <12.5fps-equivalent for one write).
+        private const val FRAME_BUDGET_MS = 40L
         private val IO_POOL = Executors.newSingleThreadExecutor()
         // Only used to force-close a socket whose write() has been blocking
         // past WRITE_TIMEOUT_MS (a client on a bad/dead connection) — plain
@@ -93,6 +99,46 @@ class CameraService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
     private val stoppedByUser = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    // Shrinks new frames automatically when a viewer's network can't keep
+    // up (e.g. a congested 2.4GHz network) instead of leaving the frame
+    // size fixed and letting the per-viewer backpressure in deliverFrame()
+    // just drop whichever frames miss the send-timing window — which is
+    // what turns a transient WiFi hiccup into a hard FPS cliff (30 -> 10 or
+    // less) instead of a smaller, smoother dip. Read from the IO_POOL
+    // encode thread, written from client handler threads (guarded below).
+    @Volatile
+    private var jpegQuality = BASE_JPEG_QUALITY
+    // A per-call streak (reset by any single fast sample) turned out not to
+    // work on real hardware: the OS socket send buffer absorbs a burst of
+    // frames almost instantly even while the client is genuinely
+    // bandwidth-starved, so write() only blocks for real once that buffer
+    // fills — individual samples come back bimodal (near-0ms, then one very
+    // long one), and a streak resets on every fast sample in between even
+    // though the client is consistently only draining ~150KB/s. An EWMA
+    // over ALL samples still converges to the true sustained rate despite
+    // that noise, so react to it instead.
+    private var writeTimeEwmaMs = FRAME_BUDGET_MS.toDouble()
+    private var framesSinceAdjust = 0
+
+    private fun onFrameWriteTiming(elapsedMs: Long) {
+        synchronized(this) {
+            writeTimeEwmaMs = writeTimeEwmaMs * 0.8 + elapsedMs * 0.2
+            framesSinceAdjust++
+            // Let a handful of samples fold into the average before acting
+            // on it, so one adjustment doesn't immediately chase the next.
+            if (framesSinceAdjust < 5) return@synchronized
+            if (writeTimeEwmaMs > FRAME_BUDGET_MS * 1.5 && jpegQuality > MIN_JPEG_QUALITY) {
+                jpegQuality = (jpegQuality - 10).coerceAtLeast(MIN_JPEG_QUALITY)
+                framesSinceAdjust = 0
+                Log.i(TAG, "Sustained slow client writes (avg ${writeTimeEwmaMs.toInt()}ms), lowering JPEG quality to $jpegQuality")
+            } else if (writeTimeEwmaMs < FRAME_BUDGET_MS * 0.5 && jpegQuality < BASE_JPEG_QUALITY) {
+                jpegQuality = (jpegQuality + 5).coerceAtMost(BASE_JPEG_QUALITY)
+                framesSinceAdjust = 0
+                Log.i(TAG, "Client writes fast again (avg ${writeTimeEwmaMs.toInt()}ms), raising JPEG quality to $jpegQuality")
+            }
+        }
+    }
 
     // A USB UVC webcam shows up through Camera2 as a regular camera ID with
     // LENS_FACING_EXTERNAL once the OS/HAL enumerates it (standard since API 28
@@ -267,7 +313,7 @@ class CameraService : Service() {
             val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
             val rotated = Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, true)
             val out = ByteArrayOutputStream()
-            rotated.compress(Bitmap.CompressFormat.JPEG, 75, out)
+            rotated.compress(Bitmap.CompressFormat.JPEG, jpegQuality, out)
             if (rotated != src) rotated.recycle()
             src.recycle()
             out.toByteArray()
@@ -299,6 +345,7 @@ class CameraService : Service() {
                     try { t.socket.close() } catch (_: Exception) {}
                 }, WRITE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 var failed = false
+                val writeStart = System.nanoTime()
                 try {
                     val out = t.out
                     if (!t.oneShot) {
@@ -327,6 +374,10 @@ class CameraService : Service() {
                     t.quit()
                 } else {
                     t.framesInFlight.set(false)
+                    // Snapshot (oneShot) fetches aren't part of the
+                    // continuous stream cadence — only feed live-stream
+                    // write timing into the adaptive quality controller.
+                    onFrameWriteTiming((System.nanoTime() - writeStart) / 1_000_000)
                 }
                 if (done.incrementAndGet() == total) {
                     onRelease()
@@ -345,6 +396,12 @@ class CameraService : Service() {
         if (id == activeCameraId && openCameraDevice != null) return
         closeActiveCamera()
         activeCameraId = id
+        // Start each fresh session at the base quality rather than
+        // carrying over whatever a previous, possibly-congested session
+        // had throttled down to.
+        jpegQuality = BASE_JPEG_QUALITY
+        writeTimeEwmaMs = FRAME_BUDGET_MS.toDouble()
+        framesSinceAdjust = 0
         try {
             cameraManager.openCamera(id, CaptureStateCallback(), cameraHandler)
         } catch (e: CameraAccessException) {
@@ -425,11 +482,15 @@ class CameraService : Service() {
 
                         val yuvImage = YuvImage(buffer, ImageFormat.NV21, img.width, img.height, null)
                         val conv = ByteArrayOutputStream()
-                        // 75 rather than 85: this feed can be relayed through
-                        // OctoEverywhere's cloud connection, not just served
-                        // over LAN — see the cameraWidth/cameraHeight comment
-                        // in Prefs.kt for the measured bandwidth reasoning.
-                        yuvImage.compressToJpeg(Rect(0, 0, img.width, img.height), 75, conv)
+                        // Base quality 75 rather than 85: this feed can be
+                        // relayed through OctoEverywhere's cloud connection,
+                        // not just served over LAN — see the
+                        // cameraWidth/cameraHeight comment in Prefs.kt for
+                        // the measured bandwidth reasoning. jpegQuality can
+                        // drop further (down to MIN_JPEG_QUALITY) on its own
+                        // when a viewer's network is struggling — see
+                        // onFrameWriteTiming().
+                        yuvImage.compressToJpeg(Rect(0, 0, img.width, img.height), jpegQuality, conv)
                         bufferStack.push(buffer)
 
                         // Rotation is the uncommon case (mounting-dependent),
