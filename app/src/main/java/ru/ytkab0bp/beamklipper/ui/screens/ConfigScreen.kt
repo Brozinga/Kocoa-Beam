@@ -14,12 +14,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -577,17 +579,32 @@ private fun BrutalAlertDialog(
     dismissButton: @Composable (() -> Unit)? = null
 ) {
     Dialog(onDismissRequest = onDismissRequest) {
-        Box(modifier = Modifier.padding(20.dp)) {
+        // Dialog windows are bounded to the screen, but a plain wrap-content
+        // Column doesn't know that — on a short viewport (landscape) content
+        // that doesn't fit just gets clipped by the window edge with no way
+        // to reach it, since nothing here was scrollable. BoxWithConstraints
+        // gives the real available height so the middle (text()) can be
+        // capped and scrolled while title/buttons stay fully visible.
+        BoxWithConstraints(modifier = Modifier.padding(20.dp)) {
+            val dialogMaxHeight = maxHeight
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = dialogMaxHeight)
                     .background(Paper, RectangleShape)
                     .border(2.dp, Ink, RectangleShape)
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
                     title()
                     Spacer(Modifier.height(8.dp))
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                    val scrollState = rememberScrollState()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false)
+                            .brutalScrollbar(scrollState)
+                            .verticalScroll(scrollState)
+                    ) {
                         text()
                     }
                     Spacer(Modifier.height(20.dp))

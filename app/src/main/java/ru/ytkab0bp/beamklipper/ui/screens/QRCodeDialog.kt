@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -44,6 +46,7 @@ import androidmads.library.qrgenearator.QRGContents
 import androidmads.library.qrgenearator.QRGEncoder
 import ru.ytkab0bp.beamklipper.R
 import ru.ytkab0bp.beamklipper.ui.components.BrutalButton
+import ru.ytkab0bp.beamklipper.ui.components.brutalScrollbar
 import ru.ytkab0bp.beamklipper.ui.theme.Accent
 import ru.ytkab0bp.beamklipper.ui.theme.Ink
 import ru.ytkab0bp.beamklipper.ui.theme.Paper
@@ -61,6 +64,7 @@ fun QRCodeDialog(
         runCatching { encoder.bitmap }.getOrNull()
     }
 
+    val scrollState = rememberScrollState()
     Dialog(onDismissRequest = onDismiss) {
         Box(modifier = Modifier.padding(20.dp)) {
             Box(
@@ -71,7 +75,10 @@ fun QRCodeDialog(
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(20.dp)
+                    modifier = Modifier
+                        .brutalScrollbar(scrollState)
+                        .verticalScroll(scrollState)
+                        .padding(20.dp)
                 ) {
                     Text(
                         stringResource(R.string.QRCode),
