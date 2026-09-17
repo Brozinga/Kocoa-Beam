@@ -158,11 +158,17 @@ object Prefs {
             AppState.updateAppLanguage()
         }
 
+    // 640x480 rather than 720p: this feed gets relayed through OctoEverywhere's
+    // cloud connection (shared with command/API traffic) when remote access is
+    // on, not just served over LAN. Measured on real hardware: 1280x720 @ ~15fps
+    // JPEG q85 pushed ~1.25MB/s continuously, which saturates a typical uplink
+    // and stalls command execution over the same connection, not just the
+    // webcam feed. 640x480 cuts pixel count (and roughly the bitrate) to ~1/3.
     val cameraWidth: Int
-        get() = getSafeInt("camera_width", 1280)
+        get() = getSafeInt("camera_width", 640)
 
     val cameraHeight: Int
-        get() = getSafeInt("camera_height", 720)
+        get() = getSafeInt("camera_height", 480)
 
     // null means "auto": prefer a LENS_FACING_EXTERNAL (USB UVC webcam) camera
     // when one is plugged in, falling back to the first camera otherwise. See

@@ -371,7 +371,11 @@ class CameraService : Service() {
 
                         val yuvImage = YuvImage(buffer, ImageFormat.NV21, img.width, img.height, null)
                         val conv = ByteArrayOutputStream()
-                        yuvImage.compressToJpeg(Rect(0, 0, img.width, img.height), 85, conv)
+                        // 75 rather than 85: this feed can be relayed through
+                        // OctoEverywhere's cloud connection, not just served
+                        // over LAN — see the cameraWidth/cameraHeight comment
+                        // in Prefs.kt for the measured bandwidth reasoning.
+                        yuvImage.compressToJpeg(Rect(0, 0, img.width, img.height), 75, conv)
                         bufferStack.push(buffer)
 
                         val converted = conv.toByteArray()
