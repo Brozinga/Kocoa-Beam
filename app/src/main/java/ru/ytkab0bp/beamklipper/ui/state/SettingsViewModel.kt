@@ -37,6 +37,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     val cameraEnabled: StateFlow<Boolean> = AppState.cameraEnabled
     val cameraSourceId: StateFlow<String?> = AppState.cameraSourceId
     val cameraRotation: StateFlow<Int> = AppState.cameraRotation
+    val cameraResolution: StateFlow<Int> = AppState.cameraResolution
     val octoEverywhereEnabled: StateFlow<Boolean> = AppState.octoEverywhereEnabled
     val appLanguage: StateFlow<String> = AppState.appLanguage
 
@@ -118,6 +119,18 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     fun cycleCameraRotation() {
         Prefs.cameraRotation = (Prefs.cameraRotation + 90) % 360
     }
+
+    fun cycleCameraResolution() {
+        Prefs.cameraResolution = (Prefs.cameraResolution + 1) % 3
+    }
+
+    fun cameraResolutionTitle(resolution: Int): String = localizedContext().getString(
+        when (resolution) {
+            Prefs.CAMERA_RESOLUTION_MEDIUM -> ru.ytkab0bp.beamklipper.R.string.CameraResolutionMedium
+            Prefs.CAMERA_RESOLUTION_HIGH -> ru.ytkab0bp.beamklipper.R.string.CameraResolutionHigh
+            else -> ru.ytkab0bp.beamklipper.R.string.CameraResolutionLow
+        }
+    )
 
     fun cameraSourceOptions(): List<CameraSourceOption> {
         val options = mutableListOf(

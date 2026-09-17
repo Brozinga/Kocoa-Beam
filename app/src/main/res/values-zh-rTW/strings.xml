@@ -59,6 +59,10 @@
     <string name="CameraSourceBackN">後置相機 %1$d</string>
     <string name="CameraSourceFrontN">前置相機 %1$d</string>
     <string name="CameraRotation">相機旋轉</string>
+    <string name="CameraResolution">相機解析度</string>
+    <string name="CameraResolutionLow">低（640×480）——遠端/OctoEverywhere 最佳</string>
+    <string name="CameraResolutionMedium">中（1280×720）</string>
+    <string name="CameraResolutionHigh">高（1920×1080）——區域網路訊號良好時最佳</string>
     <string name="OctoEverywhereDescription">OctoEverywhere 伴生程式正在背景執行…</string>
     <string name="RemoteAccess">遠端存取</string>
     <string name="LinkOctoEverywhere">連結印表機</string>

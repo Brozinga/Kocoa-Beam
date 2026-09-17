@@ -59,6 +59,10 @@
     <string name="CameraSourceBackN">Задняя камера %1$d</string>
     <string name="CameraSourceFrontN">Передняя камера %1$d</string>
     <string name="CameraRotation">Поворот камеры</string>
+    <string name="CameraResolution">Разрешение камеры</string>
+    <string name="CameraResolutionLow">Низкое (640×480) — лучше для удалённого доступа/OctoEverywhere</string>
+    <string name="CameraResolutionMedium">Среднее (1280×720)</string>
+    <string name="CameraResolutionHigh">Высокое (1920×1080) — лучше при сильной локальной сети</string>
     <string name="OctoEverywhereDescription">Клиент OctoEverywhere работает в фоне…</string>
     <string name="RemoteAccess">Удалённый доступ</string>
     <string name="LinkOctoEverywhere">Привязать принтер</string>

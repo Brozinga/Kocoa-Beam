@@ -159,17 +159,41 @@ object Prefs {
             AppState.updateAppLanguage()
         }
 
-    // 640x480 rather than 720p: this feed gets relayed through OctoEverywhere's
-    // cloud connection (shared with command/API traffic) when remote access is
-    // on, not just served over LAN. Measured on real hardware: 1280x720 @ ~15fps
-    // JPEG q85 pushed ~1.25MB/s continuously, which saturates a typical uplink
-    // and stalls command execution over the same connection, not just the
-    // webcam feed. 640x480 cuts pixel count (and roughly the bitrate) to ~1/3.
+    const val CAMERA_RESOLUTION_LOW = 0
+    const val CAMERA_RESOLUTION_MEDIUM = 1
+    const val CAMERA_RESOLUTION_HIGH = 2
+
+    // Low (640x480) stays the default rather than 720p+: this feed gets
+    // relayed through OctoEverywhere's cloud connection (shared with
+    // command/API traffic) when remote access is on, not just served over
+    // LAN. Measured on real hardware: 1280x720 @ ~15fps JPEG q85 pushed
+    // ~1.25MB/s continuously, which saturates a typical uplink and stalls
+    // command execution over the same connection, not just the webcam feed.
+    // Medium/High are opt-in for users on a good LAN who want more detail.
+    private val CAMERA_RESOLUTION_PRESETS = arrayOf(
+        640 to 480,
+        1280 to 720,
+        1920 to 1080
+    )
+
+    // Cross-process restart story is the same as cameraId/cameraRotation
+    // below: CameraService only reads this at camera-open time, in its own
+    // ":camera" process, so a change needs a restart to take effect.
+    var cameraResolution: Int
+        get() = getSafeInt("camera_resolution", CAMERA_RESOLUTION_LOW)
+            .coerceIn(0, CAMERA_RESOLUTION_PRESETS.size - 1)
+        set(value) {
+            val normalized = value.coerceIn(0, CAMERA_RESOLUTION_PRESETS.size - 1)
+            mPrefs.edit().putInt("camera_resolution", normalized).apply()
+            AppState.updateCameraSourceId()
+            KlipperApp.EVENT_BUS.fireEvent(CameraSourceChangedEvent())
+        }
+
     val cameraWidth: Int
-        get() = getSafeInt("camera_width", 640)
+        get() = CAMERA_RESOLUTION_PRESETS[cameraResolution].first
 
     val cameraHeight: Int
-        get() = getSafeInt("camera_height", 480)
+        get() = CAMERA_RESOLUTION_PRESETS[cameraResolution].second
 
     // null means "auto": prefer a LENS_FACING_EXTERNAL (USB UVC webcam) camera
     // when one is plugged in, falling back to the first camera otherwise. See

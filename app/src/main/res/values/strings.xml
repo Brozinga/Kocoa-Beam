@@ -60,6 +60,10 @@
     <string name="CameraSourceBackN">Back camera %1$d</string>
     <string name="CameraSourceFrontN">Front camera %1$d</string>
     <string name="CameraRotation">Camera rotation</string>
+    <string name="CameraResolution">Camera resolution</string>
+    <string name="CameraResolutionLow">Low (640×480) — best for remote/OctoEverywhere</string>
+    <string name="CameraResolutionMedium">Medium (1280×720)</string>
+    <string name="CameraResolutionHigh">High (1920×1080) — best on a strong LAN</string>
     <string name="OctoEverywhereTitle" translatable="false">OctoEverywhere</string>
     <string name="OctoEverywhereDescription">OctoEverywhere companion is running in background…</string>
     <string name="RemoteAccess">Remote access</string>
