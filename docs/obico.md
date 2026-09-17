@@ -38,9 +38,14 @@ as.
    - Already have a code the *other* way around — one Obico gave you, e.g.
      from an OctoPrint-style manual setup? The same dialog has a field to
      enter it instead.
+
+<p align="center"><img src="images/obico-link-code.png" alt="Link printer dialog showing the generated code, Open link button, and manual-code fallback" width="320"></p>
+
 5. Once linked, your printer shows up in the Obico app/website. To unlink,
    open **Link printer** again — the dialog shows an **Unlink** option once
-   linked.
+   linked. Linking also completes automatically if Obico's app/website finds
+   the printer on its own (same account) — no button in Kocoa Beam to press
+   for that, the dialog just closes on its own once it happens.
 
 ## Webcam
 
@@ -66,11 +71,11 @@ failure detection, independent of that flag.
   connection to your chosen server is unaffected. It's also automatically
   disabled by the companion itself for any self-hosted server, regardless of
   this setting.
-- **Confirmed working on real hardware**: the companion connects to
-  Moonraker and generates a real one-time code from the real Obico Cloud
-  servers, shown live in the dialog. The manual-code path has also been
-  verified against the real servers (a deliberately wrong code correctly
-  comes back "invalid").
+- **Confirmed working end-to-end on real hardware**: the companion
+  connects to Moonraker, generates a real one-time code from the real Obico
+  Cloud servers, and the printer has actually linked through that flow. The
+  manual-code path has also been verified against the real servers (a
+  deliberately wrong code correctly comes back "invalid").
 
 ## Troubleshooting
 

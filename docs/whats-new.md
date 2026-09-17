@@ -95,13 +95,15 @@ either Obico Cloud or a self-hosted Obico Server, whichever URL is set in
 **Obico server**, over the same local Moonraker connection Fluidd/Mainsail
 use — no extra setup on the Moonraker side.
 
-- Turning it on starts the companion (it waits, doing nothing, until
-  linked — no local-network discovery or interactive terminal prompt, which
-  is how Obico's own install script normally links). **Link printer** opens
-  a dialog for a 6-digit code, which you get from the Obico app/website by
-  adding a printer manually; entering it exchanges it for the same
-  auth token Obico's own linking flow would produce. **The API call for this
-  has been verified against the real Obico Cloud servers.**
+- Turning it on starts the companion right away. **Link printer** shows a
+  code the companion generates itself (the same flow Obico's own install
+  script uses for a self-installed Klipper printer, just without a
+  terminal) — enter it in the Obico app/website when adding a printer, or
+  tap **Open link** to jump straight to Obico's own linking page with the
+  code pre-filled. A manual-code field is also available for the reverse
+  case (a code Obico gave you). **Confirmed working end-to-end against the
+  real Obico Cloud servers**, including a printer actually linking through
+  the generated-code flow.
 - Its own crash telemetry (Sentry) is disabled by default, and always
   disabled for a self-hosted server regardless of that setting; the actual
   connection to whichever server you picked is unaffected.

@@ -100,14 +100,16 @@ Cloud ou a um Obico Server auto-hospedado — o que estiver definido em
 **Servidor Obico** — pela mesma conexão local com o Moonraker que
 Fluidd/Mainsail usam, sem configuração extra do lado do Moonraker.
 
-- Ativar o botão inicia o companion (que fica parado, sem fazer nada, até
-  ser vinculado — sem descoberta na rede local nem prompt interativo de
-  terminal, que é como o script de instalação do próprio Obico normalmente
-  vincula). **Vincular impressora** abre uma caixa de diálogo para um
-  código de 6 dígitos, que você obtém no app/site do Obico ao adicionar uma
-  impressora manualmente; digitá-lo troca o código pelo mesmo auth token
-  que o fluxo de vinculação original do Obico produziria. **A chamada de
-  API para isso foi verificada contra os servidores reais do Obico Cloud.**
+- Ativar o botão já inicia o companion. **Vincular impressora** mostra um
+  código que o próprio companion gera (o mesmo fluxo que o script de
+  instalação do Obico usa para uma impressora Klipper auto-instalada, só que
+  sem precisar de terminal) — digite esse código no app/site do Obico ao
+  adicionar uma impressora, ou toque em **Abrir link** para ir direto à
+  página de vinculação do Obico com o código já preenchido. Um campo de
+  código manual também fica disponível para o caso inverso (um código que o
+  Obico te deu). **Confirmado funcionando de ponta a ponta contra os
+  servidores reais do Obico Cloud**, incluindo uma impressora vinculando de
+  fato pelo fluxo de código gerado.
 - A telemetria de erros própria dele (Sentry) fica desativada por padrão, e
   sempre desativada para um servidor auto-hospedado independente dessa
   configuração; a conexão real com o servidor escolhido não é afetada.

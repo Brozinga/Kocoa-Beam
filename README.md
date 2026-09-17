@@ -160,8 +160,9 @@ Opt-in Klipper add-ons are also bundled (KAMP, LED Effect, Z Calibration, Auto S
 - **Obico remote access** — the real Obico Klipper/Moonraker companion,
   vendored and adapted to run natively as an Android process, connecting to
   Obico Cloud or a self-hosted Obico Server. Toggle in Settings → Remote
-  access, link via a 6-digit code from the Obico app/website. Guide:
-  [`docs/obico.md`](docs/obico.md).
+  access; the app generates and shows its own linking code (same flow as
+  Obico's "Klipper, self-installed" onboarding), with a manual-code field as
+  an alternative. Guide: [`docs/obico.md`](docs/obico.md).
 
 # Android Extensions
 

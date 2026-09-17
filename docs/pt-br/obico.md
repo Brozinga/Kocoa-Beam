@@ -41,9 +41,15 @@ normalmente instala.
    - Já tem um código no sentido contrário — um que o Obico te deu, por
      exemplo de uma configuração manual no estilo OctoPrint? A mesma caixa
      de diálogo tem um campo para digitar esse código em vez disso.
+
+<p align="center"><img src="../images/obico-link-code.png" alt="Caixa de diálogo Vincular impressora mostrando o código gerado, o botão Abrir link e o campo de código manual" width="320"></p>
+
 5. Depois de vinculada, sua impressora aparece no app/site do Obico. Para
    desvincular, abra **Vincular impressora** de novo — a caixa de diálogo
-   mostra uma opção **Desvincular** quando já está vinculada.
+   mostra uma opção **Desvincular** quando já está vinculada. A vinculação
+   também se completa sozinha se o app/site do Obico encontrar a impressora
+   automaticamente (mesma conta) — não há botão no Kocoa Beam para isso, a
+   caixa de diálogo simplesmente se fecha quando acontece.
 
 ## Webcam
 
@@ -71,11 +77,12 @@ independente dessa flag.
   padrão; a conexão real com o servidor escolhido não é afetada. Ela também
   é desativada automaticamente pelo próprio companion para qualquer servidor
   auto-hospedado, independente dessa configuração.
-- **Confirmado funcionando em hardware real**: o companion se conecta ao
-  Moonraker e gera um código de uso único real, vindo dos servidores reais
-  do Obico Cloud, mostrado ao vivo na caixa de diálogo. O caminho de código
-  manual também foi verificado contra os servidores reais (um código
-  propositalmente errado retorna "inválido" corretamente).
+- **Confirmado funcionando de ponta a ponta em hardware real**: o companion
+  se conecta ao Moonraker, gera um código de uso único real vindo dos
+  servidores reais do Obico Cloud, e a impressora de fato vinculou por esse
+  caminho. O caminho de código manual também foi verificado contra os
+  servidores reais (um código propositalmente errado retorna "inválido"
+  corretamente).
 
 ## Solução de problemas
 
