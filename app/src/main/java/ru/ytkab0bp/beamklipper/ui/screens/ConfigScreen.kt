@@ -677,12 +677,12 @@ private fun CameraSourceDialog(
 @Composable
 private fun LanguageDialog(onDismiss: () -> Unit) {
     val options = listOf(
-        KlipperApp.INSTANCE.getString(R.string.LanguageSystem),
-        KlipperApp.INSTANCE.getString(R.string.LanguageEnglish),
-        KlipperApp.INSTANCE.getString(R.string.LanguagePortuguese),
-        KlipperApp.INSTANCE.getString(R.string.LanguageRussian),
-        KlipperApp.INSTANCE.getString(R.string.LanguageChineseSimplified),
-        KlipperApp.INSTANCE.getString(R.string.LanguageChineseTraditional)
+        stringResource(R.string.LanguageSystem),
+        stringResource(R.string.LanguageEnglish),
+        stringResource(R.string.LanguagePortuguese),
+        stringResource(R.string.LanguageRussian),
+        stringResource(R.string.LanguageChineseSimplified),
+        stringResource(R.string.LanguageChineseTraditional)
     )
     BrutalAlertDialog(
         onDismissRequest = onDismiss,

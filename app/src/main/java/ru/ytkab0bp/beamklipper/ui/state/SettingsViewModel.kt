@@ -2,6 +2,7 @@ package ru.ytkab0bp.beamklipper.ui.state
 
 import android.app.Application
 import android.content.Context
+import android.content.res.Configuration
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import androidx.lifecycle.AndroidViewModel
@@ -10,8 +11,26 @@ import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.KlipperInstance
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import java.io.File
+import java.util.Locale
 
 class SettingsViewModel(app: Application) : AndroidViewModel(app) {
+    // KlipperApp.INSTANCE.getString() reads the raw Application resources,
+    // which AppCompatDelegate.setApplicationLocales() (Prefs.applyAppLanguage)
+    // does NOT keep in sync on API < 33 — that compat path only wraps
+    // Activity contexts via attachBaseContext, so it falls back to the
+    // device's system locale instead of the user's in-app language choice.
+    // Compose's stringResource() (Activity-scoped) gets this right on its
+    // own; anywhere in this ViewModel that needs a string outside Compose
+    // must build its own locale-correct context instead.
+    private fun localizedContext(): Context {
+        val language = Prefs.appLanguage
+        val base = KlipperApp.INSTANCE
+        if (language == Prefs.LANGUAGE_SYSTEM) return base
+        val config = Configuration(base.resources.configuration)
+        config.setLocale(Locale.forLanguageTag(language))
+        return base.createConfigurationContext(config)
+    }
+
     val engine: StateFlow<String> = AppState.engine
     val webFrontend: StateFlow<String> = AppState.webFrontend
     val usbNaming: StateFlow<Int> = AppState.usbNaming
@@ -97,7 +116,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 
     fun cameraSourceOptions(): List<CameraSourceOption> {
         val options = mutableListOf(
-            CameraSourceOption(null, KlipperApp.INSTANCE.getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceAuto))
+            CameraSourceOption(null, localizedContext().getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceAuto))
         )
         try {
             val manager = KlipperApp.INSTANCE.getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -109,18 +128,18 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun cameraSourceTitle(id: String?): String {
-        if (id == null) return KlipperApp.INSTANCE.getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceAuto)
+        if (id == null) return localizedContext().getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceAuto)
         return try {
             val manager = KlipperApp.INSTANCE.getSystemService(Context.CAMERA_SERVICE) as CameraManager
             if (manager.cameraIdList.contains(id)) cameraLabel(manager, id)
-            else KlipperApp.INSTANCE.getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceAuto)
+            else localizedContext().getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceAuto)
         } catch (_: Throwable) {
-            KlipperApp.INSTANCE.getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceAuto)
+            localizedContext().getString(ru.ytkab0bp.beamklipper.R.string.CameraSourceAuto)
         }
     }
 
     private fun cameraLabel(manager: CameraManager, id: String): String {
-        val ctx = KlipperApp.INSTANCE
+        val ctx = localizedContext()
         val facing = try {
             manager.getCameraCharacteristics(id).get(CameraCharacteristics.LENS_FACING)
         } catch (_: Throwable) { null }
@@ -132,22 +151,22 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun engineTitle(engine: String): String = KlipperApp.INSTANCE.getString(
+    fun engineTitle(engine: String): String = localizedContext().getString(
         if (engine == Prefs.ENGINE_KALICO) ru.ytkab0bp.beamklipper.R.string.Kalico
         else ru.ytkab0bp.beamklipper.R.string.Klipper
     )
 
-    fun frontendTitle(frontend: String): String = KlipperApp.INSTANCE.getString(
+    fun frontendTitle(frontend: String): String = localizedContext().getString(
         if (frontend == Prefs.FRONTEND_FLUIDD) ru.ytkab0bp.beamklipper.R.string.Fluidd
         else ru.ytkab0bp.beamklipper.R.string.Mainsail
     )
 
-    fun usbNamingTitle(naming: Int): String = KlipperApp.INSTANCE.getString(
+    fun usbNamingTitle(naming: Int): String = localizedContext().getString(
         if (naming == Prefs.USB_DEVICE_NAMING_BY_PATH) ru.ytkab0bp.beamklipper.R.string.USBDeviceNamingByPath
         else ru.ytkab0bp.beamklipper.R.string.USBDeviceNamingByVidPid
     )
 
-    fun languageTitle(language: String): String = KlipperApp.INSTANCE.getString(
+    fun languageTitle(language: String): String = localizedContext().getString(
         when (language) {
             Prefs.LANGUAGE_ENGLISH -> ru.ytkab0bp.beamklipper.R.string.LanguageEnglish
             Prefs.LANGUAGE_PORTUGUESE_BRAZIL -> ru.ytkab0bp.beamklipper.R.string.LanguagePortuguese
