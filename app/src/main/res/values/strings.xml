@@ -71,6 +71,32 @@
     <string name="LinkOctoEverywhere">Link printer</string>
     <string name="LinkOctoEverywhereHint">Scan the QR code to connect your OctoEverywhere account</string>
     <string name="LinkOctoEverywhereNotReady">Not ready yet — give it a few seconds after enabling, then try again</string>
+    <string name="ObicoTitle" translatable="false">Obico</string>
+    <string name="ObicoDescription">Obico companion is running in background…</string>
+    <string name="Obico" translatable="false">Obico</string>
+    <string name="EnableObico" translatable="false">Enable Obico</string>
+    <string name="ObicoServer">Obico server</string>
+    <string name="ObicoServerHint">Connect to Obico Cloud, or a self-hosted Obico Server</string>
+    <string name="ObicoServerCloud">Obico Cloud (app.obico.io)</string>
+    <string name="ObicoServerSelfHosted">Self-hosted</string>
+    <string name="ObicoServerSelfHostedHint">https://your-obico-server.example.com</string>
+    <string name="ObicoLink">Link printer</string>
+    <string name="ObicoLinked">Linked ✓</string>
+    <string name="ObicoNotLinked">Not linked</string>
+    <string name="ObicoLinkHint">Open the Obico app or website, add a printer, choose Klipper (self-installed), and enter the code below when asked</string>
+    <string name="ObicoAlreadyLinkedHint">This printer is already linked to your Obico account.</string>
+    <string name="ObicoLinkCodeHint">6-digit code</string>
+    <string name="ObicoLinkAction">Link</string>
+    <string name="ObicoLinking">Linking…</string>
+    <string name="ObicoUnlink">Unlink</string>
+    <string name="ObicoInvalidCode">Invalid or expired code</string>
+    <string name="ObicoNetworkError">Couldn\'t reach the server</string>
+    <string name="ObicoGeneratedCodeLabel">Your printer\'s code</string>
+    <string name="ObicoCodeTapToCopy">Tap the code to copy it</string>
+    <string name="ObicoCodeCopied">Copied</string>
+    <string name="ObicoOpenLink">Open link</string>
+    <string name="ObicoWaitingForCode">Waiting for the companion to generate a code… make sure Enable Obico is on and a printer is running</string>
+    <string name="ObicoManualCodeHint">Already have a code from Obico instead (e.g. OctoPrint-style setup)? Enter it here</string>
     <string name="USB" translatable="false">USB</string>
     <string name="ListUSB">List USB devices</string>
     <string name="ListUSBTitle">USB devices</string>

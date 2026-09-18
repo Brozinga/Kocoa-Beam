@@ -49,8 +49,13 @@ URL ativa. Os endpoints de câmera continuam em `:8889`.
 
 O servidor de câmera agora também transmite de uma webcam USB UVC genérica
 (além da câmera do próprio aparelho), com troca a quente ao vivo, um
-seletor que diferencia várias lentes, e um controle de rotação. Guia
-completo, incluindo como adicionar no Fluidd/Mainsail:
+seletor que diferencia várias lentes, um controle de rotação, e uma
+configuração de resolução (Baixa/Média/Alta). A transmissão também ficou
+mais resiliente numa conexão fraca: um espectador lento não trava mais o
+feed para todo mundo (backpressure por espectador), e a qualidade JPEG
+agora se ajusta automaticamente ao que a rede consegue realmente carregar,
+em vez de um tamanho fixo que simplesmente é descartado sob congestionamento.
+Guia completo, incluindo como adicionar no Fluidd/Mainsail:
 [`webcam.md`](webcam.md).
 
 ## Acesso remoto via OctoEverywhere
@@ -84,6 +89,37 @@ os servidores reais de produção do octoeverywhere.com.
   execução de comandos por compartilhar a mesma conexão retransmitida).
 - Apenas um perfil de impressora pode ficar vinculado ao OctoEverywhere por
   vez, mesmo rodando vários perfis ao mesmo tempo.
+
+## Acesso remoto via Obico
+
+**Configurações → Acesso remoto → Obico** executa o companion real do
+[Obico](https://www.obico.io) (`moonraker-obico`), vendorizado a partir da
+fonte original e adaptado para rodar como processo próprio no Android, em
+vez do serviço systemd que ele normalmente instala. Ele se conecta ao Obico
+Cloud ou a um Obico Server auto-hospedado — o que estiver definido em
+**Servidor Obico** — pela mesma conexão local com o Moonraker que
+Fluidd/Mainsail usam, sem configuração extra do lado do Moonraker.
+
+- Ativar o botão já inicia o companion. **Vincular impressora** mostra um
+  código que o próprio companion gera (o mesmo fluxo que o script de
+  instalação do Obico usa para uma impressora Klipper auto-instalada, só que
+  sem precisar de terminal) — digite esse código no app/site do Obico ao
+  adicionar uma impressora, ou toque em **Abrir link** para ir direto à
+  página de vinculação do Obico com o código já preenchido. Um campo de
+  código manual também fica disponível para o caso inverso (um código que o
+  Obico te deu). **Confirmado funcionando de ponta a ponta contra os
+  servidores reais do Obico Cloud**, incluindo uma impressora vinculando de
+  fato pelo fluxo de código gerado.
+- A telemetria de erros própria dele (Sentry) fica desativada por padrão, e
+  sempre desativada para um servidor auto-hospedado independente dessa
+  configuração; a conexão real com o servidor escolhido não é afetada.
+- Só está disponível um snapshot periódico (~10s) da webcam, não a
+  pré-visualização ao vivo via WebRTC do Obico — que precisa de um processo
+  `janus-gateway` nativo e `ffmpeg`, ambos compilados para desktop
+  Linux/Raspberry Pi no projeto original e não incluídos aqui. Veja
+  [`obico.md`](obico.md) para detalhes.
+- Apenas um perfil de impressora pode ficar vinculado ao Obico por vez,
+  mesmo rodando vários perfis ao mesmo tempo.
 
 ## Visualizador de logs no app
 

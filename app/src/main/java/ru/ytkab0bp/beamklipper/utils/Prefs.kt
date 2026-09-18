@@ -12,6 +12,7 @@ import ru.ytkab0bp.beamklipper.BuildConfig
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.events.CameraSourceChangedEvent
 import ru.ytkab0bp.beamklipper.events.EngineChangedEvent
+import ru.ytkab0bp.beamklipper.events.ObicoConfigChangedEvent
 import ru.ytkab0bp.beamklipper.events.WebFrontendChangedEvent
 import ru.ytkab0bp.beamklipper.serial.UsbSerialManager
 import ru.ytkab0bp.beamklipper.ui.state.AppState
@@ -238,6 +239,47 @@ object Prefs {
             mPrefs.edit().putBoolean("octoeverywhere_enabled", value).apply()
             AppState.updateOctoEverywhereEnabled()
         }
+
+    const val OBICO_CLOUD_URL = "https://app.obico.io"
+
+    var isObicoEnabled: Boolean
+        get() = getSafeBoolean("obico_enabled", false)
+        set(value) {
+            mPrefs.edit().putBoolean("obico_enabled", value).apply()
+            AppState.updateObicoEnabled()
+        }
+
+    // Any URL is accepted here so this doubles as "Obico Cloud or a
+    // self-hosted server" — OBICO_CLOUD_URL is just the default. Changing it
+    // invalidates any existing link (an auth_token is only valid for the
+    // server that issued it), so the token is cleared alongside it.
+    var obicoServerUrl: String
+        get() = getSafeString("obico_server_url", OBICO_CLOUD_URL)
+        set(value) {
+            val normalized = value.trim().trimEnd('/').ifEmpty { OBICO_CLOUD_URL }
+            mPrefs.edit()
+                .putString("obico_server_url", normalized)
+                .remove("obico_auth_token")
+                .apply()
+            AppState.updateObicoServer()
+            KlipperApp.EVENT_BUS.fireEvent(ObicoConfigChangedEvent())
+        }
+
+    // Set once linking succeeds (see SettingsViewModel.linkObico) and read
+    // fresh by ObicoService (its own ":obico" process) at every start, same
+    // cross-process story as cameraId/cameraRotation above.
+    var obicoAuthToken: String?
+        get() = getSafeStringNullable("obico_auth_token")
+        set(value) {
+            mPrefs.edit().apply {
+                if (value == null) remove("obico_auth_token") else putString("obico_auth_token", value)
+            }.apply()
+            AppState.updateObicoServer()
+            KlipperApp.EVENT_BUS.fireEvent(ObicoConfigChangedEvent())
+        }
+
+    val isObicoLinked: Boolean
+        get() = !obicoAuthToken.isNullOrBlank()
 
     var usbDeviceNaming: Int
         get() = getSafeInt("usb_device_naming", USB_DEVICE_NAMING_BY_PATH)

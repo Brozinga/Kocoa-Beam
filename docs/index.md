@@ -6,6 +6,7 @@
 |---|---|
 | [whats-new.md](whats-new.md) | What this project changes on top of the base application. |
 | [octoeverywhere.md](octoeverywhere.md) | Using the bundled OctoEverywhere companion for remote access — enabling and linking. |
+| [obico.md](obico.md) | Using the bundled Obico companion for remote access — enabling and linking, Obico Cloud or self-hosted. |
 | [webcam.md](webcam.md) | Camera / USB webcam — source picker, rotation, adding it to Fluidd and Mainsail. |
 | [build-app.md](build-app.md) | Building the APK — one-shot setup script (Linux/macOS/Windows) plus manual steps. |
 | [build-firmware.md](build-firmware.md) | Building MCU firmware for any supported board — script or Docker. |

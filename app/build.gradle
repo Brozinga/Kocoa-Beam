@@ -115,6 +115,22 @@ android {
                 install "sentry-sdk>=2.20.0,<3"
                 install "pybind11"
                 install "qrcode<=8.0.0"
+
+                // Obico companion (app/src/main/obico), vendored from
+                // github.com/TheSpaghettiDetective/moonraker-obico. Versions
+                // match its requirements.txt; "requests", "distro" and
+                // "sentry-sdk" are already installed above and shared —
+                // its own sentry-sdk==1.23.1 pin is skipped since we always
+                // ship with telemetry opted out (see ObicoService) and its
+                // basic sentry_sdk.init()/capture_exception() usage is stable
+                // across both major versions.
+                install "websocket-client==1.2.1"
+                install "bson==0.5.10"
+                install "backoff==1.11.1"
+                install "pathvalidate==2.5.0"
+                install "sarge==0.1.6"
+                install "flask==2.2.5"
+                install "netaddr==0.8.0"
             }
             pyc {
                 src true
@@ -383,13 +399,15 @@ tasks.register('bundleKlipper') {
         var addonsVersionFile = file('src/main/assets/klipper/addons_version')
         var addonsVersion = addonsVersionFile.exists() ? addonsVersionFile.text.trim() : '0'
         var octoeverywhereVersion = file('src/main/octoeverywhere/vendor_version').exists() ? file('src/main/octoeverywhere/vendor_version').text.trim() : 'none'
-        var version = 'klipper-' + getGitCommitHash(file('src/main/klipper')) + '_kalico-' + kalicoHash + '_moonraker-' + getGitCommitHash(file('src/main/moonraker')) + '_happyhare-' + getGitCommitHash(file('src/main/happyhare')) + '_klipper_tmc_autotune-' + getGitCommitHash(file('src/main/klipper_tmc_autotune')) + '_moonraker_timelapse-' + getGitCommitHash(file('src/main/moonraker_timelapse')) + '_beamext-' + file('src/main/assets/klipper/beam_ext/ext_version').text + '_addons-' + addonsVersion + '_octoeverywhere-' + octoeverywhereVersion
+        var obicoVersion = file('src/main/obico/vendor_version').exists() ? file('src/main/obico/vendor_version').text.trim() : 'none'
+        var version = 'klipper-' + getGitCommitHash(file('src/main/klipper')) + '_kalico-' + kalicoHash + '_moonraker-' + getGitCommitHash(file('src/main/moonraker')) + '_happyhare-' + getGitCommitHash(file('src/main/happyhare')) + '_klipper_tmc_autotune-' + getGitCommitHash(file('src/main/klipper_tmc_autotune')) + '_moonraker_timelapse-' + getGitCommitHash(file('src/main/moonraker_timelapse')) + '_beamext-' + file('src/main/assets/klipper/beam_ext/ext_version').text + '_addons-' + addonsVersion + '_octoeverywhere-' + octoeverywhereVersion + '_obico-' + obicoVersion
         if (!versionFile.exists() || versionFile.text != version) {
             var files = new ArrayList<File>()
             collectFiles(file('src/main/assets/klipper/klippy'), files)
             collectFiles(file('src/main/assets/kalico/klippy'), files)
             collectFiles(file('src/main/assets/moonraker/moonraker'), files)
             collectFiles(file('src/main/assets/octoeverywhere'), files)
+            collectFiles(file('src/main/assets/obico'), files)
             files.each {
                 it.delete()
             }
@@ -601,6 +619,27 @@ tasks.register('bundleKlipper') {
                     Files.copy(it.toPath(), f.toPath(), StandardCopyOption.REPLACE_EXISTING)
                 }
                 index.put('octoeverywhere', arr)
+            }
+
+            // Obico companion (real vendored source, see docs/obico.md). Also
+            // copied wholesale like octoeverywhere above — it's a plain
+            // Python package (moonraker_obico/), not filtered to a klippy/
+            // moonraker component subfolder.
+            arr = new JSONArray()
+            var obicoRoot = file('src/main/obico')
+            if (obicoRoot.exists()) {
+                files.clear()
+                collectFiles(obicoRoot, files)
+                files.each {
+                    if (it.getName() == 'vendor_version') return
+                    var sub = it.getAbsolutePath().substring(obicoRoot.getAbsolutePath().length() + 1).replace('\\', '/')
+                    if (sub.startsWith('.') || sub.contains('/.')) return
+                    arr.put(sub)
+                    var f = new File(assets, 'obico/' + sub)
+                    f.getParentFile().mkdirs()
+                    Files.copy(it.toPath(), f.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                }
+                index.put('obico', arr)
             }
 
             var indexFile = file('src/main/assets/index.json')
