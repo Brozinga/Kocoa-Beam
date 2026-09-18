@@ -98,7 +98,7 @@ class MainActivity : AppCompatActivity() {
                     manager.requestPermission(drv.device,
                         PendingIntent.getBroadcast(this, 0,
                             Intent(UsbSerialManager.ACTION_ON_DEVICE_CONNECTED).setPackage(packageName),
-                            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE))
+                            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
                 } else {
                     sendBroadcast(Intent(UsbSerialManager.ACTION_ON_DEVICE_CONNECTED)
                         .putExtra(UsbManager.EXTRA_DEVICE, drv.device)
