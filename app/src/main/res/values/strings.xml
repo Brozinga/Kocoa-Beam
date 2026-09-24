@@ -150,4 +150,11 @@
     <string name="PrivacyNote">Everything runs on your device. No data leaves your phone.</string>
     <string name="SelectIcon">Choose an icon</string>
     <string name="Done">Done</string>
+    <string name="CameraZoom">Camera zoom</string>
+    <string name="CameraZoomUnsupported">Not supported by this camera</string>
+    <string name="CameraPreview">Camera preview</string>
+    <string name="CameraPreviewPermission">Camera permission is required to show the preview.</string>
+    <string name="CameraPreviewGrant">Grant camera permission</string>
+    <string name="CameraPreviewConnecting">Connecting to the camera server…</string>
+    <string name="CameraPreviewHint">Live view of what Fluidd/Mainsail will see, including rotation, resolution and zoom. Leaving this tab disconnects the preview.</string>
 </resources>

@@ -22,6 +22,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,9 +39,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.ytkab0bp.beamklipper.R
+import ru.ytkab0bp.beamklipper.ui.screens.CameraPreviewScreen
 import ru.ytkab0bp.beamklipper.ui.screens.ConfigScreen
 import ru.ytkab0bp.beamklipper.ui.screens.HomeScreen
 import ru.ytkab0bp.beamklipper.ui.screens.LogsScreen
+import ru.ytkab0bp.beamklipper.ui.state.AppState
 import ru.ytkab0bp.beamklipper.ui.state.MainViewModel
 import ru.ytkab0bp.beamklipper.ui.theme.Accent
 import ru.ytkab0bp.beamklipper.ui.theme.Ink
@@ -48,6 +52,7 @@ import ru.ytkab0bp.beamklipper.ui.theme.Paper
 const val NAV_HOME = 0
 const val NAV_CONFIG = 1
 const val NAV_LOGS = 2
+const val NAV_CAMERA = 3
 
 @Composable
 fun NavHost(
@@ -55,6 +60,11 @@ fun NavHost(
     mainViewModel: MainViewModel
 ) {
     var nav by remember { mutableStateOf(NAV_HOME) }
+    // The preview tab exists only while the camera server is enabled.
+    val cameraEnabled by AppState.cameraEnabled.collectAsStateWithLifecycle()
+    LaunchedEffect(cameraEnabled) {
+        if (!cameraEnabled && nav == NAV_CAMERA) nav = NAV_HOME
+    }
     val statusInsets = WindowInsets.statusBars.asPaddingValues()
     val navBarInsets = WindowInsets.navigationBars.asPaddingValues()
 
@@ -91,6 +101,13 @@ fun NavHost(
                     icon = R.drawable.ic_home_outline_28,
                     onClick = { nav = NAV_HOME }
                 )
+                if (cameraEnabled) {
+                    NavTabButton(
+                        active = nav == NAV_CAMERA,
+                        icon = R.drawable.ic_camera_outline_28,
+                        onClick = { nav = NAV_CAMERA }
+                    )
+                }
                 NavTabButton(
                     active = nav == NAV_LOGS,
                     icon = R.drawable.ic_inbox_outline_28,
@@ -114,6 +131,7 @@ fun NavHost(
             when (nav) {
                 NAV_CONFIG -> ConfigScreen()
                 NAV_LOGS -> LogsScreen()
+                NAV_CAMERA -> CameraPreviewScreen()
                 else -> HomeScreen(
                     isCurrentLauncher = isCurrentLauncher,
                     mainViewModel = mainViewModel

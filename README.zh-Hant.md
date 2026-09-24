@@ -26,6 +26,9 @@
 - [選擇正確的安裝包](#選擇正確的安裝包)
 - [本專案改變了什麼](#本專案改變了什麼)
 - [快速入門](#快速入門)
+- [截圖](#截圖)
+- [韌體（MCU）版本](#韌體mcu版本)
+- [文件](#文件)
 - [安裝 Kocoa Beam 後裝置還能正常使用嗎?](#安裝-kocoa-beam-後裝置還能正常使用嗎)
 - [IP:連接埠是什麼?](#ip連接埠是什麼)
 - [內建了什麼?](#內建了什麼)
@@ -37,6 +40,7 @@
 - [用哪種 USB 集線器?](#用哪種-usb-集線器)
 - [限制](#限制)
 - [建置](#建置)
+- [致謝](#致謝)
 - [貢獻](#貢獻)
 
 </details>
@@ -131,6 +135,51 @@ Kocoa Beam 提供三種 APK 版本：
 > 和應用程式本身的記錄，並可直接複製/分享，不需要電腦 —— 如果上面哪一步沒有
 > 按預期運作，先去看看記錄檔。
 
+## 截圖
+
+**手機/平板上** —— 主畫面、設定（相機、遠端存取、語言）以及應用內 Logs 分頁：
+
+<p align="center">
+  <img src="docs/images/principal-screen.png" alt="主畫面" width="200">
+  <img src="docs/images/camera-octoeverywhere-settings.png" alt="設定畫面" width="200">
+  <img src="docs/images/log-screen.png" alt="Logs 分頁" width="200">
+</p>
+
+**瀏覽器中** —— 由裝置本身提供的網頁介面。Fluidd（系統頁面）與 Mainsail（含即時相機畫面的儀表板）：
+
+<p align="center">
+  <img src="docs/images/fluidd-screen-klipper-version.png" alt="由 Kocoa Beam 提供的 Fluidd" width="420">
+  <img src="docs/images/mainsail-webcam-dashboard.png" alt="含即時相機的 Mainsail" width="300">
+</p>
+
+## 韌體（MCU）版本
+
+印表機主機板（MCU）需要自己的 Klipper 韌體，只需在電腦上燒錄**一次**。有三種方式：
+
+| 方式 | 適合 | 做法 |
+|---|---|---|
+| **預編譯映像檔** | 新手 —— 無需編譯 | 從 [Beam Klipper 韌體發布頁](https://github.com/utkabobr/klipper/releases) 下載對應主機板的檔案（`prebuilt-v0.12.0` 系列涵蓋許多主機板），依主機板慣例燒錄（SD 卡、DFU 等） |
+| **Docker 建置** | 進階使用者、最新 Klipper | `docker compose -f firmware/docker-compose.yml run --rm fw <主機板>` |
+| **本機腳本** | 同上，無需 Docker | `./scripts/build_firmware.sh <主機板>` |
+
+- 建議使用 **Klipper 0.13**，但較舊的預編譯映像檔（如 0.12）同樣可用：Klipper 對 MCU 與主機沒有嚴格的版本鎖定。
+- 沒有你的主機板？用 `make menuconfig` 儲存 `.config`，再傳給建置腳本。
+
+完整指南：[`docs/zh-Hans/build-firmware.md`](docs/zh-Hans/build-firmware.md)（簡體）。
+
+## 文件
+
+以下內容皆在 [`docs/zh-Hans/`](docs/zh-Hans/index.md)（簡體；另有 English 與 Português 版本）：
+
+| 我想要… | 閱讀 |
+|---|---|
+| 了解相較 Beam Klipper 有哪些改動 | [`whats-new.md`](docs/zh-Hans/whats-new.md) |
+| 設定相機、USB 網路攝影機、預覽與縮放 | [`webcam.md`](docs/zh-Hans/webcam.md) |
+| 遠端存取印表機 | [`octoeverywhere.md`](docs/zh-Hans/octoeverywhere.md) · [`obico.md`](docs/zh-Hans/obico.md) |
+| 建置/燒錄 MCU 韌體 | [`build-firmware.md`](docs/zh-Hans/build-firmware.md) |
+| 自行建置 APK | [`build-app.md`](docs/zh-Hans/build-app.md) |
+| 啟用 Klipper 附加模組 / 調校 input shaper | [`mods/klipper-addons.md`](docs/zh-Hans/mods/klipper-addons.md) · [`mods/input-shaper-manual.md`](docs/zh-Hans/mods/input-shaper-manual.md) |
+
 ## 安裝 Kocoa Beam 後裝置還能正常使用嗎?
 
 **當然可以！**
@@ -203,6 +252,9 @@ Kocoa Beam 內建了：
   self-installed」導引流程相同），也提供手動輸入驗證碼的替代方式。指南：
   [`docs/zh-Hans/obico.md`](docs/zh-Hans/obico.md)。
 
+- **相機即時預覽分頁** —— 啟用相機伺服器後，Logs 旁會出現新分頁，顯示即時畫面（與 Fluidd/Mainsail 取得的相同）。需要時會請求相機權限，離開分頁即中斷。
+- **相機縮放** —— 設定 → 相機 → 相機縮放。只提供所選相機真正支援的縮放檔位（手機的超廣角、長焦或 USB 攝影機限制各不相同）。指南：[`docs/zh-Hans/webcam.md`](docs/zh-Hans/webcam.md)（簡體）。
+
 ## Android 擴充功能
 
 Kocoa Beam 提供了一些附加擴充功能，用於控制內建功能。
@@ -258,6 +310,12 @@ Kocoa Beam 提供了一些附加擴充功能，用於控制內建功能。
 - Windows：`.\scripts\setup.ps1`
 
 接著執行 `./gradlew :app:assembleArm64Debug`，或用 Android Studio 開啟專案並點選 Run。詳細步驟、手動設定與簽署見 [`docs/zh-Hans/build-app.md`](docs/zh-Hans/build-app.md)（簡體）。
+
+## 致謝
+
+- **[ProtonKicker/Kocoa-Beam](https://github.com/ProtonKicker)** —— 將應用程式移植到 Kotlin 並重做了介面。
+- **[Beam Klipper](https://github.com/utkabobr/BeamKlipper)** —— 本專案的原始來源。
+- Klipper、Kalico、Moonraker、Fluidd、Mainsail 及其他內建元件歸各自作者所有（見[內建了什麼?](#內建了什麼)）。
 
 ## 貢獻
 

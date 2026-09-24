@@ -27,6 +27,9 @@
 - [Escolhendo o pacote certo](#escolhendo-o-pacote-certo)
 - [O que este projeto altera](#o-que-este-projeto-altera)
 - [Início rápido](#início-rápido)
+- [Capturas de tela](#capturas-de-tela)
+- [Versões do firmware (MCU)](#versões-do-firmware-mcu)
+- [Documentação](#documentação)
 - [Posso usar o aparelho normalmente depois de instalar o Kocoa Beam?](#posso-usar-o-aparelho-normalmente-depois-de-instalar-o-kocoa-beam)
 - [O que é IP:porta?](#o-que-é-ipporta)
 - [O que vem dentro?](#o-que-vem-dentro)
@@ -38,6 +41,7 @@
 - [Qual hub USB usar?](#qual-hub-usb-usar)
 - [Limitações](#limitações)
 - [Compilando](#compilando)
+- [Créditos](#créditos)
 - [Contribuindo](#contribuindo)
 
 </details>
@@ -131,6 +135,51 @@ Este projeto mantém o Klipper / Moonraker / Fluidd / Mainsail / Happy Hare embu
 > compartilhar sem precisar de PC — útil se algo acima não funcionar como
 > esperado.
 
+## Capturas de tela
+
+**No celular/tablet** — tela principal, Configurações (câmera, acesso remoto, idioma) e a aba Logs do app:
+
+<p align="center">
+  <img src="docs/images/principal-screen.png" alt="Tela principal" width="200">
+  <img src="docs/images/camera-octoeverywhere-settings.png" alt="Tela de configurações" width="200">
+  <img src="docs/images/log-screen.png" alt="Aba Logs" width="200">
+</p>
+
+**No navegador** — as interfaces web servidas pelo próprio aparelho. Fluidd (página do sistema) e Mainsail (painel com a webcam ao vivo):
+
+<p align="center">
+  <img src="docs/images/fluidd-screen-klipper-version.png" alt="Fluidd servido pelo Kocoa Beam" width="420">
+  <img src="docs/images/mainsail-webcam-dashboard.png" alt="Mainsail com webcam ao vivo" width="300">
+</p>
+
+## Versões do firmware (MCU)
+
+A placa-mãe da impressora (MCU) precisa do próprio firmware do Klipper, gravado **uma vez** a partir de um PC. Você tem três opções:
+
+| Opção | Ideal para | Como |
+|---|---|---|
+| **Imagem pré-compilada** | Iniciantes — sem compilar | Baixe o arquivo da sua placa nas [releases de firmware do Beam Klipper](https://github.com/utkabobr/klipper/releases) (o conjunto `prebuilt-v0.12.0` cobre muitas placas) e grave como de costume para a sua placa (cartão SD, DFU, …) |
+| **Build com Docker** | Usuários experientes, Klipper mais novo | `docker compose -f firmware/docker-compose.yml run --rm fw <placa>` |
+| **Script local** | Igual, sem Docker | `./scripts/build_firmware.sh <placa>` |
+
+- **Klipper 0.13** é o recomendado, mas imagens pré-compiladas mais antigas (ex.: 0.12) também funcionam: o Klipper não tem trava rígida de versão entre MCU e host.
+- Sua placa não está na lista? Salve um `.config` com `make menuconfig` e passe para o script de build.
+
+Guia completo: [`docs/pt-br/build-firmware.md`](docs/pt-br/build-firmware.md).
+
+## Documentação
+
+Tudo abaixo está em [`docs/pt-br/`](docs/pt-br/index.md) (também em English e 简体中文):
+
+| Eu quero… | Leia |
+|---|---|
+| Ver o que mudou em relação ao Beam Klipper | [`whats-new.md`](docs/pt-br/whats-new.md) |
+| Configurar câmera, webcam USB, pré-visualização e zoom | [`webcam.md`](docs/pt-br/webcam.md) |
+| Acessar a impressora remotamente | [`octoeverywhere.md`](docs/pt-br/octoeverywhere.md) · [`obico.md`](docs/pt-br/obico.md) |
+| Compilar/gravar o firmware do MCU | [`build-firmware.md`](docs/pt-br/build-firmware.md) |
+| Compilar o APK eu mesmo | [`build-app.md`](docs/pt-br/build-app.md) |
+| Ativar add-ons do Klipper / ajustar input shaper | [`mods/klipper-addons.md`](docs/pt-br/mods/klipper-addons.md) · [`mods/input-shaper-manual.md`](docs/pt-br/mods/input-shaper-manual.md) |
+
 ## Posso usar o aparelho normalmente depois de instalar o Kocoa Beam?
 
 **Sim!** Com certeza pode!
@@ -211,6 +260,9 @@ Add-ons opcionais do Klipper também são embutidos (KAMP, LED Effect, Z Calibra
   do Obico), com um campo de código manual como alternativa. Guia:
   [`docs/pt-br/obico.md`](docs/pt-br/obico.md).
 
+- **Aba de pré-visualização da câmera** — com o servidor de câmera ativado, surge uma aba ao lado de Logs mostrando a transmissão ao vivo (a mesma que o Fluidd/Mainsail recebem). Pede a permissão da câmera se necessário e desconecta ao sair da aba.
+- **Zoom da câmera** — Configurações → Câmera → Zoom da câmera. Só aparecem os níveis de zoom que a câmera selecionada realmente suporta (ultra-wide, teleobjetiva ou webcam USB têm limites diferentes). Guia: [`docs/pt-br/webcam.md`](docs/pt-br/webcam.md).
+
 ## Extensões Android
 
 O Kocoa Beam oferece algumas extensões para controlar recursos nativos.
@@ -267,6 +319,12 @@ Setup em um comando (instala o SDK / NDK / CMake fixados, um Python 3.10 para o 
 - Windows: `.\scripts\setup.ps1`
 
 Depois `./gradlew :app:assembleArm64Debug`, ou abra o projeto no Android Studio e clique em Run. Detalhes, passos manuais e assinatura: [`docs/pt-br/build-app.md`](docs/pt-br/build-app.md).
+
+## Créditos
+
+- **[ProtonKicker/Kocoa-Beam](https://github.com/ProtonKicker)** — portou o aplicativo para Kotlin e refez o visual.
+- **[Beam Klipper](https://github.com/utkabobr/BeamKlipper)** — o projeto original que deu origem a este.
+- Klipper, Kalico, Moonraker, Fluidd, Mainsail e os demais componentes embutidos pertencem aos seus respectivos autores (veja [O que vem dentro?](#o-que-vem-dentro)).
 
 ## Contribuindo
 

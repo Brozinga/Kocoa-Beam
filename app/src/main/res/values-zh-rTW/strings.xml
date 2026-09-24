@@ -138,4 +138,11 @@
     <string name="PrivacyNote">所有作業都在裝置上完成。您的資料不會離開手機。</string>
     <string name="SelectIcon">選擇圖示</string>
     <string name="Done">完成</string>
+    <string name="CameraZoom">相機縮放</string>
+    <string name="CameraZoomUnsupported">此相機不支援</string>
+    <string name="CameraPreview">相機預覽</string>
+    <string name="CameraPreviewPermission">顯示預覽需要相機權限。</string>
+    <string name="CameraPreviewGrant">授予相機權限</string>
+    <string name="CameraPreviewConnecting">正在連線至相機伺服器…</string>
+    <string name="CameraPreviewHint">Fluidd/Mainsail 將看到的即時畫面，包含旋轉、解析度與縮放。離開此分頁將中斷預覽。</string>
 </resources>

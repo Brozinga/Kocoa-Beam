@@ -28,6 +28,24 @@ A imagem é servida em `http://<ip-do-aparelho>:8889/` (stream) e
 `http://<ip-do-aparelho>:8889/snapshot` (JPEG único), independente da
 porta que o Fluidd/Mainsail estejam usando.
 
+### Aba de pré-visualização ao vivo
+
+Com o servidor de câmera ativado, uma **aba de câmera** aparece na barra
+superior, ao lado de Logs. Ela mostra a transmissão ao vivo — exatamente o
+que o Fluidd/Mainsail recebem, com rotação, resolução e zoom — para você
+conferir o enquadramento sem abrir o navegador. Na primeira vez o app pede a
+**permissão da câmera** (também pedida ao ativar o servidor). Sair da aba
+desconecta a pré-visualização, então ela não custa nada quando não usada.
+
+### Zoom
+
+**Configurações → Câmera → Zoom da câmera** alterna entre os níveis de zoom
+(1×, 1,5×, 2×, 3× … até 10×). Só são oferecidos os níveis que a **câmera
+selecionada realmente suporta** — ultra-wide, teleobjetiva e webcam USB têm
+limites diferentes — e a lista muda ao trocar a fonte da câmera. Se a câmera
+não tiver zoom, a linha mostra "Não suportado". Alterar o zoom reinicia o
+servidor de câmera rapidamente.
+
 ### Suporte a webcam USB
 
 Isso depende do aparelho expor a webcam USB pela API Camera2 padrão do

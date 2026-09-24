@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.KlipperInstance
+import ru.ytkab0bp.beamklipper.utils.CameraZoom
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import java.io.File
 import java.net.HttpURLConnection
@@ -44,6 +45,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     val cameraSourceId: StateFlow<String?> = AppState.cameraSourceId
     val cameraRotation: StateFlow<Int> = AppState.cameraRotation
     val cameraResolution: StateFlow<Int> = AppState.cameraResolution
+    val cameraZoom: StateFlow<Float> = AppState.cameraZoom
     val octoEverywhereEnabled: StateFlow<Boolean> = AppState.octoEverywhereEnabled
     val obicoEnabled: StateFlow<Boolean> = AppState.obicoEnabled
     val obicoServerUrl: StateFlow<String> = AppState.obicoServerUrl
@@ -242,6 +244,42 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 
     fun cycleCameraResolution() {
         Prefs.cameraResolution = (Prefs.cameraResolution + 1) % 3
+    }
+
+    // Mirrors CameraService.resolveCameraId() so the zoom steps offered here
+    // match the camera the service will really open (a pinned id, else a USB
+    // webcam if one is plugged in, else the first camera).
+    private fun zoomOptionsForSelectedCamera(): List<Float> {
+        return try {
+            val manager = KlipperApp.INSTANCE.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+            val ids = manager.cameraIdList
+            val pinned = Prefs.cameraId
+            val id = when {
+                pinned != null && ids.contains(pinned) -> pinned
+                pinned == null -> ids.firstOrNull {
+                    try {
+                        manager.getCameraCharacteristics(it).get(CameraCharacteristics.LENS_FACING) ==
+                            CameraCharacteristics.LENS_FACING_EXTERNAL
+                    } catch (_: Throwable) { false }
+                } ?: ids.firstOrNull()
+                else -> ids.firstOrNull()
+            } ?: return listOf(1f)
+            CameraZoom.options(CameraZoom.maxZoom(manager.getCameraCharacteristics(id)))
+        } catch (_: Throwable) {
+            listOf(1f)
+        }
+    }
+
+    fun cameraZoomOptions(): List<Float> = zoomOptionsForSelectedCamera()
+
+    // Saved zoom may exceed what a newly selected camera supports.
+    fun effectiveCameraZoom(zoom: Float): Float = CameraZoom.clamp(zoom, zoomOptionsForSelectedCamera())
+
+    fun cycleCameraZoom() {
+        val options = zoomOptionsForSelectedCamera()
+        if (options.size <= 1) return
+        val current = CameraZoom.clamp(Prefs.cameraZoom, options)
+        Prefs.cameraZoom = options[(options.indexOf(current) + 1) % options.size]
     }
 
     fun cameraResolutionTitle(resolution: Int): String = localizedContext().getString(

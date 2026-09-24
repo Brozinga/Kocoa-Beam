@@ -140,4 +140,11 @@
     <string name="PrivacyNote">Tudo roda no seu aparelho. Nenhum dado sai do seu celular.</string>
     <string name="SelectIcon">Escolher um ícone</string>
     <string name="Done">Concluído</string>
+    <string name="CameraZoom">Zoom da câmera</string>
+    <string name="CameraZoomUnsupported">Não suportado por esta câmera</string>
+    <string name="CameraPreview">Pré-visualização da câmera</string>
+    <string name="CameraPreviewPermission">A permissão da câmera é necessária para exibir a pré-visualização.</string>
+    <string name="CameraPreviewGrant">Conceder permissão da câmera</string>
+    <string name="CameraPreviewConnecting">Conectando ao servidor da câmera…</string>
+    <string name="CameraPreviewHint">Visão ao vivo do que o Fluidd/Mainsail vão ver, com rotação, resolução e zoom. Ao sair desta aba a pré-visualização é desconectada.</string>
 </resources>

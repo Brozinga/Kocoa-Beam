@@ -27,6 +27,24 @@ The feed is served at `http://<device-ip>:8889/` (stream) and
 `http://<device-ip>:8889/snapshot` (single JPEG), independent of whichever
 port Fluidd/Mainsail themselves are running on.
 
+### Live preview tab
+
+While the camera server is enabled, a **camera tab** appears in the top bar
+next to Logs. It shows the live stream — exactly what Fluidd/Mainsail
+receive, including rotation, resolution and zoom — so you can check the
+framing without opening a browser. The first time, the app asks for the
+**camera permission** (it is also requested when you enable the server).
+Leaving the tab disconnects the preview, so it costs nothing when unused.
+
+### Zoom
+
+**Settings → Camera → Camera zoom** cycles through the zoom levels
+(1×, 1.5×, 2×, 3× … up to 10×). Only levels the **selected camera really
+supports** are offered — a phone's ultra-wide, tele lens and a USB webcam
+each report different limits — and the list updates when you change the
+camera source. If a camera has no zoom, the row shows "Not supported".
+Changing zoom briefly restarts the camera server.
+
 ### USB webcam support
 
 This relies on the device exposing the USB webcam through Android's
