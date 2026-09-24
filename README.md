@@ -144,6 +144,7 @@ tooling. Details:
   <img src="docs/images/principal-screen.png" alt="Main screen" width="200">
   <img src="docs/images/camera-octoeverywhere-settings.png" alt="Settings screen" width="200">
   <img src="docs/images/log-screen.png" alt="Logs tab" width="200">
+  <img src="docs/images/camera-preview-tab.png" alt="Live camera preview tab" width="200">
 </p>
 
 **In the browser** — the web interfaces served by the device itself. Fluidd (system page) and Mainsail (dashboard with the live webcam):

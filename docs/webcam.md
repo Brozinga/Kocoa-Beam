@@ -36,6 +36,8 @@ framing without opening a browser. The first time, the app asks for the
 **camera permission** (it is also requested when you enable the server).
 Leaving the tab disconnects the preview, so it costs nothing when unused.
 
+<p align="center"><img src="images/camera-preview-tab.png" alt="Live preview tab (zoom 1×) and the same view at 2× zoom" width="240"> <img src="images/camera-preview-zoom.png" alt="Live preview tab (zoom 1×) and the same view at 2× zoom" width="240"></p>
+
 ### Zoom
 
 **Settings → Camera → Camera zoom** cycles through the zoom levels
@@ -44,6 +46,8 @@ supports** are offered — a phone's ultra-wide, tele lens and a USB webcam
 each report different limits — and the list updates when you change the
 camera source. If a camera has no zoom, the row shows "Not supported".
 Changing zoom briefly restarts the camera server.
+
+<p align="center"><img src="images/camera-settings-zoom.png" alt="Camera settings with the new Camera zoom row" width="240"></p>
 
 ### USB webcam support
 

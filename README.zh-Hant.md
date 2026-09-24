@@ -143,6 +143,7 @@ Kocoa Beam 提供三種 APK 版本：
   <img src="docs/images/principal-screen.png" alt="主畫面" width="200">
   <img src="docs/images/camera-octoeverywhere-settings.png" alt="設定畫面" width="200">
   <img src="docs/images/log-screen.png" alt="Logs 分頁" width="200">
+  <img src="docs/images/camera-preview-tab.png" alt="相機即時預覽分頁" width="200">
 </p>
 
 **瀏覽器中** —— 由裝置本身提供的網頁介面。Fluidd（系統頁面）與 Mainsail（含即時相機畫面的儀表板）：

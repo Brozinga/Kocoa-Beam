@@ -87,7 +87,8 @@ fun NavHost(
         ) {
             Text(
                 text = stringResource(R.string.AppName),
-                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 32.sp),
+                // Shrinks when the extra camera tab makes the button row wider.
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = if (cameraEnabled) 26.sp else 32.sp),
                 color = Ink,
                 textAlign = TextAlign.Center,
                 maxLines = 1,

@@ -37,6 +37,8 @@ conferir o enquadramento sem abrir o navegador. Na primeira vez o app pede a
 **permissão da câmera** (também pedida ao ativar o servidor). Sair da aba
 desconecta a pré-visualização, então ela não custa nada quando não usada.
 
+<p align="center"><img src="../images/camera-preview-tab.png" alt="Aba de pré-visualização (zoom 1×) e a mesma visão com zoom 2×" width="240"> <img src="../images/camera-preview-zoom.png" alt="Aba de pré-visualização (zoom 1×) e a mesma visão com zoom 2×" width="240"></p>
+
 ### Zoom
 
 **Configurações → Câmera → Zoom da câmera** alterna entre os níveis de zoom
@@ -45,6 +47,8 @@ selecionada realmente suporta** — ultra-wide, teleobjetiva e webcam USB têm
 limites diferentes — e a lista muda ao trocar a fonte da câmera. Se a câmera
 não tiver zoom, a linha mostra "Não suportado". Alterar o zoom reinicia o
 servidor de câmera rapidamente.
+
+<p align="center"><img src="../images/camera-settings-zoom.png" alt="Configurações da câmera com a nova linha Zoom da câmera" width="240"></p>
 
 ### Suporte a webcam USB
 

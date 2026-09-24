@@ -143,6 +143,7 @@ Este projeto mantém o Klipper / Moonraker / Fluidd / Mainsail / Happy Hare embu
   <img src="docs/images/principal-screen.png" alt="Tela principal" width="200">
   <img src="docs/images/camera-octoeverywhere-settings.png" alt="Tela de configurações" width="200">
   <img src="docs/images/log-screen.png" alt="Aba Logs" width="200">
+  <img src="docs/images/camera-preview-tab.png" alt="Aba de pré-visualização da câmera" width="200">
 </p>
 
 **No navegador** — as interfaces web servidas pelo próprio aparelho. Fluidd (página do sistema) e Mainsail (painel com a webcam ao vivo):
