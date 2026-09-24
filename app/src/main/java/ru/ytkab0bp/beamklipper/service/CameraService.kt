@@ -37,6 +37,7 @@ import android.view.Surface
 import ru.ytkab0bp.beamklipper.BuildConfig
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.R
+import ru.ytkab0bp.beamklipper.utils.CameraZoom
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import ru.ytkab0bp.beamklipper.utils.ViewUtils
 import java.io.BufferedOutputStream
@@ -535,6 +536,7 @@ class CameraService : Service() {
                             captureRequestBuilder!!.set(CaptureRequest.LENS_FOCUS_DISTANCE, Prefs.focusDistance)
                             captureRequestBuilder!!.set(CaptureRequest.CONTROL_AF_MODE,
                                 if (Prefs.isAutofocusEnabled) CaptureRequest.CONTROL_AF_MODE_AUTO else CaptureRequest.CONTROL_AF_MODE_OFF)
+                            CameraZoom.apply(captureRequestBuilder!!, chars, Prefs.cameraZoom)
                             captureRequestBuilder!!.addTarget(reader.surface)
                             session.setRepeatingRequest(captureRequestBuilder!!.build(), null, null)
                         } catch (e: CameraAccessException) {

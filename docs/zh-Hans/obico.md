@@ -32,7 +32,7 @@ Obico Server。Kocoa Beam 运行的是真实的 `moonraker-obico` 伴生程序�
    - 反过来，已经有一个 Obico 给你的验证码了（例如通过 OctoPrint 方式手动
      设置得到的）？同一个对话框里也有一个输入框，可以直接输入这个验证码。
 
-<p align="center"><img src="../images/obico-link-code.png" alt="关联打印机对话框，显示生成的验证码、打开链接按钮和手动验证码输入框" width="320"></p>
+<p align="center"><img src="../images/obico-link-code.png" alt="关联打印机对话框，显示生成的验证码、打开链接按钮和手动验证码输入框" width="384"></p>
 
 5. 关联完成后，你的打印机就会出现在 Obico 应用/网站中。要取消关联，再次打
    开**关联打印机**——已关联时对话框会显示**取消关联**选项。如果 Obico 应用

@@ -7,7 +7,7 @@ both end users and developers. For firmware, see
 [build-firmware.md](build-firmware.md); for the optional Klipper add-ons, see
 [mods/klipper-addons.md](mods/klipper-addons.md).
 
-<p align="center"><img src="images/principal-screen.png" alt="Kocoa Beam main screen" width="280"></p>
+<p align="center"><img src="images/principal-screen.png" alt="Kocoa Beam main screen" width="336"></p>
 
 ## Bundled software
 
@@ -28,8 +28,8 @@ Static assets for Fluidd and Mainsail are served with correct MIME types, so bot
 front ends load fully styled and saving files or configs from the web UI works.
 
 <p align="center">
-  <img src="images/moonraker-version.png" alt="Moonraker welcome page" width="420">
-  <img src="images/fluidd-screen-klipper-version.png" alt="Fluidd system page" width="420">
+  <img src="images/moonraker-version.png" alt="Moonraker welcome page" width="504">
+  <img src="images/fluidd-screen-klipper-version.png" alt="Fluidd system page" width="840">
 </p>
 
 ## Web interface ports
@@ -121,7 +121,7 @@ A **Logs** tab exposes the Klipper, Moonraker and application logs. Each can be
 viewed, copied, downloaded to the device's `Downloads/` folder, or shared — no
 PC or `adb` required.
 
-<p align="center"><img src="images/log-screen.png" alt="Logs tab" width="300"></p>
+<p align="center"><img src="images/log-screen.png" alt="Logs tab" width="360"></p>
 
 ## G-code metadata and thumbnails
 
@@ -131,7 +131,7 @@ Moonraker normally extracts this by launching a separate helper process, which i
 not possible inside an Android application; the extraction was changed to run
 in-process.
 
-<p align="center"><img src="images/thumbnail-metadata.png" alt="Fluidd job list with thumbnail and metadata" width="760"></p>
+<p align="center"><img src="images/thumbnail-metadata.png" alt="Fluidd job list with thumbnail and metadata" width="912"></p>
 
 ## Starting printer.cfg template
 

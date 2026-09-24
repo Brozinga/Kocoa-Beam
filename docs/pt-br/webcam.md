@@ -6,7 +6,7 @@ O Kocoa Beam consegue transmitir uma imagem de câmera ao vivo para
 monitorar a impressão — a câmera do próprio aparelho, ou uma webcam USB
 UVC conectada via OTG/hub.
 
-<p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="Tela de configurações mostrando a seção Câmera" width="280"></p>
+<p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="Tela de configurações mostrando a seção Câmera" width="336"></p>
 
 ## Ativando
 
@@ -27,6 +27,29 @@ UVC conectada via OTG/hub.
 A imagem é servida em `http://<ip-do-aparelho>:8889/` (stream) e
 `http://<ip-do-aparelho>:8889/snapshot` (JPEG único), independente da
 porta que o Fluidd/Mainsail estejam usando.
+
+### Aba de pré-visualização ao vivo
+
+Com o servidor de câmera ativado, uma **aba de câmera** aparece na barra
+superior, ao lado de Logs. Ela mostra a transmissão ao vivo — exatamente o
+que o Fluidd/Mainsail recebem, com rotação, resolução e zoom — para você
+conferir o enquadramento sem abrir o navegador. Na primeira vez o app pede a
+**permissão da câmera** (também pedida ao ativar o servidor). Sair da aba
+desconecta a pré-visualização, então ela não custa nada quando não usada.
+O servidor de câmera segue a chave **Ativar servidor de câmera**, não as impressoras: a pré-visualização funciona mesmo sem nenhuma impressora rodando.
+
+<p align="center"><img src="../images/camera-preview-tab.png" alt="Aba de pré-visualização (zoom 1×) e a mesma visão com zoom 2×" width="288"> <img src="../images/camera-preview-zoom.png" alt="Aba de pré-visualização (zoom 1×) e a mesma visão com zoom 2×" width="288"></p>
+
+### Zoom
+
+**Configurações → Câmera → Zoom da câmera** alterna entre os níveis de zoom
+(1×, 1,5×, 2×, 3× … até 10×). Só são oferecidos os níveis que a **câmera
+selecionada realmente suporta** — ultra-wide, teleobjetiva e webcam USB têm
+limites diferentes — e a lista muda ao trocar a fonte da câmera. Se a câmera
+não tiver zoom, a linha mostra "Não suportado". Alterar o zoom reinicia o
+servidor de câmera rapidamente.
+
+<p align="center"><img src="../images/camera-settings-zoom.png" alt="Configurações da câmera com a nova linha Zoom da câmera" width="288"></p>
 
 ### Suporte a webcam USB
 
@@ -50,7 +73,7 @@ adicionar **uma vez**, em qualquer um dos dois, e aparece nos dois.
 **No Fluidd:** ícone de engrenagem (Configurações) → **Cameras** → **+
 Adicionar Camera**:
 
-<p align="center"><img src="../images/fluidd-cameras-settings.png" alt="Seção de configurações de câmeras do Fluidd" width="640"></p>
+<p align="center"><img src="../images/fluidd-cameras-settings.png" alt="Seção de configurações de câmeras do Fluidd" width="1280"></p>
 
 | Campo | Valor |
 |---|---|
@@ -63,13 +86,15 @@ Use `127.0.0.1` só se estiver vendo o Fluidd num navegador no próprio
 celular; de outro aparelho, use o IP local do celular (o mesmo que já está
 na URL do Fluidd/Mainsail).
 
+<p align="center"><img src="../images/fluidd-dashboard-webcam.png" alt="Painel do Fluidd com a webcam ao vivo" width="1280"></p>
+
 **No Mainsail:** o formulário equivalente fica em **Machine → Webcams**.
 Use o tipo de serviço `UV4L-MJPEG` com as mesmas URLs acima. Como a config
 é compartilhada, adicionar no Fluidd já basta — aqui está a mesma webcam
 já aparecendo ao vivo no dashboard do Mainsail depois de adicionada uma
 vez no Fluidd:
 
-<p align="center"><img src="../images/mainsail-webcam-dashboard.png" alt="Dashboard do Mainsail mostrando a imagem da webcam ao vivo" width="420"></p>
+<p align="center"><img src="../images/mainsail-dashboard-webcam.png" alt="Painel do Mainsail com a webcam ao vivo" width="1280"></p>
 
 O OctoEverywhere pega essa mesma webcam automaticamente também, assim que
 ela estiver configurada aqui — veja [`octoeverywhere.md`](octoeverywhere.md).

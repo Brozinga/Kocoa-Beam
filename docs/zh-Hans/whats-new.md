@@ -6,7 +6,7 @@
 [build-firmware.md](build-firmware.md)；可选的 Klipper 附加模块见
 [mods/klipper-addons.md](mods/klipper-addons.md)。
 
-<p align="center"><img src="../images/principal-screen.png" alt="Kocoa Beam 主界面" width="280"></p>
+<p align="center"><img src="../images/principal-screen.png" alt="Kocoa Beam 主界面" width="336"></p>
 
 ## 内置软件
 
@@ -26,8 +26,8 @@
 Fluidd 和 Mainsail 的静态资源以正确的 MIME 类型提供，因此两个前端都能完整加载样式，从网页界面保存文件或配置也能正常工作。
 
 <p align="center">
-  <img src="../images/moonraker-version.png" alt="Moonraker 欢迎页面" width="420">
-  <img src="../images/fluidd-screen-klipper-version.png" alt="Fluidd 系统页面" width="420">
+  <img src="../images/moonraker-version.png" alt="Moonraker 欢迎页面" width="504">
+  <img src="../images/fluidd-screen-klipper-version.png" alt="Fluidd 系统页面" width="840">
 </p>
 
 ## 网页界面端口
@@ -99,13 +99,13 @@ Fluidd/Mainsail 相同的本地 Moonraker 连接，Moonraker 一侧无需额外�
 
 一个 **Logs** 标签页提供 Klipper、Moonraker 和应用日志。每个都可以查看、复制、下载到设备的 `Downloads/` 目录或分享 —— 不需要 PC 或 `adb`。
 
-<p align="center"><img src="../images/log-screen.png" alt="Logs 标签页" width="300"></p>
+<p align="center"><img src="../images/log-screen.png" alt="Logs 标签页" width="360"></p>
 
 ## g-code 元数据与缩略图
 
 此前不可用，现已修复。上传的任务现在会在 Fluidd/Mainsail 里显示预览图、打印时间、耗材用量和物体列表。Moonraker 通常通过启动一个独立的辅助进程来提取这些信息，而这在 Android 应用内不可行；提取过程被改为在进程内运行。
 
-<p align="center"><img src="../images/thumbnail-metadata.png" alt="Fluidd 任务列表，带缩略图和元数据" width="760"></p>
+<p align="center"><img src="../images/thumbnail-metadata.png" alt="Fluidd 任务列表，带缩略图和元数据" width="912"></p>
 
 ## 起步 printer.cfg 模板
 

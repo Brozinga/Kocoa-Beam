@@ -140,4 +140,11 @@
     <string name="PrivacyNote">Всё работает на вашем устройстве. Данные не покидают ваш телефон.</string>
     <string name="SelectIcon">Выберите иконку</string>
     <string name="Done">Готово</string>
+    <string name="CameraZoom">Зум камеры</string>
+    <string name="CameraZoomUnsupported">Не поддерживается этой камерой</string>
+    <string name="CameraPreview">Просмотр камеры</string>
+    <string name="CameraPreviewPermission">Для просмотра требуется разрешение на использование камеры.</string>
+    <string name="CameraPreviewGrant">Разрешить доступ к камере</string>
+    <string name="CameraPreviewConnecting">Подключение к серверу камеры…</string>
+    <string name="CameraPreviewHint">Живое изображение, которое увидят Fluidd/Mainsail, с учётом поворота, разрешения и зума. При выходе из вкладки просмотр отключается.</string>
 </resources>

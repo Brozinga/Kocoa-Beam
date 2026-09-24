@@ -39,7 +39,7 @@ as.
      from an OctoPrint-style manual setup? The same dialog has a field to
      enter it instead.
 
-<p align="center"><img src="images/obico-link-code.png" alt="Link printer dialog showing the generated code, Open link button, and manual-code fallback" width="320"></p>
+<p align="center"><img src="images/obico-link-code.png" alt="Link printer dialog showing the generated code, Open link button, and manual-code fallback" width="384"></p>
 
 5. Once linked, your printer shows up in the Obico app/website. To unlink,
    open **Link printer** again — the dialog shows an **Unlink** option once

@@ -10,7 +10,7 @@ systemd service it normally installs as — see
 [whats-new.md](whats-new.md#octoeverywhere-remote-access) for the technical
 summary.
 
-<p align="center"><img src="images/camera-octoeverywhere-settings.png" alt="Settings screen showing the Camera and Remote access sections" width="280"></p>
+<p align="center"><img src="images/camera-octoeverywhere-settings.png" alt="Settings screen showing the Camera and Remote access sections" width="336"></p>
 
 ## Enabling it
 

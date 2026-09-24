@@ -5,7 +5,7 @@
 Kocoa Beam 可以推送实时摄像头画面用于监控打印——可以是设备自带的摄像头，也可以
 是通过 OTG/集线器连接的 USB UVC 摄像头。
 
-<p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="设置页面显示摄像头区块" width="280"></p>
+<p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="设置页面显示摄像头区块" width="336"></p>
 
 ## 启用
 
@@ -22,6 +22,23 @@ Kocoa Beam 可以推送实时摄像头画面用于监控打印——可以是设
 画面会通过 `http://<设备-ip>:8889/`（推流）和
 `http://<设备-ip>:8889/snapshot`（单张 JPEG）提供，与 Fluidd/Mainsail 自己使用
 的端口无关。
+
+### 实时预览标签页
+
+启用摄像头服务器后，顶部栏 Logs 旁会出现**摄像头标签页**，显示实时画面 ——
+与 Fluidd/Mainsail 收到的完全一致（含旋转、分辨率和缩放），无需打开浏览器即可确认取景。
+首次使用时应用会请求**摄像头权限**（启用服务器时也会请求）。离开标签页即断开预览，不用时没有任何开销。
+摄像头服务器取决于**启用摄像头服务器**开关而非打印机：即使没有任何打印机在运行，预览也能使用。
+
+<p align="center"><img src="../images/camera-preview-tab.png" alt="实时预览标签页（1×）与 2× 缩放下的同一画面" width="288"> <img src="../images/camera-preview-zoom.png" alt="实时预览标签页（1×）与 2× 缩放下的同一画面" width="288"></p>
+
+### 缩放
+
+**设置 → 摄像头 → 摄像头缩放**在各缩放档位间循环（1×、1.5×、2×、3× … 最高 10×）。
+只提供**所选摄像头真正支持**的档位 —— 手机的超广角、长焦和 USB 摄像头的限制各不相同 ——
+切换摄像头来源后列表会随之更新。若摄像头不支持缩放，该行显示"此摄像头不支持"。修改缩放会短暂重启摄像头服务器。
+
+<p align="center"><img src="../images/camera-settings-zoom.png" alt="摄像头设置中新增的“摄像头缩放”一行" width="288"></p>
 
 ### USB 摄像头支持
 
@@ -40,7 +57,7 @@ Fluidd 和 Mainsail 的摄像头列表来自同一个地方——该打印机配
 
 **在 Fluidd 中：** 齿轮图标（设置）→ **Cameras** → **+ Add Camera**：
 
-<p align="center"><img src="../images/fluidd-cameras-settings.png" alt="Fluidd 的摄像头设置区块" width="640"></p>
+<p align="center"><img src="../images/fluidd-cameras-settings.png" alt="Fluidd 的摄像头设置区块" width="1280"></p>
 
 | 字段 | 值 |
 |---|---|
@@ -52,12 +69,14 @@ Fluidd 和 Mainsail 的摄像头列表来自同一个地方——该打印机配
 只有在手机本机浏览器中查看 Fluidd 时才用 `127.0.0.1`；从其他设备访问时，使用
 手机的局域网 IP（就是你 Fluidd/Mainsail 网址里已经用的那个）。
 
+<p align="center"><img src="../images/fluidd-dashboard-webcam.png" alt="带实时摄像头的 Fluidd 仪表盘" width="1280"></p>
+
 **在 Mainsail 中：** 对应的添加摄像头表单在 **Machine → Webcams** 下，使用
 service 类型 `UV4L-MJPEG`，配合上面同样的 stream/snapshot 地址。由于配置是共
 享的，只在 Fluidd 里添加一次就够了——下面是在 Fluidd 添加一次后，同一个摄像头
 已经在 Mainsail 仪表盘上实时显示的效果：
 
-<p align="center"><img src="../images/mainsail-webcam-dashboard.png" alt="Mainsail 仪表盘显示实时摄像头画面" width="420"></p>
+<p align="center"><img src="../images/mainsail-dashboard-webcam.png" alt="带实时摄像头的 Mainsail 仪表盘" width="1280"></p>
 
 一旦在这里配置好，OctoEverywhere 也会自动使用这同一个摄像头——参见
 [`octoeverywhere.md`](octoeverywhere.md)。

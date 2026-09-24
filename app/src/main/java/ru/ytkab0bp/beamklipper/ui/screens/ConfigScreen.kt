@@ -64,6 +64,7 @@ import kotlinx.coroutines.withContext
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.MainActivity
 import ru.ytkab0bp.beamklipper.R
+import ru.ytkab0bp.beamklipper.utils.CameraZoom
 import ru.ytkab0bp.beamklipper.serial.KlipperProbeTable
 import ru.ytkab0bp.beamklipper.serial.UsbSerialManager
 import ru.ytkab0bp.beamklipper.ui.components.BrutalButton
@@ -92,6 +93,7 @@ fun ConfigScreen(
     val cameraSourceId by viewModel.cameraSourceId.collectAsStateWithLifecycle()
     val cameraRotation by viewModel.cameraRotation.collectAsStateWithLifecycle()
     val cameraResolution by viewModel.cameraResolution.collectAsStateWithLifecycle()
+    val cameraZoom by viewModel.cameraZoom.collectAsStateWithLifecycle()
     val octoEverywhereEnabled by viewModel.octoEverywhereEnabled.collectAsStateWithLifecycle()
     val obicoEnabled by viewModel.obicoEnabled.collectAsStateWithLifecycle()
     val obicoServerUrl by viewModel.obicoServerUrl.collectAsStateWithLifecycle()
@@ -260,6 +262,16 @@ fun ConfigScreen(
             title = stringResource(R.string.CameraResolution),
             value = viewModel.cameraResolutionTitle(cameraResolution),
             onClick = { viewModel.cycleCameraResolution() }
+        )
+        Spacer(Modifier.height(8.dp))
+        // Re-read on every source change: the steps depend on the camera.
+        val zoomOptions = remember(cameraSourceId) { viewModel.cameraZoomOptions() }
+        BrutalValueRow(
+            title = stringResource(R.string.CameraZoom),
+            value = if (zoomOptions.size > 1)
+                CameraZoom.label(viewModel.effectiveCameraZoom(cameraZoom))
+            else stringResource(R.string.CameraZoomUnsupported),
+            onClick = { viewModel.cycleCameraZoom() }
         )
 
         Spacer(Modifier.height(28.dp))

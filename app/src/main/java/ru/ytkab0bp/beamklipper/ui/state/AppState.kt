@@ -76,6 +76,9 @@ object AppState {
     private val _cameraResolution = MutableStateFlow(Prefs.cameraResolution)
     val cameraResolution: StateFlow<Int> = _cameraResolution.distinct()
 
+    private val _cameraZoom = MutableStateFlow(Prefs.cameraZoom)
+    val cameraZoom: StateFlow<Float> = _cameraZoom.distinct()
+
     private val _octoEverywhereEnabled = MutableStateFlow(Prefs.isOctoEverywhereEnabled)
     val octoEverywhereEnabled: StateFlow<Boolean> = _octoEverywhereEnabled.distinct()
 
@@ -102,6 +105,7 @@ object AppState {
         _cameraSourceId.value = Prefs.cameraId
         _cameraRotation.value = Prefs.cameraRotation
         _cameraResolution.value = Prefs.cameraResolution
+        _cameraZoom.value = Prefs.cameraZoom
         _octoEverywhereEnabled.value = Prefs.isOctoEverywhereEnabled
         _obicoEnabled.value = Prefs.isObicoEnabled
         _obicoServerUrl.value = Prefs.obicoServerUrl
@@ -167,6 +171,7 @@ object AppState {
         _cameraSourceId.value = Prefs.cameraId
         _cameraRotation.value = Prefs.cameraRotation
         _cameraResolution.value = Prefs.cameraResolution
+        _cameraZoom.value = Prefs.cameraZoom
         KlipperInstance.onCameraSourceChanged()
     }
 
@@ -182,6 +187,7 @@ object AppState {
         _cameraSourceId.value = Prefs.cameraId
         _cameraRotation.value = Prefs.cameraRotation
         _cameraResolution.value = Prefs.cameraResolution
+        _cameraZoom.value = Prefs.cameraZoom
     }
 
     fun updateOctoEverywhereEnabled() {

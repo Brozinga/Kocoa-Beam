@@ -225,6 +225,18 @@ object Prefs {
             KlipperApp.EVENT_BUS.fireEvent(CameraSourceChangedEvent())
         }
 
+    // Digital/optical zoom ratio applied by CameraService (1.0 = no zoom).
+    // The selectable steps depend on the camera in use — see CameraZoom — so
+    // the service clamps this to whatever the opened camera actually
+    // supports. Same cross-process restart story as cameraId above.
+    var cameraZoom: Float
+        get() = getSafeFloat("camera_zoom", 1f).coerceAtLeast(1f)
+        set(value) {
+            mPrefs.edit().putFloat("camera_zoom", value.coerceAtLeast(1f)).apply()
+            AppState.updateCameraSourceId()
+            KlipperApp.EVENT_BUS.fireEvent(CameraSourceChangedEvent())
+        }
+
     var isCameraEnabled: Boolean
         get() = (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || KlipperApp.INSTANCE.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) &&
                 getSafeBoolean("camera_enabled", false)
