@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.LocalConfiguration
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -78,7 +82,10 @@ fun CameraPreviewScreen() {
         }
     }
 
-    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+    val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    // Scrollable so the preview can never push past the screen in landscape.
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text(stringResource(R.string.CameraPreview), style = MaterialTheme.typography.headlineMedium, color = Ink)
         Spacer(Modifier.height(12.dp))
         if (!granted) {
@@ -92,7 +99,10 @@ fun CameraPreviewScreen() {
         }
         Box(
             Modifier
-                .fillMaxWidth()
+                // Landscape: a fraction of the width keeps the 4:3 box short
+                // enough for the tab bar and hint to stay visible.
+                .fillMaxWidth(if (landscape) 0.4f else 1f)
+                .align(Alignment.CenterHorizontally)
                 .aspectRatio(4f / 3f)
                 .background(Color.Black, RectangleShape)
                 .border(2.dp, Ink, RectangleShape),
