@@ -36,6 +36,7 @@ que o Fluidd/Mainsail recebem, com rotação, resolução e zoom — para você
 conferir o enquadramento sem abrir o navegador. Na primeira vez o app pede a
 **permissão da câmera** (também pedida ao ativar o servidor). Sair da aba
 desconecta a pré-visualização, então ela não custa nada quando não usada.
+O servidor de câmera segue a chave **Ativar servidor de câmera**, não as impressoras: a pré-visualização funciona mesmo sem nenhuma impressora rodando.
 
 <p align="center"><img src="../images/camera-preview-tab.png" alt="Aba de pré-visualização (zoom 1×) e a mesma visão com zoom 2×" width="288"> <img src="../images/camera-preview-zoom.png" alt="Aba de pré-visualização (zoom 1×) e a mesma visão com zoom 2×" width="288"></p>
 

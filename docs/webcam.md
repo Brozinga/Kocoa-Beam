@@ -35,6 +35,7 @@ receive, including rotation, resolution and zoom — so you can check the
 framing without opening a browser. The first time, the app asks for the
 **camera permission** (it is also requested when you enable the server).
 Leaving the tab disconnects the preview, so it costs nothing when unused.
+The camera server follows the **Enable camera server** switch, not the printers: the preview works even when no printer is running.
 
 <p align="center"><img src="images/camera-preview-tab.png" alt="Live preview tab (zoom 1×) and the same view at 2× zoom" width="288"> <img src="images/camera-preview-zoom.png" alt="Live preview tab (zoom 1×) and the same view at 2× zoom" width="288"></p>
 

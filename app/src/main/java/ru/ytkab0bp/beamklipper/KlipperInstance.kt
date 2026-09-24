@@ -466,14 +466,7 @@ class KlipperInstance {
                     }.also { webServerConnection = it }, Context.BIND_AUTO_CREATE)
                 }
 
-                if (Prefs.isCameraEnabled) {
-                    if (cameraServerConnection == null) {
-                        KlipperApp.INSTANCE.bindService(Intent(KlipperApp.INSTANCE, CameraService::class.java), object : ServiceConnection {
-                            override fun onServiceConnected(name: ComponentName, service: IBinder) {}
-                            override fun onServiceDisconnected(name: ComponentName) {}
-                        }.also { cameraServerConnection = it }, Context.BIND_AUTO_CREATE)
-                    }
-                }
+                if (Prefs.isCameraEnabled) bindCameraServer()
 
                 // OctoEverywhere is one companion process for the whole app (like the
                 // camera server), bound to whichever instance happened to reach RUNNING
@@ -678,11 +671,9 @@ class KlipperInstance {
                 KlipperApp.EVENT_BUS.fireEvent(WebStateChangedEvent(ru.ytkab0bp.beamklipper.KlipperInstance.State.IDLE))
                 webServerConnection = null
             }
-            if (cameraServerConnection != null) {
-                try { KlipperApp.INSTANCE.unbindService(cameraServerConnection!!) } catch (_: Throwable) {}
-                try { KlipperApp.INSTANCE.stopService(Intent(KlipperApp.INSTANCE, CameraService::class.java)) } catch (_: Throwable) {}
-                cameraServerConnection = null
-            }
+            // The camera server is intentionally left running: it follows the
+            // "Enable camera server" switch, not whether a printer is running,
+            // so the preview tab keeps working with every printer stopped.
             if (octoEverywhereConnection != null) {
                 try { KlipperApp.INSTANCE.unbindService(octoEverywhereConnection!!) } catch (_: Throwable) {}
                 try { KlipperApp.INSTANCE.stopService(Intent(KlipperApp.INSTANCE, OctoEverywhereService::class.java)) } catch (_: Throwable) {}
@@ -695,14 +686,28 @@ class KlipperInstance {
             }
         }
 
+        // Must run on the main thread (all callers post to mainHandler).
+        private fun bindCameraServer() {
+            if (cameraServerConnection != null) return
+            KlipperApp.INSTANCE.bindService(Intent(KlipperApp.INSTANCE, CameraService::class.java), object : ServiceConnection {
+                override fun onServiceConnected(name: ComponentName, service: IBinder) {}
+                override fun onServiceDisconnected(name: ComponentName) {}
+            }.also { cameraServerConnection = it }, Context.BIND_AUTO_CREATE)
+        }
+
+        // Starts the camera server if it's enabled, with or without a running
+        // printer. Called from the foreground UI (a camera foreground service
+        // can't be started from the background on recent Android versions).
+        @JvmStatic
+        fun ensureCameraServer() {
+            mainHandler.post { if (Prefs.isCameraEnabled) bindCameraServer() }
+        }
+
         @JvmStatic
         fun onCameraConfigChanged(enable: Boolean) {
             mainHandler.post {
-                if (cameraServerConnection == null && slotById.isNotEmpty() && enable) {
-                    KlipperApp.INSTANCE.bindService(Intent(KlipperApp.INSTANCE, CameraService::class.java), object : ServiceConnection {
-                        override fun onServiceConnected(name: ComponentName, service: IBinder) {}
-                        override fun onServiceDisconnected(name: ComponentName) {}
-                    }.also { cameraServerConnection = it }, Context.BIND_AUTO_CREATE)
+                if (enable) {
+                    bindCameraServer()
                 } else if (cameraServerConnection != null && !enable) {
                     try { KlipperApp.INSTANCE.unbindService(cameraServerConnection!!) } catch (_: Throwable) {}
                     try { KlipperApp.INSTANCE.stopService(Intent(KlipperApp.INSTANCE, CameraService::class.java)) } catch (_: Throwable) {}
@@ -721,12 +726,7 @@ class KlipperInstance {
                     try { KlipperApp.INSTANCE.unbindService(cameraServerConnection!!) } catch (_: Throwable) {}
                     try { KlipperApp.INSTANCE.stopService(Intent(KlipperApp.INSTANCE, CameraService::class.java)) } catch (_: Throwable) {}
                     cameraServerConnection = null
-                    if (slotById.isNotEmpty() && Prefs.isCameraEnabled) {
-                        KlipperApp.INSTANCE.bindService(Intent(KlipperApp.INSTANCE, CameraService::class.java), object : ServiceConnection {
-                            override fun onServiceConnected(name: ComponentName, service: IBinder) {}
-                            override fun onServiceDisconnected(name: ComponentName) {}
-                        }.also { cameraServerConnection = it }, Context.BIND_AUTO_CREATE)
-                    }
+                    if (Prefs.isCameraEnabled) bindCameraServer()
                 }
             }
         }
@@ -813,7 +813,6 @@ class KlipperInstance {
             instanceBySlotId.clear()
             slots.clear()
             webServerConnection = null
-            cameraServerConnection = null
             octoEverywhereConnection = null
             obicoConnection = null
         }

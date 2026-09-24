@@ -49,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         isCurrentLauncher = intent?.categories?.contains(Intent.CATEGORY_HOME) == true
 
         AppState.start()
+        KlipperInstance.ensureCameraServer()
 
         processIntent(intent)
 
