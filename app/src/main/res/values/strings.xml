@@ -157,4 +157,15 @@
     <string name="CameraPreviewGrant">Grant camera permission</string>
     <string name="CameraPreviewConnecting">Connecting to the camera server…</string>
     <string name="CameraPreviewHint">Live view of what Fluidd/Mainsail will see, including rotation, resolution and zoom. Leaving this tab disconnects the preview.</string>
+    <string name="LogsSourceNotFound">Log source not found.</string>
+    <string name="LogsLoadFailed">Failed to load: %1$s</string>
+    <string name="LogsLoading">Loading…</string>
+    <string name="LogsRefresh">Refresh</string>
+    <string name="LogsCopy">Copy</string>
+    <string name="LogsCopied">Copied</string>
+    <string name="LogsDownload">Download</string>
+    <string name="LogsSavedTo">Saved to %1$s</string>
+    <string name="LogsSaveFailed">Failed to save</string>
+    <string name="LogsShare">Share</string>
+    <string name="LogsShareTitle">Share logs</string>
 </resources>

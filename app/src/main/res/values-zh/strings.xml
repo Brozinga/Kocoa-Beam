@@ -145,4 +145,15 @@
     <string name="CameraPreviewGrant">授予摄像头权限</string>
     <string name="CameraPreviewConnecting">正在连接摄像头服务器…</string>
     <string name="CameraPreviewHint">Fluidd/Mainsail 将看到的实时画面，包含旋转、分辨率和缩放。离开此标签页将断开预览。</string>
+    <string name="LogsSourceNotFound">未找到日志来源。</string>
+    <string name="LogsLoadFailed">加载失败：%1$s</string>
+    <string name="LogsLoading">加载中…</string>
+    <string name="LogsRefresh">刷新</string>
+    <string name="LogsCopy">复制</string>
+    <string name="LogsCopied">已复制</string>
+    <string name="LogsDownload">下载</string>
+    <string name="LogsSavedTo">已保存到 %1$s</string>
+    <string name="LogsSaveFailed">保存失败</string>
+    <string name="LogsShare">分享</string>
+    <string name="LogsShareTitle">分享日志</string>
 </resources>

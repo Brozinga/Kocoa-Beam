@@ -147,4 +147,15 @@
     <string name="CameraPreviewGrant">Разрешить доступ к камере</string>
     <string name="CameraPreviewConnecting">Подключение к серверу камеры…</string>
     <string name="CameraPreviewHint">Живое изображение, которое увидят Fluidd/Mainsail, с учётом поворота, разрешения и зума. При выходе из вкладки просмотр отключается.</string>
+    <string name="LogsSourceNotFound">Источник журнала не найден.</string>
+    <string name="LogsLoadFailed">Не удалось загрузить: %1$s</string>
+    <string name="LogsLoading">Загрузка…</string>
+    <string name="LogsRefresh">Обновить</string>
+    <string name="LogsCopy">Копировать</string>
+    <string name="LogsCopied">Скопировано</string>
+    <string name="LogsDownload">Скачать</string>
+    <string name="LogsSavedTo">Сохранено: %1$s</string>
+    <string name="LogsSaveFailed">Не удалось сохранить</string>
+    <string name="LogsShare">Поделиться</string>
+    <string name="LogsShareTitle">Поделиться журналами</string>
 </resources>
