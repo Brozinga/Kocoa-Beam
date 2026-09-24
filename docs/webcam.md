@@ -5,7 +5,7 @@
 Kocoa Beam can stream a live camera feed for print monitoring — either the
 device's own built-in camera, or a USB UVC webcam plugged in via OTG/a hub.
 
-<p align="center"><img src="images/camera-octoeverywhere-settings.png" alt="Settings screen showing the Camera section" width="280"></p>
+<p align="center"><img src="images/camera-octoeverywhere-settings.png" alt="Settings screen showing the Camera section" width="336"></p>
 
 ## Enabling it
 
@@ -36,7 +36,7 @@ framing without opening a browser. The first time, the app asks for the
 **camera permission** (it is also requested when you enable the server).
 Leaving the tab disconnects the preview, so it costs nothing when unused.
 
-<p align="center"><img src="images/camera-preview-tab.png" alt="Live preview tab (zoom 1×) and the same view at 2× zoom" width="240"> <img src="images/camera-preview-zoom.png" alt="Live preview tab (zoom 1×) and the same view at 2× zoom" width="240"></p>
+<p align="center"><img src="images/camera-preview-tab.png" alt="Live preview tab (zoom 1×) and the same view at 2× zoom" width="288"> <img src="images/camera-preview-zoom.png" alt="Live preview tab (zoom 1×) and the same view at 2× zoom" width="288"></p>
 
 ### Zoom
 
@@ -47,7 +47,7 @@ each report different limits — and the list updates when you change the
 camera source. If a camera has no zoom, the row shows "Not supported".
 Changing zoom briefly restarts the camera server.
 
-<p align="center"><img src="images/camera-settings-zoom.png" alt="Camera settings with the new Camera zoom row" width="240"></p>
+<p align="center"><img src="images/camera-settings-zoom.png" alt="Camera settings with the new Camera zoom row" width="288"></p>
 
 ### USB webcam support
 
@@ -69,7 +69,7 @@ to add it **once**, in either front end, and it shows up in both.
 
 **In Fluidd:** gear icon (Settings) → **Cameras** → **+ Add Camera**:
 
-<p align="center"><img src="images/fluidd-cameras-settings.png" alt="Fluidd's Cameras settings section" width="640"></p>
+<p align="center"><img src="images/fluidd-cameras-settings.png" alt="Fluidd's Cameras settings section" width="1280"></p>
 
 | Field | Value |
 |---|---|
@@ -82,7 +82,7 @@ Use `127.0.0.1` only if you're viewing Fluidd in a browser on the phone
 itself; from another device, use the phone's LAN IP (the same one already
 in your Fluidd/Mainsail URL).
 
-<p align="center"><img src="images/fluidd-dashboard-webcam.png" alt="Fluidd dashboard with the live webcam" width="640"></p>
+<p align="center"><img src="images/fluidd-dashboard-webcam.png" alt="Fluidd dashboard with the live webcam" width="1280"></p>
 
 **In Mainsail:** the equivalent add-camera form is under **Machine →
 Webcams**. Use service type `UV4L-MJPEG` with the same stream/snapshot
@@ -90,7 +90,7 @@ URLs above. Since the config is shared, adding it in Fluidd is enough —
 here's the same webcam already showing live on Mainsail's dashboard after
 being added once in Fluidd:
 
-<p align="center"><img src="images/mainsail-dashboard-webcam.png" alt="Mainsail dashboard with the live webcam" width="640"></p>
+<p align="center"><img src="images/mainsail-dashboard-webcam.png" alt="Mainsail dashboard with the live webcam" width="1280"></p>
 
 OctoEverywhere picks up this same webcam automatically too, once it's
 configured here — see [`octoeverywhere.md`](octoeverywhere.md).

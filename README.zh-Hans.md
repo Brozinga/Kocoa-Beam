@@ -10,12 +10,12 @@
 **语言: [English](README.md) · [Português (BR)](README.pt-br.md) · [简体中文](README.zh-Hans.md) · [繁體中文](README.zh-Hant.md)**
 
 <p align="center">
-  <img src="docs/images/principal-screen.png" alt="Kocoa Beam 主界面" width="270">
-  <img src="docs/images/log-screen.png" alt="Kocoa Beam Logs 标签页" width="270">
+  <img src="docs/images/principal-screen.png" alt="Kocoa Beam 主界面" width="324">
+  <img src="docs/images/log-screen.png" alt="Kocoa Beam Logs 标签页" width="324">
 </p>
 
 > **只想安装？** 直接到 [Releases 页面](https://github.com/Brozinga/Kocoa-Beam/releases/latest)
-> 下载最新 APK —— 不确定选哪个的话，选 `arm64`（详见下方
+> 下载最新 APK —— 不确定选哪个的话，选 `armv7`（详见下方
 > [选择正确的安装包](#选择正确的安装包)）。
 
 <details>
@@ -93,14 +93,14 @@ Kocoa Beam 提供三个 APK 版本：
 
 | 架构 | 包名称 | 适用场景 |
 |------|--------|----------|
-| arm64 | `KocoaBeam_*_arm64.apk` | 现代 64 位设备（推荐） |
-| armv7 | `KocoaBeam_*_armv7.apk` | 旧式 32 位设备 |
+| arm64 | `KocoaBeam_*_arm64.apk` | 现代 64 位设备 |
+| armv7 | `KocoaBeam_*_armv7.apk` | 旧式 32 位设备 —— 大多数设备均可使用（不确定时推荐） |
 | x86_64 | `KocoaBeam_*_amd64.apk` | x86_64 平板、Chromebook、Android 模拟器 |
 
 **如何检查设备架构：**
 - 前往「设置」>「关于手机」>「架构」或「内核架构」
 - 或安装 CPU 信息 App 如「CPU-Z」或「AIDA64」
-- 如有疑问，先尝试 arm64 — 2015 年后发布的设备大多支持
+- 如有疑问，请选择 armv7 — 它兼容的设备范围最广
 
 ## 本项目改变了什么
 
@@ -139,14 +139,14 @@ Kocoa Beam 提供三个 APK 版本：
 
 | 主界面 | 设置 | 摄像头实时预览 | 缩放（2×） |
 |:-:|:-:|:-:|:-:|
-| <img src="docs/images/app-main-running.png" width="180"> | <img src="docs/images/app-settings-frontend-camera.png" width="180"> | <img src="docs/images/camera-preview-tab.png" width="180"> | <img src="docs/images/camera-preview-zoom.png" width="180"> |
+| <img src="docs/images/app-main-running.png" width="216"> | <img src="docs/images/app-settings-frontend-camera.png" width="216"> | <img src="docs/images/camera-preview-tab.png" width="216"> | <img src="docs/images/camera-preview-zoom.png" width="216"> |
 | 启动/停止打印机，显示网页地址 | 固件引擎、网页前端、USB、摄像头、远程访问、语言 | 新标签页：查看摄像头画面 | 可选缩放档位取决于所选摄像头 |
 
 **浏览器中** —— 网页界面由设备本身提供，此时打印机已连接、摄像头画面为实时：
 
 <p align="center">
-  <img src="docs/images/fluidd-dashboard-webcam.png" alt="带实时摄像头的 Fluidd 仪表盘" width="400">
-  <img src="docs/images/mainsail-dashboard-webcam.png" alt="带实时摄像头的 Mainsail 仪表盘" width="400">
+  <img src="docs/images/fluidd-dashboard-webcam.png" alt="带实时摄像头的 Fluidd 仪表盘" width="800">
+  <img src="docs/images/mainsail-dashboard-webcam.png" alt="带实时摄像头的 Mainsail 仪表盘" width="800">
 </p>
 <p align="center"><sub>Fluidd（左）与 Mainsail（右）</sub></p>
 
@@ -199,7 +199,7 @@ Kocoa Beam 不会对 Android 系统做任何改动，它以普通 Android 应用
 
 Fluidd 推荐使用 mjpeg-**stream**（非 adaptive mjpeg）摄像头配置，Mainsail 推荐 UV4L-MJPEG。
 
-<p align="center"><img src="docs/images/fluidd-screen-klipper-version.png" alt="从主界面显示的 IP:端口打开的 Fluidd" width="480"></p>
+<p align="center"><img src="docs/images/fluidd-screen-klipper-version.png" alt="从主界面显示的 IP:端口打开的 Fluidd" width="960"></p>
 
 ## 内置了什么?
 

@@ -7,7 +7,7 @@ para usuários finais quanto para desenvolvedores. Para firmware, veja
 [build-firmware.md](build-firmware.md); para os add-ons opcionais do Klipper, veja
 [mods/klipper-addons.md](mods/klipper-addons.md).
 
-<p align="center"><img src="../images/principal-screen.png" alt="Tela principal do Kocoa Beam" width="280"></p>
+<p align="center"><img src="../images/principal-screen.png" alt="Tela principal do Kocoa Beam" width="336"></p>
 
 ## Software embutido
 
@@ -29,8 +29,8 @@ corretos, então os dois front ends carregam totalmente estilizados e salvar
 arquivos ou configs pela interface web funciona.
 
 <p align="center">
-  <img src="../images/moonraker-version.png" alt="Página inicial do Moonraker" width="420">
-  <img src="../images/fluidd-screen-klipper-version.png" alt="Página de sistema do Fluidd" width="420">
+  <img src="../images/moonraker-version.png" alt="Página inicial do Moonraker" width="504">
+  <img src="../images/fluidd-screen-klipper-version.png" alt="Página de sistema do Fluidd" width="840">
 </p>
 
 ## Portas da interface web
@@ -127,7 +127,7 @@ Uma aba **Logs** expõe os logs do Klipper, do Moonraker e do aplicativo. Cada u
 pode ser visto, copiado, baixado para a pasta `Downloads/` do dispositivo ou
 compartilhado — sem PC nem `adb`.
 
-<p align="center"><img src="../images/log-screen.png" alt="Aba de Logs" width="300"></p>
+<p align="center"><img src="../images/log-screen.png" alt="Aba de Logs" width="360"></p>
 
 ## Metadados e thumbnails de g-code
 
@@ -137,7 +137,7 @@ Fluidd/Mainsail. O Moonraker normalmente extrai isso iniciando um processo
 auxiliar separado, o que não é possível dentro de um aplicativo Android; a
 extração foi alterada para rodar in-process.
 
-<p align="center"><img src="../images/thumbnail-metadata.png" alt="Lista de trabalhos do Fluidd com thumbnail e metadados" width="760"></p>
+<p align="center"><img src="../images/thumbnail-metadata.png" alt="Lista de trabalhos do Fluidd com thumbnail e metadados" width="912"></p>
 
 ## Template de printer.cfg inicial
 

@@ -42,7 +42,7 @@ normalmente instala.
      exemplo de uma configuração manual no estilo OctoPrint? A mesma caixa
      de diálogo tem um campo para digitar esse código em vez disso.
 
-<p align="center"><img src="../images/obico-link-code.png" alt="Caixa de diálogo Vincular impressora mostrando o código gerado, o botão Abrir link e o campo de código manual" width="320"></p>
+<p align="center"><img src="../images/obico-link-code.png" alt="Caixa de diálogo Vincular impressora mostrando o código gerado, o botão Abrir link e o campo de código manual" width="384"></p>
 
 5. Depois de vinculada, sua impressora aparece no app/site do Obico. Para
    desvincular, abra **Vincular impressora** de novo — a caixa de diálogo

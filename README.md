@@ -10,13 +10,13 @@
 **Read this in other languages: [English](README.md) · [Português (BR)](README.pt-br.md) · [简体中文](README.zh-Hans.md) · [繁體中文](README.zh-Hant.md)**
 
 <p align="center">
-  <img src="docs/images/principal-screen.png" alt="Kocoa Beam main screen" width="270">
-  <img src="docs/images/log-screen.png" alt="Kocoa Beam Logs tab" width="270">
+  <img src="docs/images/principal-screen.png" alt="Kocoa Beam main screen" width="324">
+  <img src="docs/images/log-screen.png" alt="Kocoa Beam Logs tab" width="324">
 </p>
 
 > **Just want to install it?** Grab the latest APK from the
 > [Releases page](https://github.com/Brozinga/Kocoa-Beam/releases/latest) — if
-> you're not sure which one, pick `arm64` (see
+> you're not sure which one, pick `armv7` (see
 > [Choosing the Right Package](#choosing-the-right-package) below).
 
 <details>
@@ -94,14 +94,14 @@ Kocoa Beam provides three APK variants:
 
 | Architecture | Package Name | Use Case |
 |-------------|--------------|----------|
-| arm64 | `KocoaBeam_*_arm64.apk` | Modern 64-bit devices (recommended) |
-| armv7 | `KocoaBeam_*_armv7.apk` | Older 32-bit devices |
+| arm64 | `KocoaBeam_*_arm64.apk` | Modern 64-bit devices |
+| armv7 | `KocoaBeam_*_armv7.apk` | Older 32-bit devices — works on most devices (recommended if unsure) |
 | x86_64 | `KocoaBeam_*_amd64.apk` | x86_64 tablets, Chromebooks, Android emulators |
 
 **How to check your device architecture:**
 - **Settings > About Phone > Architecture** or **Kernel Architecture**
 - Or install a CPU info app like "CPU-Z" or "AIDA64"
-- If unsure, try arm64 first — most devices released after 2015 support it
+- If unsure, pick armv7 — it is the package that works on the widest range of devices
 
 ## What this project changes
 
@@ -142,14 +142,14 @@ tooling. Details:
 
 | Main screen | Settings | Live camera preview | Zoom (2×) |
 |:-:|:-:|:-:|:-:|
-| <img src="docs/images/app-main-running.png" width="180"> | <img src="docs/images/app-settings-frontend-camera.png" width="180"> | <img src="docs/images/camera-preview-tab.png" width="180"> | <img src="docs/images/camera-preview-zoom.png" width="180"> |
+| <img src="docs/images/app-main-running.png" width="216"> | <img src="docs/images/app-settings-frontend-camera.png" width="216"> | <img src="docs/images/camera-preview-tab.png" width="216"> | <img src="docs/images/camera-preview-zoom.png" width="216"> |
 | Start/stop printers; shows the web address | Firmware engine, web front end, USB, camera, remote access, language | New tab: see what the camera sees | Zoom levels offered depend on the selected camera |
 
 **In the browser** — the web interfaces are served by the device itself, with the printer connected and the webcam live:
 
 <p align="center">
-  <img src="docs/images/fluidd-dashboard-webcam.png" alt="Fluidd dashboard with live webcam" width="400">
-  <img src="docs/images/mainsail-dashboard-webcam.png" alt="Mainsail dashboard with live webcam" width="400">
+  <img src="docs/images/fluidd-dashboard-webcam.png" alt="Fluidd dashboard with live webcam" width="800">
+  <img src="docs/images/mainsail-dashboard-webcam.png" alt="Mainsail dashboard with live webcam" width="800">
 </p>
 <p align="center"><sub>Fluidd (left) and Mainsail (right)</sub></p>
 
@@ -203,7 +203,7 @@ Camera URLs:
 
 Recommended camera config is mjpeg-**stream** (Not adaptive mjpeg) for Fluidd and UV4L-MJPEG for Mainsail
 
-<p align="center"><img src="docs/images/fluidd-screen-klipper-version.png" alt="Fluidd opened from the IP:port shown on the main screen" width="480"></p>
+<p align="center"><img src="docs/images/fluidd-screen-klipper-version.png" alt="Fluidd opened from the IP:port shown on the main screen" width="960"></p>
 
 ## What's inside?
 
