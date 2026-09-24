@@ -68,12 +68,14 @@ Fluidd 和 Mainsail 的摄像头列表来自同一个地方——该打印机配
 只有在手机本机浏览器中查看 Fluidd 时才用 `127.0.0.1`；从其他设备访问时，使用
 手机的局域网 IP（就是你 Fluidd/Mainsail 网址里已经用的那个）。
 
+<p align="center"><img src="../images/fluidd-dashboard-webcam.png" alt="带实时摄像头的 Fluidd 仪表盘" width="640"></p>
+
 **在 Mainsail 中：** 对应的添加摄像头表单在 **Machine → Webcams** 下，使用
 service 类型 `UV4L-MJPEG`，配合上面同样的 stream/snapshot 地址。由于配置是共
 享的，只在 Fluidd 里添加一次就够了——下面是在 Fluidd 添加一次后，同一个摄像头
 已经在 Mainsail 仪表盘上实时显示的效果：
 
-<p align="center"><img src="../images/mainsail-webcam-dashboard.png" alt="Mainsail 仪表盘显示实时摄像头画面" width="420"></p>
+<p align="center"><img src="../images/mainsail-dashboard-webcam.png" alt="带实时摄像头的 Mainsail 仪表盘" width="640"></p>
 
 一旦在这里配置好，OctoEverywhere 也会自动使用这同一个摄像头——参见
 [`octoeverywhere.md`](octoeverywhere.md)。

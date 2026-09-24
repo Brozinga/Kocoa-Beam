@@ -137,21 +137,22 @@ Este projeto mantém o Klipper / Moonraker / Fluidd / Mainsail / Happy Hare embu
 
 ## Capturas de tela
 
-**No celular/tablet** — tela principal, Configurações (câmera, acesso remoto, idioma) e a aba Logs do app:
+**No celular/tablet**
+
+| Tela principal | Configurações | Pré-visualização da câmera | Zoom (2×) |
+|:-:|:-:|:-:|:-:|
+| <img src="docs/images/app-main-running.png" width="180"> | <img src="docs/images/app-settings-frontend-camera.png" width="180"> | <img src="docs/images/camera-preview-tab.png" width="180"> | <img src="docs/images/camera-preview-zoom.png" width="180"> |
+| Inicia/para as impressoras; mostra o endereço web | Motor de firmware, front end web, USB, câmera, acesso remoto, idioma | Nova aba: veja o que a câmera enxerga | Os níveis de zoom dependem da câmera selecionada |
+
+**No navegador** — as interfaces web são servidas pelo próprio aparelho, com a impressora conectada e a webcam ao vivo:
 
 <p align="center">
-  <img src="docs/images/principal-screen.png" alt="Tela principal" width="200">
-  <img src="docs/images/camera-octoeverywhere-settings.png" alt="Tela de configurações" width="200">
-  <img src="docs/images/log-screen.png" alt="Aba Logs" width="200">
-  <img src="docs/images/camera-preview-tab.png" alt="Aba de pré-visualização da câmera" width="200">
+  <img src="docs/images/fluidd-dashboard-webcam.png" alt="Painel do Fluidd com webcam ao vivo" width="400">
+  <img src="docs/images/mainsail-dashboard-webcam.png" alt="Painel do Mainsail com webcam ao vivo" width="400">
 </p>
+<p align="center"><sub>Fluidd (esquerda) e Mainsail (direita)</sub></p>
 
-**No navegador** — as interfaces web servidas pelo próprio aparelho. Fluidd (página do sistema) e Mainsail (painel com a webcam ao vivo):
-
-<p align="center">
-  <img src="docs/images/fluidd-screen-klipper-version.png" alt="Fluidd servido pelo Kocoa Beam" width="420">
-  <img src="docs/images/mainsail-webcam-dashboard.png" alt="Mainsail com webcam ao vivo" width="300">
-</p>
+A aba **Logs** do app aparece no topo desta página.
 
 ## Versões do firmware (MCU)
 

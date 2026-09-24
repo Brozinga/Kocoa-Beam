@@ -135,21 +135,22 @@ Kocoa Beam 提供三个 APK 版本：
 
 ## 截图
 
-**手机/平板上** —— 主界面、设置（摄像头、远程访问、语言）以及应用内 Logs 标签页：
+**手机/平板上**
+
+| 主界面 | 设置 | 摄像头实时预览 | 缩放（2×） |
+|:-:|:-:|:-:|:-:|
+| <img src="docs/images/app-main-running.png" width="180"> | <img src="docs/images/app-settings-frontend-camera.png" width="180"> | <img src="docs/images/camera-preview-tab.png" width="180"> | <img src="docs/images/camera-preview-zoom.png" width="180"> |
+| 启动/停止打印机，显示网页地址 | 固件引擎、网页前端、USB、摄像头、远程访问、语言 | 新标签页：查看摄像头画面 | 可选缩放档位取决于所选摄像头 |
+
+**浏览器中** —— 网页界面由设备本身提供，此时打印机已连接、摄像头画面为实时：
 
 <p align="center">
-  <img src="docs/images/principal-screen.png" alt="主界面" width="200">
-  <img src="docs/images/camera-octoeverywhere-settings.png" alt="设置界面" width="200">
-  <img src="docs/images/log-screen.png" alt="Logs 标签页" width="200">
-  <img src="docs/images/camera-preview-tab.png" alt="摄像头实时预览标签页" width="200">
+  <img src="docs/images/fluidd-dashboard-webcam.png" alt="带实时摄像头的 Fluidd 仪表盘" width="400">
+  <img src="docs/images/mainsail-dashboard-webcam.png" alt="带实时摄像头的 Mainsail 仪表盘" width="400">
 </p>
+<p align="center"><sub>Fluidd（左）与 Mainsail（右）</sub></p>
 
-**浏览器中** —— 由设备本身提供的网页界面。Fluidd（系统页面）与 Mainsail（带实时摄像头画面的仪表盘）：
-
-<p align="center">
-  <img src="docs/images/fluidd-screen-klipper-version.png" alt="由 Kocoa Beam 提供的 Fluidd" width="420">
-  <img src="docs/images/mainsail-webcam-dashboard.png" alt="带实时摄像头的 Mainsail" width="300">
-</p>
+应用内 **Logs** 标签页见本页顶部。
 
 ## 固件（MCU）版本
 

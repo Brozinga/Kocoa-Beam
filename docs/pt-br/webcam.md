@@ -85,13 +85,15 @@ Use `127.0.0.1` só se estiver vendo o Fluidd num navegador no próprio
 celular; de outro aparelho, use o IP local do celular (o mesmo que já está
 na URL do Fluidd/Mainsail).
 
+<p align="center"><img src="../images/fluidd-dashboard-webcam.png" alt="Painel do Fluidd com a webcam ao vivo" width="640"></p>
+
 **No Mainsail:** o formulário equivalente fica em **Machine → Webcams**.
 Use o tipo de serviço `UV4L-MJPEG` com as mesmas URLs acima. Como a config
 é compartilhada, adicionar no Fluidd já basta — aqui está a mesma webcam
 já aparecendo ao vivo no dashboard do Mainsail depois de adicionada uma
 vez no Fluidd:
 
-<p align="center"><img src="../images/mainsail-webcam-dashboard.png" alt="Dashboard do Mainsail mostrando a imagem da webcam ao vivo" width="420"></p>
+<p align="center"><img src="../images/mainsail-dashboard-webcam.png" alt="Painel do Mainsail com a webcam ao vivo" width="640"></p>
 
 O OctoEverywhere pega essa mesma webcam automaticamente também, assim que
 ela estiver configurada aqui — veja [`octoeverywhere.md`](octoeverywhere.md).

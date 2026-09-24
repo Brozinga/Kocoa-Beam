@@ -82,13 +82,15 @@ Use `127.0.0.1` only if you're viewing Fluidd in a browser on the phone
 itself; from another device, use the phone's LAN IP (the same one already
 in your Fluidd/Mainsail URL).
 
+<p align="center"><img src="images/fluidd-dashboard-webcam.png" alt="Fluidd dashboard with the live webcam" width="640"></p>
+
 **In Mainsail:** the equivalent add-camera form is under **Machine →
 Webcams**. Use service type `UV4L-MJPEG` with the same stream/snapshot
 URLs above. Since the config is shared, adding it in Fluidd is enough —
 here's the same webcam already showing live on Mainsail's dashboard after
 being added once in Fluidd:
 
-<p align="center"><img src="images/mainsail-webcam-dashboard.png" alt="Mainsail dashboard showing the live webcam feed" width="420"></p>
+<p align="center"><img src="images/mainsail-dashboard-webcam.png" alt="Mainsail dashboard with the live webcam" width="640"></p>
 
 OctoEverywhere picks up this same webcam automatically too, once it's
 configured here — see [`octoeverywhere.md`](octoeverywhere.md).

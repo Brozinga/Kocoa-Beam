@@ -138,21 +138,22 @@ tooling. Details:
 
 ## Screenshots
 
-**On the phone/tablet** — main screen, Settings (camera, remote access, language) and the in-app Logs tab:
+**On the phone/tablet**
+
+| Main screen | Settings | Live camera preview | Zoom (2×) |
+|:-:|:-:|:-:|:-:|
+| <img src="docs/images/app-main-running.png" width="180"> | <img src="docs/images/app-settings-frontend-camera.png" width="180"> | <img src="docs/images/camera-preview-tab.png" width="180"> | <img src="docs/images/camera-preview-zoom.png" width="180"> |
+| Start/stop printers; shows the web address | Firmware engine, web front end, USB, camera, remote access, language | New tab: see what the camera sees | Zoom levels offered depend on the selected camera |
+
+**In the browser** — the web interfaces are served by the device itself, with the printer connected and the webcam live:
 
 <p align="center">
-  <img src="docs/images/principal-screen.png" alt="Main screen" width="200">
-  <img src="docs/images/camera-octoeverywhere-settings.png" alt="Settings screen" width="200">
-  <img src="docs/images/log-screen.png" alt="Logs tab" width="200">
-  <img src="docs/images/camera-preview-tab.png" alt="Live camera preview tab" width="200">
+  <img src="docs/images/fluidd-dashboard-webcam.png" alt="Fluidd dashboard with live webcam" width="400">
+  <img src="docs/images/mainsail-dashboard-webcam.png" alt="Mainsail dashboard with live webcam" width="400">
 </p>
+<p align="center"><sub>Fluidd (left) and Mainsail (right)</sub></p>
 
-**In the browser** — the web interfaces served by the device itself. Fluidd (system page) and Mainsail (dashboard with the live webcam):
-
-<p align="center">
-  <img src="docs/images/fluidd-screen-klipper-version.png" alt="Fluidd served by Kocoa Beam" width="420">
-  <img src="docs/images/mainsail-webcam-dashboard.png" alt="Mainsail with live webcam" width="300">
-</p>
+The in-app **Logs** tab is shown at the top of this page.
 
 ## Firmware (MCU) versions
 
