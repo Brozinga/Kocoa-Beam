@@ -107,6 +107,7 @@ O Kocoa Beam fornece três variantes de APK:
 
 Este projeto mantém o Klipper / Moonraker / Fluidd / Mainsail / Happy Hare embutidos atualizados e adiciona diagnóstico no aparelho, add-ons opcionais do Klipper e ferramentas de firmware. Detalhes:
 
+- [`docs/pt-br/getting-started.md`](docs/pt-br/getting-started.md) — **passo a passo para iniciantes**: instalar o APK, adicionar uma impressora (com prints), corrigir os avisos de "configuração faltando" do Fluidd/Mainsail
 - [`docs/pt-br/whats-new.md`](docs/pt-br/whats-new.md) — lista completa das mudanças
 - [`docs/pt-br/build-firmware.md`](docs/pt-br/build-firmware.md) — compilar firmware do MCU para qualquer placa
 - [`docs/pt-br/mods/klipper-addons.md`](docs/pt-br/mods/klipper-addons.md) — os add-ons embutidos
@@ -114,6 +115,8 @@ Este projeto mantém o Klipper / Moonraker / Fluidd / Mainsail / Happy Hare embu
 - [`docs/pt-br/`](docs/pt-br/index.md) — índice da documentação
 
 ## Início rápido
+
+> Primeira vez? Siga o passo a passo com prints: [`docs/pt-br/getting-started.md`](docs/pt-br/getting-started.md).
 
 1. **Firmware do MCU** — grave na placa da impressora, usando:
    - uma imagem pré-compilada da [lista de firmwares do Beam Klipper](https://github.com/utkabobr/klipper/releases)
@@ -175,8 +178,9 @@ Tudo abaixo está em [`docs/pt-br/`](docs/pt-br/index.md) (também em English e 
 
 | Eu quero… | Leia |
 |---|---|
+| Instalar o app e configurar minha primeira impressora, passo a passo | [`getting-started.md`](docs/pt-br/getting-started.md) |
 | Ver o que mudou em relação ao Beam Klipper | [`whats-new.md`](docs/pt-br/whats-new.md) |
-| Configurar câmera, webcam USB, pré-visualização e zoom | [`webcam.md`](docs/pt-br/webcam.md) |
+| Configurar câmera, webcam USB, pré-visualização, zoom e toque para focar | [`webcam.md`](docs/pt-br/webcam.md) |
 | Acessar a impressora remotamente | [`octoeverywhere.md`](docs/pt-br/octoeverywhere.md) · [`obico.md`](docs/pt-br/obico.md) |
 | Compilar/gravar o firmware do MCU | [`build-firmware.md`](docs/pt-br/build-firmware.md) |
 | Compilar o APK eu mesmo | [`build-app.md`](docs/pt-br/build-app.md) |
@@ -264,6 +268,7 @@ Add-ons opcionais do Klipper também são embutidos (KAMP, LED Effect, Z Calibra
 
 - **Aba de pré-visualização da câmera** — com o servidor de câmera ativado, surge uma aba ao lado de Logs mostrando a transmissão ao vivo (a mesma que o Fluidd/Mainsail recebem). Pede a permissão da câmera se necessário e desconecta ao sair da aba.
 - **Zoom da câmera** — Configurações → Câmera → Zoom da câmera. Só aparecem os níveis de zoom que a câmera selecionada realmente suporta (ultra-wide, teleobjetiva ou webcam USB têm limites diferentes). Guia: [`docs/pt-br/webcam.md`](docs/pt-br/webcam.md).
+- **Toque para focar** — na aba de pré-visualização da câmera, toque na imagem para focar naquele ponto; um quadrado amarelo mostra onde. Só é oferecido quando a câmera selecionada suporta. Guia: [`docs/pt-br/webcam.md`](docs/pt-br/webcam.md).
 
 ## Extensões Android
 

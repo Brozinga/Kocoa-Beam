@@ -4,6 +4,7 @@
 
 | Document | Contents |
 |---|---|
+| [getting-started.md](getting-started.md) | Step-by-step for beginners — install the APK, add a printer, open Fluidd/Mainsail, fix the "missing configuration" warnings. |
 | [whats-new.md](whats-new.md) | What this project changes on top of the base application. |
 | [octoeverywhere.md](octoeverywhere.md) | Using the bundled OctoEverywhere companion for remote access — enabling and linking. |
 | [obico.md](obico.md) | Using the bundled Obico companion for remote access — enabling and linking, Obico Cloud or self-hosted. |

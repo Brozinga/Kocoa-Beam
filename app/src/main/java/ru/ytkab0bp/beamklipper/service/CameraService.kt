@@ -37,6 +37,7 @@ import android.view.Surface
 import ru.ytkab0bp.beamklipper.BuildConfig
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.R
+import ru.ytkab0bp.beamklipper.utils.CameraFocus
 import ru.ytkab0bp.beamklipper.utils.CameraZoom
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import ru.ytkab0bp.beamklipper.utils.ViewUtils
@@ -61,6 +62,9 @@ class CameraService : Service() {
         const val ACTION_TOGGLE_FLASHLIGHT = "${BuildConfig.APPLICATION_ID}.action.TOGGLE_FLASHLIGHT"
         const val ACTION_TOGGLE_FOCUS = "${BuildConfig.APPLICATION_ID}.action.TOGGLE_FOCUS"
         const val KEY_FLASHLIGHT = "flashlight"
+        const val ACTION_TAP_FOCUS = "${BuildConfig.APPLICATION_ID}.action.TAP_FOCUS"
+        const val KEY_TAP_X = "tap_x"
+        const val KEY_TAP_Y = "tap_y"
         const val KEY_AUTOFOCUS = "autofocus"
         const val KEY_FOCUS = "focus"
         private const val TAG = "beam_camera"
@@ -185,6 +189,10 @@ class CameraService : Service() {
                         Log.e(TAG, "Failed to update camera settings", e)
                     }
                 }
+                ACTION_TAP_FOCUS -> focusAt(
+                    intent.getFloatExtra(KEY_TAP_X, 0.5f),
+                    intent.getFloatExtra(KEY_TAP_Y, 0.5f)
+                )
                 ACTION_TOGGLE_FOCUS -> {
                     val autofocus = intent.getBooleanExtra(KEY_AUTOFOCUS, false)
                     Prefs.isAutofocusEnabled = autofocus
@@ -200,6 +208,31 @@ class CameraService : Service() {
                     }
                 }
             }
+        }
+    }
+
+    // One-shot AF at a point of the served frame: AUTO mode + region, then
+    // CANCEL -> START -> IDLE so the lens focuses once and holds. Silently
+    // ignored on cameras that can't do it (see CameraFocus.isSupported).
+    private fun focusAt(nx: Float, ny: Float) {
+        val id = activeCameraId ?: return
+        val builder = captureRequestBuilder ?: return
+        val session = captureSession ?: return
+        try {
+            val chars = cameraManager.getCameraCharacteristics(id)
+            if (!CameraFocus.isSupported(chars)) return
+            val zoom = CameraZoom.clamp(Prefs.cameraZoom, CameraZoom.options(CameraZoom.maxZoom(chars)))
+            val region = CameraFocus.region(chars, zoom, Prefs.cameraRotation, nx, ny) ?: return
+            builder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO)
+            builder.set(CaptureRequest.CONTROL_AF_REGIONS, arrayOf(region))
+            builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL)
+            session.capture(builder.build(), null, null)
+            builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START)
+            session.capture(builder.build(), null, null)
+            builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
+            session.setRepeatingRequest(builder.build(), null, null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to focus at $nx,$ny", e)
         }
     }
 
@@ -300,7 +333,7 @@ class CameraService : Service() {
         }
         cameraHandler?.post { openSelectedCamera() }
 
-        val filter = IntentFilter(ACTION_TOGGLE_FLASHLIGHT).apply { addAction(ACTION_TOGGLE_FOCUS) }
+        val filter = IntentFilter(ACTION_TOGGLE_FLASHLIGHT).apply { addAction(ACTION_TOGGLE_FOCUS); addAction(ACTION_TAP_FOCUS) }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(receiver, filter, KlipperApp.PERMISSION, ViewUtils.getUiHandler(), Context.RECEIVER_EXPORTED)
         } else {

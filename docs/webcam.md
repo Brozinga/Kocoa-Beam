@@ -50,6 +50,26 @@ Changing zoom briefly restarts the camera server.
 
 <p align="center"><img src="images/camera-settings-zoom.png" alt="Camera settings with the new Camera zoom row" width="288"></p>
 
+### Tap to focus
+
+In the **camera preview tab**, tap anywhere on the picture to focus on that
+spot. A yellow square shows where the focus was requested, closes in on the
+point and fades out. The lens focuses once on that area and holds it, and
+Fluidd/Mainsail see the new focus too because they receive the same stream.
+
+<p align="center"><img src="images/camera-tap-focus.png" alt="Camera preview with the yellow focus square after a tap" width="288"></p>
+
+- It works on cameras whose hardware supports focusing on a chosen area
+  (most phone cameras). If the selected camera cannot do it — many USB webcams
+  only have a fixed or continuous focus — the hint under the preview says
+  "This camera does not support tap-to-focus." and taps do nothing, so nothing
+  breaks.
+- The tap lands on the right spot even with **rotation** and **zoom** set.
+- Tapping switches that camera to one-shot autofocus mode; the focus mode in
+  the app settings is applied again the next time the camera restarts.
+- Works on old phones too (Android 5.0+): it uses only the standard Camera2
+  focus controls and checks what the camera reports before enabling itself.
+
 ### USB webcam support
 
 This relies on the device exposing the USB webcam through Android's

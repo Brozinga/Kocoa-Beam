@@ -4,6 +4,7 @@
 
 | 文档 | 内容 |
 |---|---|
+| [getting-started.md](getting-started.md) | 新手分步指南 —— 安装 APK、添加打印机、打开 Fluidd/Mainsail、处理“缺少配置”警告。 |
 | [whats-new.md](whats-new.md) | 本项目在基础应用之上所做的变更。 |
 | [octoeverywhere.md](octoeverywhere.md) | 如何使用内置的 OctoEverywhere 伴生程序进行远程访问——启用与关联。 |
 | [obico.md](obico.md) | 如何使用内置的 Obico 伴生程序进行远程访问——启用与关联，Obico Cloud 或自建服务器。 |

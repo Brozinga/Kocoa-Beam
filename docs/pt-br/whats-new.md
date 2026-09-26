@@ -58,6 +58,11 @@ em vez de um tamanho fixo que simplesmente é descartado sob congestionamento.
 Guia completo, incluindo como adicionar no Fluidd/Mainsail:
 [`webcam.md`](webcam.md).
 
+Na aba de pré-visualização ao vivo você também pode **tocar na imagem para
+focar** naquele ponto, com um quadrado amarelo mostrando onde o foco foi
+pedido. Só funciona em câmeras que suportam, então aparelhos antigos e webcams
+simples não são afetados.
+
 ## Acesso remoto via OctoEverywhere
 
 **Configurações → Acesso remoto → Ativar OctoEverywhere** executa o

@@ -4,6 +4,7 @@
 
 | Documento | Conteúdo |
 |---|---|
+| [getting-started.md](getting-started.md) | Passo a passo para iniciantes — instalar o APK, adicionar uma impressora, abrir o Fluidd/Mainsail e corrigir os avisos de "configuração faltando". |
 | [whats-new.md](whats-new.md) | O que este projeto altera em relação ao aplicativo base. |
 | [octoeverywhere.md](octoeverywhere.md) | Como usar o companion do OctoEverywhere para acesso remoto — ativação e vinculação. |
 | [obico.md](obico.md) | Como usar o companion do Obico para acesso remoto — ativação e vinculação, Obico Cloud ou auto-hospedado. |

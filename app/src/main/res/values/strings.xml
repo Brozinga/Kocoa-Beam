@@ -157,6 +157,8 @@
     <string name="CameraPreviewGrant">Grant camera permission</string>
     <string name="CameraPreviewConnecting">Connecting to the camera server…</string>
     <string name="CameraPreviewHint">Live view of what Fluidd/Mainsail will see, including rotation, resolution and zoom. Leaving this tab disconnects the preview.</string>
+    <string name="CameraPreviewFocusHint">Tap the preview to focus on that spot.</string>
+    <string name="CameraPreviewFocusUnsupported">This camera does not support tap-to-focus.</string>
     <string name="LogsSourceNotFound">Log source not found.</string>
     <string name="LogsLoadFailed">Failed to load: %1$s</string>
     <string name="LogsLoading">Loading…</string>
