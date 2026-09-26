@@ -4,7 +4,7 @@
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
 import logging, threading, os
-import urllib.request
+import urllib.request, urllib.error
 import serial
 
 import msgproto, chelper, util
@@ -391,8 +391,20 @@ def cheetah_reset(serialport, reactor):
 
 # Attempt an arduino style reset on a serial port
 def arduino_reset(serialport, reactor):
+    # Kocoa Beam's web service listens on the active frontend's port (Fluidd
+    # 4408 / Mainsail 4409, switched live): try both, moving on only when the
+    # connection is refused.
     try:
-        response = urllib.request.urlopen('http://127.0.0.1:8888/beam/arduino_reset?serial=' + serialport)
+        response = None
+        for port in (4408, 4409):
+            try:
+                response = urllib.request.urlopen('http://127.0.0.1:%d/beam/arduino_reset?serial=%s' % (port, serialport))
+                break
+            except urllib.error.URLError as err:
+                if not isinstance(err.reason, ConnectionRefusedError):
+                    raise
+        if response is None:
+            raise RuntimeError('web service not reachable on 4408/4409')
         data = response.read()
         response.close()
     except Exception:

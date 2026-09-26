@@ -7,9 +7,10 @@ import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 
 object BundleInstaller {
+    private const val INSTALLED_VERSION_FILE = ".bundle_installed_version"
+
     @JvmStatic
     fun init(ctx: Context) {
-        val prefs = ctx.getSharedPreferences("installation", 0)
         val assets = ctx.assets
         try {
             val pm = ctx.packageManager
@@ -17,14 +18,25 @@ object BundleInstaller {
             var ver = readString(assets, "bundle_version") + "_beam-" + info.versionName
 
             val root = ctx.filesDir
-            if (prefs.getString("version", "") != ver) {
+            // The installed-version marker is a plain file, not SharedPreferences:
+            // every Klippy/Moonraker service runs this in its own process (under
+            // withBundleInstallLock), and SharedPreferences is cached per process
+            // and written asynchronously, so a second process could still read the
+            // OLD version, unpack the raw templates again (placeholders like
+            // ${TTY_PATH}/${DEST_LIB} not yet substituted) and delete the tree
+            // while the first process's Python was already importing from it —
+            // which made the first start after an update fail with a SyntaxError /
+            // "did not manage to locate a library called '${DEST_LIB}'".
+            // It is written only once the whole install (unpack + patches) is done.
+            val marker = File(root, INSTALLED_VERSION_FILE)
+            val needsUnpack = try { marker.readText() != ver } catch (_: Exception) { true }
+            if (needsUnpack) {
                 val index = JSONObject(readString(assets, "index.json"))
                 unpack(assets, index, root, "klipper")
                 unpack(assets, index, root, "kalico")
                 unpack(assets, index, root, "moonraker")
                 unpack(assets, index, root, "octoeverywhere")
                 unpack(assets, index, root, "obico")
-                prefs.edit().putString("version", ver).apply()
             }
 
             // Moonraker's file_manager registers "<klipper_path>/docs" as the
@@ -46,9 +58,7 @@ object BundleInstaller {
             var str = readString(assets, "moonraker/moonraker/utils/sysfs_devs.py")
             str = str.replace("TTY_PATH = \"/sys/class/tty\"",
                 "TTY_PATH = \"" + File(KlipperApp.INSTANCE.filesDir, "serial").absolutePath + "\"")
-            FileOutputStream(File(root, "moonraker/moonraker/utils/sysfs_devs.py")).use {
-                it.write(str.toByteArray(StandardCharsets.UTF_8))
-            }
+            writeIfChanged(File(root, "moonraker/moonraker/utils/sysfs_devs.py"), str.toByteArray(StandardCharsets.UTF_8))
 
             val tempPath = File(KlipperApp.INSTANCE.cacheDir, "resonances").absolutePath
             patchBundledFile(root, assets, "klipper", "klippy/extras/resonance_tester.py") {
@@ -99,8 +109,24 @@ object BundleInstaller {
                     "    def set_obico_link_status(self, is_linked, one_time_passcode, one_time_passlink):\n        try:\n            import json as _json\n            _status_path = os.path.join(os.path.dirname(os.path.abspath(self.config._config_path)), 'obico_link_status.json')\n            with open(_status_path, 'w') as _f:\n                _json.dump({'is_linked': is_linked, 'one_time_passcode': one_time_passcode, 'one_time_passlink': one_time_passlink}, _f)\n        except Exception:\n            pass\n        self.moonrakerconn.set_macro_variables('OBICO_LINK_STATUS',"
                 )
             }
+            if (needsUnpack) marker.writeText(ver)
         } catch (e: Exception) {
             throw RuntimeException(e)
+        }
+    }
+
+    // Other processes may be importing these files right now, so never leave
+    // one truncated or half-written: skip identical content, otherwise write a
+    // temp file and rename it over the target (atomic on the same directory).
+    private fun writeIfChanged(target: File, bytes: ByteArray) {
+        try {
+            if (target.exists() && target.readBytes().contentEquals(bytes)) return
+        } catch (_: Exception) {}
+        val tmp = File(target.parentFile, target.name + ".tmp")
+        FileOutputStream(tmp).use { it.write(bytes) }
+        if (!tmp.renameTo(target)) {
+            tmp.delete()
+            FileOutputStream(target).use { it.write(bytes) }
         }
     }
 
@@ -136,9 +162,7 @@ object BundleInstaller {
             return
         }
         val updated = transform(readString(assets, "$bundleKey/$relativePath"))
-        FileOutputStream(target).use {
-            it.write(updated.toByteArray(StandardCharsets.UTF_8))
-        }
+        writeIfChanged(target, updated.toByteArray(StandardCharsets.UTF_8))
     }
 
     @JvmStatic

@@ -53,6 +53,10 @@ Fluidd 和 Mainsail 的静态资源以正确的 MIME 类型提供，因此两个
 在实时预览标签页中，还可以**点击画面对该处对焦**，黄色方框会标出请求对焦的位置。
 仅在摄像头支持时才会启用，因此旧手机和简易 USB 摄像头不受影响。
 
+## 延时摄影（Timelapse）
+
+已内置 Moonraker-timelapse，现在可在手机上直接渲染视频（硬件 H.264 编码器）。通过 `[include timelapse.cfg]` 启用；生成的视频会显示在 Fluidd/Mainsail 的 Timelapse 页面。完整指南（含文件存放位置）：[`timelapse.md`](timelapse.md)。
+
 ## OctoEverywhere 远程访问
 
 **设置 → 远程访问 → 启用 OctoEverywhere** 运行真实的
