@@ -63,6 +63,13 @@ focar** naquele ponto, com um quadrado amarelo mostrando onde o foco foi
 pedido. Só funciona em câmeras que suportam, então aparelhos antigos e webcams
 simples não são afetados.
 
+## Timelapse
+
+O Moonraker-timelapse vem embutido e agora renderiza o vídeo no próprio
+celular (codificador H.264 por hardware). Ative com `[include timelapse.cfg]`;
+o vídeo pronto aparece na página Timelapse do Fluidd/Mainsail. Guia completo,
+incluindo onde os arquivos ficam: [`timelapse.md`](timelapse.md).
+
 ## Acesso remoto via OctoEverywhere
 
 **Configurações → Acesso remoto → Ativar OctoEverywhere** executa o

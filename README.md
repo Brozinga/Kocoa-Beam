@@ -181,6 +181,7 @@ Everything below is in [`docs/`](docs/index.md) (also available in Português an
 |---|---|
 | Install the app and set up my first printer, step by step | [`getting-started.md`](docs/getting-started.md) |
 | See what changed compared to Beam Klipper | [`whats-new.md`](docs/whats-new.md) |
+| Record a timelapse and find the video | [`timelapse.md`](docs/timelapse.md) |
 | Set up the camera, USB webcam, preview, zoom and tap to focus | [`webcam.md`](docs/webcam.md) |
 | Access my printer remotely | [`octoeverywhere.md`](docs/octoeverywhere.md) · [`obico.md`](docs/obico.md) |
 | Build/flash the MCU firmware | [`build-firmware.md`](docs/build-firmware.md) |

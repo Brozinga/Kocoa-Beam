@@ -60,6 +60,13 @@ In the live preview tab you can also **tap the picture to focus** on that spot,
 with a yellow square showing where the focus was requested. It only appears
 for cameras that support it, so older phones and simple webcams are unaffected.
 
+## Timelapse
+
+Moonraker-timelapse is bundled and now renders the video on the phone
+(hardware H.264 encoder). Enable it with `[include timelapse.cfg]`; the
+finished video appears on the Fluidd/Mainsail Timelapse page. Full guide,
+including where the files are stored: [`timelapse.md`](timelapse.md).
+
 ## OctoEverywhere remote access
 
 **Settings → Remote access → Enable OctoEverywhere** runs the real
