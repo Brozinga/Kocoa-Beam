@@ -27,8 +27,6 @@ class PrintRecovery:
         self.printer = config.get_printer()
         self.reactor = self.printer.get_reactor()
         self.gcode = self.printer.lookup_object('gcode')
-        # RESPOND is what Fluidd/Mainsail send when a prompt is closed
-        self.printer.load_object(config, 'respond')
         self.interval = config.getfloat('snapshot_interval', 2.,
                                         minval=0.5, maxval=300.)
         self.park_x = config.getfloat('park_x', None)
@@ -75,6 +73,11 @@ class PrintRecovery:
     # ---- lifecycle -------------------------------------------------------
     def _handle_ready(self):
         self.shutdown = False
+        if 'RESPOND' not in self.gcode.gcode_handlers:
+            # Fluidd/Mainsail send RESPOND when a prompt is closed. The stock
+            # [respond] is not loaded here since it also takes over M118,
+            # which many configs define as a macro.
+            self.gcode.register_command('RESPOND', self.cmd_RESPOND)
         self.pending = self._read_state()
         if self.pending is not None:
             logging.info("print_recovery: interrupted print found: %s at "
@@ -312,6 +315,12 @@ class PrintRecovery:
         if self.prompt_repeat <= 0.:
             return self.reactor.NEVER
         return eventtime + self.prompt_repeat
+
+    def cmd_RESPOND(self, gcmd):
+        msg = gcmd.get('MSG', '')
+        kind = gcmd.get('TYPE', 'echo')
+        prefix = {'command': '// ', 'error': '!! '}.get(kind, 'echo: ')
+        self.gcode.respond_raw(prefix + msg)
 
     # ---- commands --------------------------------------------------------
     cmd_PRINT_RECOVERY_STATUS_help = \
