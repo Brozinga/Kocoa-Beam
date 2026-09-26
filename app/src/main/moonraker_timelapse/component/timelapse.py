@@ -15,6 +15,7 @@ from tornado.ioloop import IOLoop
 from zipfile import ZipFile
 import urllib.request
 import urllib.parse
+import urllib.error
 
 # Annotation imports
 from typing import (
@@ -33,6 +34,25 @@ if TYPE_CHECKING:
     APIComp = klippy_apis.KlippyAPI
     SCMDComp = shell_command.ShellCommandFactory
     DBComp = database.MoonrakerDatabase
+
+
+# Kocoa Beam's local web service (it serves /beam/ffmpeg) listens on the port of
+# whichever frontend is active — Fluidd 4408 or Mainsail 4409, switched live —
+# so try both instead of assuming one. Only a refused connection moves on to the
+# next port; any other error (or a real answer) is returned/raised as is.
+BEAM_WEB_PORTS = (4408, 4409)
+
+
+def beam_urlopen(path_and_query: str):
+    last_error = None
+    for port in BEAM_WEB_PORTS:
+        try:
+            return urllib.request.urlopen(f"http://127.0.0.1:{port}{path_and_query}")
+        except urllib.error.URLError as err:
+            if not isinstance(err.reason, ConnectionRefusedError):
+                raise
+            last_error = err
+    raise last_error
 
 
 class Timelapse:
@@ -685,8 +705,9 @@ class Timelapse:
 
             # run the command
             self.notify_event(result)
+            cmdstatus = None
             try:
-                with urllib.request.urlopen('http://127.0.0.1:8888/beam/ffmpeg?cmd=' + urllib.parse.quote_plus(cmd)) as f:
+                with beam_urlopen('/beam/ffmpeg?cmd=' + urllib.parse.quote_plus(cmd)) as f:
                     cmdstatus = f.read()
                     self.ffmpeg_cb(cmdstatus)
             except Exception:
@@ -735,7 +756,7 @@ class Timelapse:
                         logging.info(f"Rotate preview image cmd: {cmd}")
 
                         try:
-                            with urllib.request.urlopen('http://127.0.0.1:8888/beam/ffmpeg?cmd=' + urllib.parse.quote_plus(cmd)) as f:
+                            with beam_urlopen('/beam/ffmpeg?cmd=' + urllib.parse.quote_plus(cmd)) as f:
                                 cmdstatus = f.read()
                                 self.ffmpeg_cb(cmdstatus)
                         except Exception:
