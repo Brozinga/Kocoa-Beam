@@ -109,6 +109,7 @@ This project keeps the bundled Klipper / Moonraker / Fluidd / Mainsail / Happy
 Hare current and adds on-device diagnostics, opt-in Klipper add-ons and firmware
 tooling. Details:
 
+- [`docs/getting-started.md`](docs/getting-started.md) — **step-by-step for beginners**: install the APK, add a printer (with screenshots), fix the Fluidd/Mainsail "missing configuration" warnings
 - [`docs/whats-new.md`](docs/whats-new.md) — full list of changes
 - [`docs/build-firmware.md`](docs/build-firmware.md) — build MCU firmware for any board
 - [`docs/mods/klipper-addons.md`](docs/mods/klipper-addons.md) — the bundled add-ons
@@ -116,6 +117,8 @@ tooling. Details:
 - [`docs/`](docs/index.md) — documentation index
 
 ## Quick Start
+
+> New to this? Follow the illustrated step-by-step guide: [`docs/getting-started.md`](docs/getting-started.md).
 
 1. **MCU firmware** — flash the printer's mainboard, using either:
    - a pre-built image from the [Beam Klipper firmware list](https://github.com/utkabobr/klipper/releases)
@@ -176,8 +179,9 @@ Everything below is in [`docs/`](docs/index.md) (also available in Português an
 
 | I want to… | Read |
 |---|---|
+| Install the app and set up my first printer, step by step | [`getting-started.md`](docs/getting-started.md) |
 | See what changed compared to Beam Klipper | [`whats-new.md`](docs/whats-new.md) |
-| Set up the camera, USB webcam, preview and zoom | [`webcam.md`](docs/webcam.md) |
+| Set up the camera, USB webcam, preview, zoom and tap to focus | [`webcam.md`](docs/webcam.md) |
 | Access my printer remotely | [`octoeverywhere.md`](docs/octoeverywhere.md) · [`obico.md`](docs/obico.md) |
 | Build/flash the MCU firmware | [`build-firmware.md`](docs/build-firmware.md) |
 | Build the APK myself | [`build-app.md`](docs/build-app.md) |
@@ -263,6 +267,7 @@ Opt-in Klipper add-ons are also bundled (KAMP, LED Effect, Z Calibration, Auto S
 
 - **Live camera preview tab** — when the camera server is enabled, a new tab appears next to Logs showing the live stream (the same feed Fluidd/Mainsail get). Asks for the camera permission if needed; disconnects when you leave the tab.
 - **Camera zoom** — Settings → Camera → Camera zoom. Only the zoom steps the selected camera really supports are offered (a phone's ultra-wide, tele or a USB webcam each have different limits). Guide: [`docs/webcam.md`](docs/webcam.md).
+- **Tap to focus** — in the camera preview tab, tap the picture to focus on that spot; a yellow square shows where. Only offered when the selected camera supports it. Guide: [`docs/webcam.md`](docs/webcam.md).
 
 ## Android Extensions
 

@@ -50,6 +50,9 @@ Fluidd 和 Mainsail 的静态资源以正确的 MIME 类型提供，因此两个
 大小、在拥堵时被直接丢弃。完整指南（含如何添加到 Fluidd/Mainsail）：
 [`webcam.md`](webcam.md)。
 
+在实时预览标签页中，还可以**点击画面对该处对焦**，黄色方框会标出请求对焦的位置。
+仅在摄像头支持时才会启用，因此旧手机和简易 USB 摄像头不受影响。
+
 ## OctoEverywhere 远程访问
 
 **设置 → 远程访问 → 启用 OctoEverywhere** 运行真实的
