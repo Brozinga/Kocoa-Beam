@@ -10,6 +10,8 @@ ainda estão bem coladas na mesa.
 O celular continua ligado (tem bateria), então a posição da impressão fica
 segura mesmo com a impressora desligada.
 
+<p align="center"><img src="../images/powerless-recovery.png" alt="Fluidd perguntando se deve retomar uma impressão interrompida" width="720"></p>
+
 ## Como funciona
 
 1. Durante a impressão, a posição no arquivo G-code, a posição do bico, as
@@ -65,6 +67,7 @@ macro_variables: *        # variáveis de macro a salvar/restaurar: * = todos os
                           # uma lista: PRINT_START, MEU_MACRO
 prompt: True              # mostrar a janela no Fluidd/Mainsail
 prompt_repeat: 60         # segundos entre lembretes (0 = uma vez)
+state_file:               # onde o snapshot é guardado (padrão: junto do printer.cfg)
 ```
 
 Ao retomar manualmente, dá para sobrescrever valores:

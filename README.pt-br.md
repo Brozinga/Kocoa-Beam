@@ -85,8 +85,11 @@ O Kocoa Beam tem um redesenho completo de UI:
 ### Recursos adicionais
 - **10 instâncias simultâneas** — rode até 10 perfis de impressora ao mesmo tempo (contra 4 no Beam Klipper)
 - **Suporte a dois firmwares** — rode o engine Klipper ou Kalico
+- **Recuperação de impressão** — após queda de energia ou desconexão, o Fluidd/Mainsail oferece retomar a impressão de onde parou ([guia](docs/pt-br/print-recovery.md))
 - **Timelapse nativo** — usa o MediaCodec por hardware do Android em vez de FFmpeg embutido
 - **Operação 100% local** — sem conexão com nuvem; todos os dados ficam no dispositivo (suporte ao Beam Cloud removido)
+
+<p align="center"><img src="docs/images/powerless-recovery.png" alt="Fluidd perguntando se deve retomar uma impressão interrompida" width="720"></p>
 
 ## Escolhendo o pacote certo
 
