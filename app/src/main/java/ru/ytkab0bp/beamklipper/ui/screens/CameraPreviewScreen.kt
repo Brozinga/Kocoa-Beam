@@ -186,6 +186,20 @@ fun CameraPreviewScreen() {
             stringResource(if (focusSupported) R.string.CameraPreviewFocusHint else R.string.CameraPreviewFocusUnsupported),
             style = MaterialTheme.typography.bodySmall, color = Ink
         )
+        if (focusSupported) {
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.CameraPreviewFocusSaved), style = MaterialTheme.typography.bodySmall, color = Ink)
+            Spacer(Modifier.height(8.dp))
+            BrutalButton(
+                text = stringResource(R.string.CameraPreviewFocusReset),
+                onClick = {
+                    KlipperApp.INSTANCE.sendBroadcast(
+                        Intent(CameraService.ACTION_RESET_FOCUS),
+                        KlipperApp.PERMISSION
+                    )
+                }
+            )
+        }
         Spacer(Modifier.height(4.dp))
         Text(stringResource(R.string.CameraPreviewHint), style = MaterialTheme.typography.bodySmall, color = Ink)
     }

@@ -65,8 +65,13 @@ Fluidd/Mainsail see the new focus too because they receive the same stream.
   "This camera does not support tap-to-focus." and taps do nothing, so nothing
   breaks.
 - The tap lands on the right spot even with **rotation** and **zoom** set.
-- Tapping switches that camera to one-shot autofocus mode; the focus mode in
-  the app settings is applied again the next time the camera restarts.
+- **The focus is remembered.** Once the lens has focused, the app saves it, so
+  restarting the app or the phone does not lose it. Nothing to do if the
+  focus is already good.
+- Switching to **another camera** forgets the saved focus (you focus the new
+  one again). Tap **Reset focus**, under the preview, to forget it yourself —
+  for example after moving the camera.
+- Changing the focus with the manual focus setting also replaces the saved one.
 - Works on old phones too (Android 5.0+): it uses only the standard Camera2
   focus controls and checks what the camera reports before enabling itself.
 

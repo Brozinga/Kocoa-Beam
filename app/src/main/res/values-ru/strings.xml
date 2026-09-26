@@ -149,6 +149,8 @@
     <string name="CameraPreviewHint">Живое изображение, которое увидят Fluidd/Mainsail, с учётом поворота, разрешения и зума. При выходе из вкладки просмотр отключается.</string>
     <string name="CameraPreviewFocusHint">Коснитесь изображения, чтобы сфокусироваться в этой точке.</string>
     <string name="CameraPreviewFocusUnsupported">Эта камера не поддерживает фокусировку касанием.</string>
+    <string name="CameraPreviewFocusReset">Сбросить фокус</string>
+    <string name="CameraPreviewFocusSaved">Фокус сохраняется после перезапуска приложения. Сбросьте его, если вы сменили камеру или её положение.</string>
     <string name="LogsSourceNotFound">Источник журнала не найден.</string>
     <string name="LogsLoadFailed">Не удалось загрузить: %1$s</string>
     <string name="LogsLoading">Загрузка…</string>

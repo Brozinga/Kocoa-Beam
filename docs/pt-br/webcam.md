@@ -66,6 +66,13 @@ e o Fluidd/Mainsail também veem o novo foco, pois recebem o mesmo stream.
   "Esta câmera não suporta foco por toque." e o toque não faz nada, sem
   quebrar nada.
 - O toque cai no ponto certo mesmo com **rotação** e **zoom** configurados.
+- **O foco é lembrado.** Depois que a lente foca, o app salva o foco, então
+  reiniciar o app ou o celular não o perde. Se o foco já está bom, não precisa
+  fazer nada.
+- Trocar para **outra câmera** esquece o foco salvo (você foca a nova de
+  novo). Use **Redefinir foco**, abaixo da pré-visualização, para esquecê-lo
+  manualmente — por exemplo, depois de mudar a câmera de lugar.
+- Alterar o foco pela configuração de foco manual também substitui o salvo.
 - Ao tocar, a câmera passa para o autofoco de um disparo; o modo de foco das
   configurações do app volta a valer na próxima vez que a câmera reiniciar.
 - Funciona em aparelhos antigos (Android 5.0+): usa só os controles de foco
