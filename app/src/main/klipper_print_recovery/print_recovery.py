@@ -391,10 +391,13 @@ class PrintRecovery:
                   "SET_GCODE_OFFSET X=0 Y=0 Z=0"]
         if bed:
             script.append("M140 S%.1f" % (bed,))
-        # Z is assumed unchanged: set it, lift, then find X/Y again
-        script += ["SET_KINEMATIC_POSITION Z=%.4f" % (raw[2],),
-                   "G91", "G1 Z%.3f F600" % (lift,), "G90"]
         self._run("\n".join(script))
+        # Z is assumed unchanged: set it, lift, then find X/Y again
+        toolhead = self.printer.lookup_object('toolhead')
+        pos = list(toolhead.get_position())
+        pos[2] = raw[2]
+        toolhead.set_position(pos, homing_axes="z")
+        self._run("G91\nG1 Z%.3f F600\nG90" % (lift,))
         info("print_recovery: homing X/Y")
         self._run("G28 X Y")
         move = "G1 X%.3f" % (park_x,)
