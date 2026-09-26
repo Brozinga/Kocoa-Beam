@@ -30,6 +30,8 @@ OBJECT_SCAN_LIMIT = 4 * 1024 * 1024
 # Missing languages fall back to English.
 TEXTS = {
     'en': {
+        'discard_lift': "lifting the nozzle %.0f mm",
+        'no_room': "not enough Z room: the nozzle was not moved",
         'title': "Print interrupted",
         'stopped': "%(name)s stopped at %(pct)d%% (%(where)s), saved %(ago)s.",
         'ask': "Resume it? The bed heats first, then the nozzle heats "
@@ -52,6 +54,8 @@ TEXTS = {
         'mesh_fail': "WARNING the bed mesh could not be restored",
     },
     'pt': {
+        'discard_lift': "subindo o bico %.0f mm",
+        'no_room': "sem espaço em Z: o bico não foi movido",
         'title': "Impressão interrompida",
         'stopped': "%(name)s parou em %(pct)d%% (%(where)s), salvo %(ago)s.",
         'ask': "Deseja retomar? A mesa aquece primeiro e depois o bico "
@@ -75,6 +79,8 @@ TEXTS = {
         'mesh_fail': "AVISO: não foi possível restaurar a malha da mesa",
     },
     'ru': {
+        'discard_lift': "подъём сопла на %.0f мм",
+        'no_room': "недостаточно хода по Z: сопло не двигалось",
         'title': "Печать прервана",
         'stopped': "%(name)s остановлена на %(pct)d%% (%(where)s), "
                    "сохранено %(ago)s.",
@@ -99,6 +105,8 @@ TEXTS = {
         'mesh_fail': "ВНИМАНИЕ: не удалось восстановить карту стола",
     },
     'zh': {
+        'discard_lift': "抬高喷嘴 %.0f mm",
+        'no_room': "Z 行程不足：喷嘴未移动",
         'title': "打印已中断",
         'stopped': "%(name)s 在 %(pct)d%% 处中断（%(where)s），%(ago)s保存。",
         'ask': "是否继续？先加热热床，再加热喷嘴，然后继续打印。",
@@ -119,6 +127,8 @@ TEXTS = {
         'mesh_fail': "警告：无法恢复热床网格",
     },
     'zh-TW': {
+        'discard_lift': "抬高噴嘴 %.0f mm",
+        'no_room': "Z 行程不足：噴嘴未移動",
         'title': "列印已中斷",
         'stopped': "%(name)s 在 %(pct)d%% 處中斷（%(where)s），%(ago)s儲存。",
         'ask': "是否繼續？先加熱熱床，再加熱噴嘴，然後繼續列印。",
@@ -150,7 +160,12 @@ class PrintRecovery:
         self.gcode = self.printer.lookup_object('gcode')
         self.interval = config.getfloat('snapshot_interval', 2.,
                                         minval=0.5, maxval=300.)
-        self.park_enable = config.getboolean('park_enable', True)
+        self.park_enable_x = config.getboolean('park_enable_x', True)
+        self.park_enable_y = config.getboolean('park_enable_y', True)
+        self.discard_lift_z = config.getfloat('discard_lift_z', 50.,
+                                              minval=0.)
+        self.discard_home_x = config.getboolean('discard_home_x', True)
+        self.discard_home_y = config.getboolean('discard_home_y', True)
         self.language = config.get('language', 'auto')
         self.park_x = config.getfloat('park_x', None)
         self.park_y = config.getfloat('park_y', None)
@@ -459,7 +474,7 @@ class PrintRecovery:
         info = lambda m: self.gcode.respond_info("action:" + m, log=False)
         info("prompt_begin " + self._t('title'))
         info("prompt_text " + self._stopped_text(p))
-        info("prompt_text " + self._t('ask_park' if self.park_enable
+        info("prompt_text " + self._t('ask_park' if self.park_enable_x
                                       else 'ask'))
         info("prompt_text " + self._t('warn'))
         info("prompt_button_group_start")
@@ -501,16 +516,56 @@ class PrintRecovery:
         self._show_prompt()
 
     cmd_PRINT_RECOVERY_DISCARD_help = \
-        "Forget the interrupted print without resuming it"
+        "Forget the interrupted print, lift the nozzle and home X/Y " \
+        "(LIFT_Z= HOME_X= HOME_Y=)"
     def cmd_PRINT_RECOVERY_DISCARD(self, gcmd):
+        p = self.pending
         self.pending = None
         self._clear_state()
         self._end_prompt()
         gcmd.respond_info("print_recovery: " + self._t('discarded'))
+        if p is None:
+            return
+        lift = gcmd.get_float('LIFT_Z', self.discard_lift_z, minval=0.)
+        home_x = self._get_bool(gcmd, 'HOME_X', self.discard_home_x)
+        home_y = self._get_bool(gcmd, 'HOME_Y', self.discard_home_y)
+        if lift <= 0. and not (home_x or home_y):
+            return
+        sd = self.printer.lookup_object('virtual_sdcard')
+        stats = self.printer.lookup_object('print_stats')
+        if sd.is_active() or stats.state == 'printing':
+            return
+        self._clear_nozzle(gcmd, p, lift, home_x, home_y)
+
+    def _clear_nozzle(self, gcmd, p, lift, home_x, home_y):
+        # Get the nozzle away from the abandoned part
+        info = gcmd.respond_info
+        toolhead = self.printer.lookup_object('toolhead')
+        th = toolhead.get_status(self.reactor.monotonic())
+        raw = p.get('raw_position')
+        if raw is None:
+            return
+        homed = th.get('homed_axes', '')
+        pos = list(toolhead.get_position())
+        if 'z' not in homed:
+            # Z is assumed to be where the last snapshot left it
+            pos[2] = raw[2]
+            toolhead.set_position(pos, homing_axes="z")
+        room = th['axis_maximum'][2] - pos[2]
+        lift = min(lift, room)
+        if lift < 2.:
+            info("print_recovery: " + self._t('no_room'))
+            return
+        info("print_recovery: " + self._t('discard_lift') % (lift,))
+        self._run("G91\nG1 Z%.3f F600\nG90" % (lift,))
+        axes = ("X " if home_x else "") + ("Y" if home_y else "")
+        if axes.strip():
+            info("print_recovery: " + self._t('home'))
+            self._run("G28 " + axes.strip())
 
     cmd_PRINT_RECOVERY_RESUME_help = \
-        "Resume the interrupted print (PARK= PARK_X= PARK_Y= PURGE= " \
-        "PURGE_LENGTH= LIFT_Z=)"
+        "Resume the interrupted print (PARK_ENABLE_X= PARK_ENABLE_Y= " \
+        "PARK_X= PARK_Y= PURGE= PURGE_LENGTH= LIFT_Z=)"
     def cmd_PRINT_RECOVERY_RESUME(self, gcmd):
         p = self.pending
         if p is None:
@@ -526,7 +581,8 @@ class PrintRecovery:
                                 if self.park_x is not None else amin[0])
         park_y = gcmd.get_float('PARK_Y', self.park_y)
         purge = self._get_bool(gcmd, 'PURGE', self.purge)
-        park = self._get_bool(gcmd, 'PARK', self.park_enable)
+        park_ex = self._get_bool(gcmd, 'PARK_ENABLE_X', self.park_enable_x)
+        park_ey = self._get_bool(gcmd, 'PARK_ENABLE_Y', self.park_enable_y)
         purge_len = gcmd.get_float('PURGE_LENGTH', self.purge_length,
                                    minval=0.)
         lift = gcmd.get_float('LIFT_Z', self.lift_z, minval=0.)
@@ -542,8 +598,8 @@ class PrintRecovery:
         self.resuming = True
         try:
             self._end_prompt()
-            self._resume(gcmd, p, sd, amax, park, park_x, park_y, purge,
-                         purge_len, lift)
+            self._resume(gcmd, p, sd, amax, park_ex, park_ey, park_x, park_y,
+                         purge, purge_len, lift)
         finally:
             self.resuming = False
 
@@ -557,8 +613,8 @@ class PrintRecovery:
     def _run(self, script):
         self.gcode.run_script_from_command(script)
 
-    def _resume(self, gcmd, p, sd, amax, park, park_x, park_y, purge,
-                purge_len, lift):
+    def _resume(self, gcmd, p, sd, amax, park_ex, park_ey, park_x, park_y,
+                purge, purge_len, lift):
         info = gcmd.respond_info
         raw = p['raw_position']
         gpos = p['gcode_position']
@@ -583,19 +639,27 @@ class PrintRecovery:
         toolhead = self.printer.lookup_object('toolhead')
         pos = list(toolhead.get_position())
         pos[2] = raw[2]
-        if park:
-            toolhead.set_position(pos, homing_axes="z")
-        else:
-            pos[0], pos[1] = raw[0], raw[1]
-            toolhead.set_position(pos, homing_axes="xyz")
+        axes = "z"
+        if not park_ex:
+            pos[0] = raw[0]
+            axes += "x"
+        if not park_ey:
+            pos[1] = raw[1]
+            axes += "y"
+        toolhead.set_position(pos, homing_axes=axes)
         self._run("G91\nG1 Z%.3f F600\nG90" % (lift,))
+        park = park_ex or park_ey
         if park:
             info("print_recovery: " + self._t('home'))
-            self._run("G28 X Y")
-            move = "G1 X%.3f" % (park_x,)
-            if park_y is not None:
-                move += " Y%.3f" % (park_y,)
-            self._run("G90\n%s F%.0f" % (move, fast))
+            self._run("G28 " + " ".join(a for a, on in
+                                        (("X", park_ex), ("Y", park_ey)) if on))
+            move = []
+            if park_ex and park_x is not None:
+                move.append("X%.3f" % (park_x,))
+            if park_ey and park_y is not None:
+                move.append("Y%.3f" % (park_y,))
+            if move:
+                self._run("G90\nG1 %s F%.0f" % (" ".join(move), fast))
         info("print_recovery: "
              + self._t('nozzle_park' if park else 'nozzle_here') % (ext,))
         script = ["M83"]

@@ -20,13 +20,15 @@ when the printer is off.
 3. If you tap **Resume print**, the printer:
    1. heats the bed;
    2. lifts the nozzle, homes **X and Y only**, and moves to the **X stop**
-      (away from the part) — optional, see `park_enable`;
+      (away from the part) — optional, see `park_enable_x` / `park_enable_y`;
    3. heats the nozzle there, so nothing drips on the print;
    4. optionally purges a little filament — see `purge`;
    5. goes back to the saved position and keeps printing from the saved byte
       of the file.
 
-**Discard** forgets the print. If you closed the window, run
+**Discard** forgets the print, then lifts the nozzle away from the abandoned
+part (**50 mm** by default) and homes X and Y — both configurable, see
+`discard_lift_z`, `discard_home_x` and `discard_home_y`. If you closed the window, run
 `PRINT_RECOVERY_STATUS` in the console to see it again (it also reappears
 every minute while a print is waiting).
 
@@ -43,14 +45,17 @@ Everything below is optional; the values shown are the defaults.
 ```ini
 [print_recovery]
 snapshot_interval: 2      # seconds between saves (0.5 - 300)
-park_enable: True         # True: home X/Y and heat the nozzle at the X stop
-                          # False: do not move X/Y, heat in place (see below)
-park_x:                   # X used for heating/purging (default: X minimum)
-park_y:                   # Y used for heating/purging (default: after homing)
+park_enable_x: True       # True: home X and heat the nozzle at the X stop
+park_enable_y: True       # True: also home Y (False for either: not moved)
+park_x:                   # X to move to after homing X (default: X minimum)
+park_y:                   # Y to move to after homing Y (default: stay at home)
 park_speed: 100           # mm/s travel speed
 lift_z: 10                # mm the nozzle is lifted before homing X/Y
+discard_lift_z: 50        # mm the nozzle rises when you press Discard (0 = no)
+discard_home_x: True      # home X after Discard
+discard_home_y: True      # home Y after Discard
 purge: True               # True/False: purge before continuing (only when
-                          # park_enable is True)
+                          # X or Y is parked)
 purge_length: 20          # mm of filament to purge
 purge_speed: 5            # mm/s
 purge_retract: 2          # mm retracted after purging
@@ -61,16 +66,32 @@ prompt_repeat: 60         # seconds between reminders (0 = once)
 ```
 
 You can also override some values when resuming by hand:
-`PRINT_RECOVERY_RESUME PARK=1 PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5`
-(`PARK` and `PURGE` accept `1`/`0` or `True`/`False`). Anything you leave out
+`PRINT_RECOVERY_RESUME PARK_ENABLE_X=1 PARK_ENABLE_Y=0 PARK_X=-6 PURGE=0
+PURGE_LENGTH=10 LIFT_Z=5` (the `*_ENABLE_*`, `PURGE` and Discard's `HOME_X` /
+`HOME_Y` accept `1`/`0` or `True`/`False`; Discard also takes `LIFT_Z`). Anything you leave out
 uses the value from `printer.cfg`, or the default above.
 
-### Without moving to the X stop (`park_enable: False`)
+### What `park_x` and `park_y` do
 
-The nozzle is **not** homed or moved: after lifting it by `lift_z` it heats in
-place, above the part, and the purge is skipped (it would drop filament on the
-print). X, Y and Z are all assumed unchanged, so use this only if you are sure
-nothing moved. The nozzle may drip a little while it heats.
+After a power loss the printer no longer knows where X and Y are, so resuming
+homes them first. When an axis is homed (`park_enable_x` / `park_enable_y`),
+the nozzle is then moved to `park_x` / `park_y` and heats (and purges) there,
+away from the print:
+
+- `park_x` — the X position used to heat and purge. Empty means the machine's
+  X minimum, i.e. the X stop (on the Neptune 3 Pro, `-6`, left of the bed).
+- `park_y` — the same for Y. Empty means "stay where Y homing left the
+  nozzle" (usually the front of the bed).
+
+Set them only if the default corner is not a good place to drip filament.
+
+### Not moving an axis (`park_enable_x: False` / `park_enable_y: False`)
+
+An axis set to `False` is **not** homed or moved: it is assumed to be exactly
+where it was. With both set to `False` the nozzle just lifts by `lift_z` and
+heats in place above the part, and the purge is skipped (it would drop
+filament on the print). Use it only if you are sure nothing moved; the nozzle
+may drip a little while it heats.
 
 ### Language
 

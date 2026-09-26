@@ -20,12 +20,14 @@ segura mesmo com a impressora desligada.
 3. Se tocar em **Resume print**, a impressora:
    1. aquece a mesa;
    2. levanta o bico, faz home **só em X e Y** e vai até o **batente do eixo X**
-      (longe da peça) — opcional, veja `park_enable`;
+      (longe da peça) — opcional, veja `park_enable_x` / `park_enable_y`;
    3. aquece o bico ali, para nada escorrer sobre a impressão;
    4. opcionalmente purga um pouco de filamento — veja `purge`;
    5. volta à posição salva e continua imprimindo do byte salvo do arquivo.
 
-**Discard** descarta a impressão. Se fechou a janela, execute
+**Discard** descarta a impressão e depois levanta o bico para longe da peça
+abandonada (**50 mm** por padrão) e faz home de X e Y — tudo configurável, veja
+`discard_lift_z`, `discard_home_x` e `discard_home_y`. Se fechou a janela, execute
 `PRINT_RECOVERY_STATUS` no console para vê-la de novo (ela também reaparece a
 cada minuto enquanto houver uma impressão pendente).
 
@@ -42,14 +44,17 @@ Tudo abaixo é opcional; os valores mostrados são os padrões.
 ```ini
 [print_recovery]
 snapshot_interval: 2      # segundos entre gravações (0.5 - 300)
-park_enable: True         # True: home de X/Y e aquece o bico no batente do X
-                          # False: não move X/Y, aquece no lugar (veja abaixo)
-park_x:                   # X para aquecer/purgar (padrão: mínimo do eixo X)
-park_y:                   # Y para aquecer/purgar (padrão: o do home)
+park_enable_x: True       # True: home de X e aquece o bico no batente do X
+park_enable_y: True       # True: também home de Y (False: eixo não se move)
+park_x:                   # X para ir após o home de X (padrão: mínimo do X)
+park_y:                   # Y para ir após o home de Y (padrão: fica no home)
 park_speed: 100           # mm/s de deslocamento
 lift_z: 10                # mm que o bico sobe antes do home de X/Y
-purge: True               # True/False: purgar antes de continuar (só com
-                          # park_enable True)
+discard_lift_z: 50        # mm que o bico sobe ao usar Discard (0 = não sobe)
+discard_home_x: True      # home de X após Discard
+discard_home_y: True      # home de Y após Discard
+purge: True               # True/False: purgar antes de continuar (só se X
+                          # ou Y estiver estacionado)
 purge_length: 20          # mm de filamento na purga
 purge_speed: 5            # mm/s
 purge_retract: 2          # mm de retração após a purga
@@ -60,16 +65,31 @@ prompt_repeat: 60         # segundos entre lembretes (0 = uma vez)
 ```
 
 Ao retomar manualmente, dá para sobrescrever valores:
-`PRINT_RECOVERY_RESUME PARK=1 PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5`
-(`PARK` e `PURGE` aceitam `1`/`0` ou `True`/`False`). O que não for informado
+`PRINT_RECOVERY_RESUME PARK_ENABLE_X=1 PARK_ENABLE_Y=0 PARK_X=-6 PURGE=0
+PURGE_LENGTH=10 LIFT_Z=5` (`*_ENABLE_*`, `PURGE` e, no Discard, `HOME_X` /
+`HOME_Y` aceitam `1`/`0` ou `True`/`False`; o Discard também aceita `LIFT_Z`). O que não for informado
 usa o valor do `printer.cfg` ou o padrão acima.
 
-### Sem mover para o batente do X (`park_enable: False`)
+### O que fazem `park_x` e `park_y`
 
-O bico **não** faz home nem se move: depois de subir `lift_z`, ele aquece no
-lugar, sobre a peça, e a purga é ignorada (derramaria filamento na impressão).
-X, Y e Z são assumidos como inalterados, então use só se tiver certeza de que
-nada se moveu. O bico pode escorrer um pouco enquanto aquece.
+Depois de uma queda de energia a impressora não sabe mais onde estão X e Y,
+então a retomada faz home deles primeiro. Quando um eixo faz home
+(`park_enable_x` / `park_enable_y`), o bico vai para `park_x` / `park_y` e
+aquece (e purga) ali, longe da impressão:
+
+- `park_x` — posição X usada para aquecer e purgar. Vazio = mínimo do X da
+  máquina, ou seja, o batente do X (na Neptune 3 Pro, `-6`, à esquerda da mesa).
+- `park_y` — o mesmo para o Y. Vazio = "fica onde o home do Y deixou o bico"
+  (normalmente a frente da mesa).
+
+Só configure se o canto padrão não for um bom lugar para escorrer filamento.
+
+### Não mover um eixo (`park_enable_x: False` / `park_enable_y: False`)
+
+Um eixo em `False` **não** faz home nem se move: assume-se que está exatamente
+onde estava. Com os dois em `False`, o bico só sobe `lift_z` e aquece no lugar,
+sobre a peça, e a purga é ignorada (derramaria filamento na impressão). Use só
+se tiver certeza de que nada se moveu; o bico pode escorrer um pouco.
 
 ### Idioma
 
