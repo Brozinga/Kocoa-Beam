@@ -1,0 +1,89 @@
+# Print recovery — resume a print after a power loss
+
+**Languages: [English](print-recovery.md) · [Português (BR)](pt-br/print-recovery.md) · [简体中文](zh-Hans/print-recovery.md)**
+
+If the printer loses power, the USB cable comes loose or Klipper shuts down in
+the middle of a print, Kocoa Beam can offer to **continue that print from where
+it stopped**. It is a best-effort feature: it works best on parts that are still
+firmly stuck to the bed.
+
+The phone keeps running (it has a battery), so the print position is safe even
+when the printer is off.
+
+## How it works
+
+1. While printing, the position in the G-code file, the nozzle position, the
+   temperatures, fan, speed/flow, Z offset and bed mesh are saved to a small
+   file every **2 seconds** (configurable).
+2. After the printer is back and Klipper is ready, Fluidd and Mainsail show a
+   **"Print interrupted"** window asking whether to resume.
+3. If you tap **Resume print**, the printer:
+   1. heats the bed;
+   2. lifts the nozzle, homes **X and Y only**, and moves to the **X stop**
+      (away from the part);
+   3. heats the nozzle there, so nothing drips on the print;
+   4. optionally purges a little filament;
+   5. goes back to the saved position and keeps printing from the saved byte
+      of the file.
+
+**Discard** forgets the print. If you closed the window, run
+`PRINT_RECOVERY_STATUS` in the console to see it again (it also reappears
+every minute while a print is waiting).
+
+## Turn it on
+
+Add this to `printer.cfg` (any place outside another section) and restart:
+
+```ini
+[print_recovery]
+```
+
+Everything below is optional; the values shown are the defaults.
+
+```ini
+[print_recovery]
+snapshot_interval: 2      # seconds between saves (0.5 - 300)
+park_x:                   # X used for heating/purging (default: X minimum)
+park_y:                   # Y used for heating/purging (default: after homing)
+park_speed: 100           # mm/s travel speed
+lift_z: 10                # mm the nozzle is lifted before homing X/Y
+purge: True               # purge before continuing
+purge_length: 20          # mm of filament to purge
+purge_speed: 5            # mm/s
+purge_retract: 2          # mm retracted after purging
+min_extruded: 5           # mm extruded before the first save
+prompt: True              # show the Fluidd/Mainsail window
+prompt_repeat: 60         # seconds between reminders (0 = once)
+```
+
+You can also override some values when resuming by hand:
+`PRINT_RECOVERY_RESUME PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5`.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `PRINT_RECOVERY_STATUS` | Shows the interrupted print and the window again |
+| `PRINT_RECOVERY_RESUME` | Resumes it |
+| `PRINT_RECOVERY_DISCARD` | Forgets it |
+
+## After the printer comes back
+
+- If Klipper shows an error such as *"Lost communication with MCU"*, press
+  **Firmware Restart**. The window appears once Klipper is ready.
+- Do **not** move the axes by hand: the resume assumes Z did not change.
+
+## Limits — please read
+
+- **Z is assumed unchanged.** Without power the motors let go. If the gantry
+  dropped or was moved, the nozzle can touch the part. That is why the nozzle
+  is lifted (`lift_z`) before anything moves.
+- **The part cools down.** It can lift or warp, and a visible line usually
+  remains at the resume height. Resume soon and only if the part is still stuck.
+- A few seconds of printing before the interruption are printed again (the
+  G-code is read ahead of the motion); this leaves a tiny bump at most.
+- There is no power-loss detector on the printer board, so the nozzle cannot
+  park or retract at the moment of the power cut.
+- If the G-code file is deleted or changed, resuming is refused.
+- The timelapse keeps the frames taken before the interruption. Moonraker
+  records the resume as a new job in the history.
