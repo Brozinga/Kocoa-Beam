@@ -180,6 +180,7 @@ Tudo abaixo está em [`docs/pt-br/`](docs/pt-br/index.md) (também em English e 
 |---|---|
 | Instalar o app e configurar minha primeira impressora, passo a passo | [`getting-started.md`](docs/pt-br/getting-started.md) |
 | Ver o que mudou em relação ao Beam Klipper | [`whats-new.md`](docs/pt-br/whats-new.md) |
+| Retomar uma impressão após queda de energia | [`print-recovery.md`](docs/pt-br/print-recovery.md) |
 | Gravar um timelapse e achar o vídeo | [`timelapse.md`](docs/pt-br/timelapse.md) |
 | Configurar câmera, webcam USB, pré-visualização, zoom e toque para focar | [`webcam.md`](docs/pt-br/webcam.md) |
 | Acessar a impressora remotamente | [`octoeverywhere.md`](docs/pt-br/octoeverywhere.md) · [`obico.md`](docs/pt-br/obico.md) |

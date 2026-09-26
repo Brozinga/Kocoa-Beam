@@ -70,6 +70,7 @@ class Timelapse:
         self.byrendermacro = False
         self.hyperlapserunning = False
         self.printing = False
+        self.recovering = False
         self.noWebcamDb = False
 
         self.confighelper = confighelper
@@ -512,9 +513,17 @@ class Timelapse:
                     ioloop.spawn_callback(self.stop_hyperlapse)
 
     async def handle_gcode_response(self, gresponse: str) -> None:
-        if gresponse == "File selected":
+        if gresponse == "Print recovery: resuming":
+            # Beam: print_recovery re-opens the interrupted file next; keep
+            # the frames already taken instead of treating it as a new print
+            self.recovering = True
+
+        elif gresponse == "File selected":
             # print_started
-            self.cleanup()
+            if self.recovering:
+                self.recovering = False
+            else:
+                self.cleanup()
             self.printing = True
 
             # start hyperlapse if mode is set
