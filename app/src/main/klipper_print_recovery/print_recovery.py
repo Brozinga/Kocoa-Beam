@@ -27,6 +27,8 @@ class PrintRecovery:
         self.printer = config.get_printer()
         self.reactor = self.printer.get_reactor()
         self.gcode = self.printer.lookup_object('gcode')
+        # RESPOND is what Fluidd/Mainsail send when a prompt is closed
+        self.printer.load_object(config, 'respond')
         self.interval = config.getfloat('snapshot_interval', 2.,
                                         minval=0.5, maxval=300.)
         self.park_x = config.getfloat('park_x', None)
@@ -301,7 +303,7 @@ class PrintRecovery:
         self.gcode.respond_info("action:prompt_end", log=False)
 
     def _prompt_handler(self, eventtime):
-        if self.pending is None or self.shutdown:
+        if self.pending is None or self.shutdown or self.resuming:
             return self.reactor.NEVER
         stats = self.printer.lookup_object('print_stats', None)
         if stats is not None and stats.state == 'printing':
