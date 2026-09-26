@@ -124,5 +124,17 @@ forçar um idioma.
 - A placa não tem detector de queda de energia, então o bico não consegue
   estacionar nem retrair no instante do corte.
 - Se o arquivo G-code for apagado ou alterado, a retomada é recusada.
+- **Impressoras Delta não são suportadas:** elas não fazem home de X e Y
+  separadamente.
+- **`G28` personalizado:** se sua configuração altera o home (por exemplo, um
+  `homing_override` que também faz home do Z), a etapa de home de X/Y da
+  retomada pode se comportar mal. Confira se `G28 X Y` faz home só de X e Y.
+- **Multifilamento e multiferramenta** (MMU/Happy Hare, IDEX, trocadores de
+  ferramenta) não são tratados: só o extrusor ativo é salvo e restaurado.
+- **Ventoinhas:** só a ventoinha da peça (`[fan]`) é restaurada. As demais
+  (`fan_generic`, do controlador ou auxiliares) voltam ao que sua configuração
+  ou macros definirem.
+- **Câmara:** aquecedores de câmara e suas temperaturas não são salvos nem
+  restaurados.
 - O timelapse mantém os quadros anteriores. O Moonraker registra a retomada
   como um novo trabalho no histórico.

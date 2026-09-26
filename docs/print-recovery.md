@@ -126,5 +126,16 @@ other language shows English). Set `language: pt` (or `en`, `ru`, `zh`,
 - There is no power-loss detector on the printer board, so the nozzle cannot
   park or retract at the moment of the power cut.
 - If the G-code file is deleted or changed, resuming is refused.
+- **Delta printers are not supported:** they cannot home X and Y on their own.
+- **Custom `G28`:** if your config overrides homing (for example a
+  `homing_override` that also homes Z), the X/Y homing step of the resume can
+  misbehave. Check that `G28 X Y` only homes X and Y.
+- **Multi-filament and multi-tool setups** (MMU/Happy Hare, IDEX, tool
+  changers) are not handled: only the active extruder is saved and restored.
+- **Fans:** only the part-cooling fan (`[fan]`) is restored. Other fans
+  (`fan_generic`, controller or auxiliary fans) go back to what your config or
+  macros set.
+- **Chamber:** chamber heaters and their temperatures are not saved or
+  restored.
 - The timelapse keeps the frames taken before the interruption. Moonraker
   records the resume as a new job in the history.
