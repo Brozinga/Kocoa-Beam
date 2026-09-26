@@ -14,6 +14,10 @@
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
 import collections, io, json, logging, os, time
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
 
 MIN_SAMPLE_PERIOD = 0.2
 MAX_SAMPLE_PERIOD = 0.5
@@ -22,6 +26,123 @@ HISTORY_SECONDS = 20.
 EXECUTED_MARGIN = 0.3
 OBJECT_SCAN_LIMIT = 4 * 1024 * 1024
 
+# Texts shown in the Fluidd/Mainsail prompt and console, by UI language.
+# Missing languages fall back to English.
+TEXTS = {
+    'en': {
+        'title': "Print interrupted",
+        'stopped': "%(name)s stopped at %(pct)d%% (%(where)s), saved %(ago)s.",
+        'ask': "Resume it? The bed heats first, then the nozzle heats "
+               "before the print continues.",
+        'ask_park': "Resume it? The bed heats first, then the nozzle heats "
+                    "parked at the X stop so it cannot drip on the part.",
+        'warn': "Only resume if the part is still stuck to the bed and the "
+                "axes were not moved by hand.",
+        'resume': "Resume print", 'discard': "Discard",
+        'layer': "layer %d/%d", 'min': "%d min ago", 'hour': "%.1f h ago",
+        'none': "nothing to resume",
+        'discarded': "interrupted print discarded",
+        'bed': "heating the bed to %.0f C",
+        'home': "homing X/Y",
+        'nozzle_park': "heating the nozzle to %.0f C at the X stop",
+        'nozzle_here': "heating the nozzle to %.0f C in place",
+        'purge': "purging %.1f mm",
+        'back': "returning to the print",
+        'resumed': "resumed %(name)s from byte %(pos)d",
+        'mesh_fail': "WARNING the bed mesh could not be restored",
+    },
+    'pt': {
+        'title': "Impressão interrompida",
+        'stopped': "%(name)s parou em %(pct)d%% (%(where)s), salvo %(ago)s.",
+        'ask': "Deseja retomar? A mesa aquece primeiro e depois o bico "
+               "aquece antes de a impressão continuar.",
+        'ask_park': "Deseja retomar? A mesa aquece primeiro e depois o bico "
+                    "aquece parado no batente do eixo X, para não escorrer "
+                    "sobre a peça.",
+        'warn': "Só retome se a peça ainda estiver colada na mesa e os eixos "
+                "não tiverem sido movidos à mão.",
+        'resume': "Retomar impressão", 'discard': "Descartar",
+        'layer': "camada %d/%d", 'min': "há %d min", 'hour': "há %.1f h",
+        'none': "nada para retomar",
+        'discarded': "impressão interrompida descartada",
+        'bed': "aquecendo a mesa a %.0f C",
+        'home': "fazendo home de X/Y",
+        'nozzle_park': "aquecendo o bico a %.0f C no batente do eixo X",
+        'nozzle_here': "aquecendo o bico a %.0f C no lugar",
+        'purge': "purgando %.1f mm",
+        'back': "voltando para a impressão",
+        'resumed': "%(name)s retomado a partir do byte %(pos)d",
+        'mesh_fail': "AVISO: não foi possível restaurar a malha da mesa",
+    },
+    'ru': {
+        'title': "Печать прервана",
+        'stopped': "%(name)s остановлена на %(pct)d%% (%(where)s), "
+                   "сохранено %(ago)s.",
+        'ask': "Продолжить? Сначала нагревается стол, затем сопло, "
+               "после чего печать продолжится.",
+        'ask_park': "Продолжить? Сначала нагревается стол, затем сопло "
+                    "нагревается в крайней точке оси X, чтобы пластик не "
+                    "капал на модель.",
+        'warn': "Продолжайте, только если модель всё ещё приклеена к столу "
+                "и оси не двигали руками.",
+        'resume': "Продолжить печать", 'discard': "Отменить",
+        'layer': "слой %d/%d", 'min': "%d мин назад", 'hour': "%.1f ч назад",
+        'none': "нечего продолжать",
+        'discarded': "прерванная печать отменена",
+        'bed': "нагрев стола до %.0f C",
+        'home': "парковка X/Y",
+        'nozzle_park': "нагрев сопла до %.0f C в крайней точке X",
+        'nozzle_here': "нагрев сопла до %.0f C на месте",
+        'purge': "прочистка %.1f мм",
+        'back': "возврат к печати",
+        'resumed': "%(name)s продолжен с байта %(pos)d",
+        'mesh_fail': "ВНИМАНИЕ: не удалось восстановить карту стола",
+    },
+    'zh': {
+        'title': "打印已中断",
+        'stopped': "%(name)s 在 %(pct)d%% 处中断（%(where)s），%(ago)s保存。",
+        'ask': "是否继续？先加热热床，再加热喷嘴，然后继续打印。",
+        'ask_park': "是否继续？先加热热床，然后喷嘴在 X 限位处加热，"
+                    "避免耗材滴在模型上。",
+        'warn': "仅当模型仍粘在热床上且未手动移动过轴时才继续。",
+        'resume': "继续打印", 'discard': "放弃",
+        'layer': "第 %d/%d 层", 'min': "%d 分钟前", 'hour': "%.1f 小时前",
+        'none': "没有可恢复的打印",
+        'discarded': "已放弃中断的打印",
+        'bed': "热床加热到 %.0f C",
+        'home': "X/Y 回零",
+        'nozzle_park': "在 X 限位处将喷嘴加热到 %.0f C",
+        'nozzle_here': "原地将喷嘴加热到 %.0f C",
+        'purge': "清洗 %.1f mm",
+        'back': "返回打印位置",
+        'resumed': "已从字节 %(pos)d 继续 %(name)s",
+        'mesh_fail': "警告：无法恢复热床网格",
+    },
+    'zh-TW': {
+        'title': "列印已中斷",
+        'stopped': "%(name)s 在 %(pct)d%% 處中斷（%(where)s），%(ago)s儲存。",
+        'ask': "是否繼續？先加熱熱床，再加熱噴嘴，然後繼續列印。",
+        'ask_park': "是否繼續？先加熱熱床，然後噴嘴在 X 限位處加熱，"
+                    "避免線材滴在模型上。",
+        'warn': "僅當模型仍黏在熱床上且未手動移動過軸時才繼續。",
+        'resume': "繼續列印", 'discard': "放棄",
+        'layer': "第 %d/%d 層", 'min': "%d 分鐘前", 'hour': "%.1f 小時前",
+        'none': "沒有可恢復的列印",
+        'discarded': "已放棄中斷的列印",
+        'bed': "熱床加熱到 %.0f C",
+        'home': "X/Y 歸零",
+        'nozzle_park': "在 X 限位處將噴嘴加熱到 %.0f C",
+        'nozzle_here': "原地將噴嘴加熱到 %.0f C",
+        'purge': "清洗 %.1f mm",
+        'back': "返回列印位置",
+        'resumed': "已從位元組 %(pos)d 繼續 %(name)s",
+        'mesh_fail': "警告：無法恢復熱床網格",
+    },
+}
+LANG_CACHE_SECONDS = 30.
+WEB_PORTS = ((4408, 'fluidd', 'uiSettings.general.locale'),
+             (4409, 'mainsail', 'general.locale'))
+
 class PrintRecovery:
     def __init__(self, config):
         self.printer = config.get_printer()
@@ -29,6 +150,8 @@ class PrintRecovery:
         self.gcode = self.printer.lookup_object('gcode')
         self.interval = config.getfloat('snapshot_interval', 2.,
                                         minval=0.5, maxval=300.)
+        self.park_enable = config.getboolean('park_enable', True)
+        self.language = config.get('language', 'auto')
         self.park_x = config.getfloat('park_x', None)
         self.park_y = config.getfloat('park_y', None)
         self.park_speed = config.getfloat('park_speed', 100., above=0.)
@@ -50,6 +173,7 @@ class PrintRecovery:
         self.state_file = os.path.expanduser(state_file)
         self.history = collections.deque()
         self.mesh_cache = (None, None)
+        self.lang_cache = (0., 'en')
         self.pending = None
         self.recording = False
         self.resuming = False
@@ -273,32 +397,76 @@ class PrintRecovery:
             self.pending = None
 
     # ---- prompt ----------------------------------------------------------
+    def _ui_language(self):
+        lang = self.language.strip()
+        if lang.lower() != 'auto':
+            return self._normalize_lang(lang)
+        now = self.reactor.monotonic()
+        if now - self.lang_cache[0] < LANG_CACHE_SECONDS:
+            return self.lang_cache[1]
+        found = 'en'
+        for port, ns, key in WEB_PORTS:
+            try:
+                url = ("http://127.0.0.1:%d/server/database/item"
+                       "?namespace=%s&key=%s" % (port, ns, key))
+                resp = urlopen(url, timeout=1.5)
+                value = json.loads(resp.read().decode('utf-8'))
+                value = value['result']['value']
+                if isinstance(value, str) and value:
+                    found = self._normalize_lang(value)
+                    break
+                # the reachable front end has no language saved: English
+                break
+            except Exception:
+                continue
+        self.lang_cache = (now, found)
+        return found
+
+    @staticmethod
+    def _normalize_lang(code):
+        code = code.replace('_', '-').lower()
+        if code.startswith('zh'):
+            return 'zh-TW' if ('tw' in code or 'hant' in code
+                               or 'hk' in code) else 'zh'
+        for lang in ('pt', 'ru'):
+            if code.startswith(lang):
+                return lang
+        return 'en'
+
+    def _t(self, key):
+        texts = TEXTS.get(self._ui_language(), TEXTS['en'])
+        return texts.get(key) or TEXTS['en'][key]
+
     def _describe(self, p):
         name = p.get('filename', '?')
         pct = int(round((p.get('progress') or 0.) * 100))
         where = "Z %.2f mm" % (p['gcode_position'][2],)
         if p.get('layer') is not None and p.get('total_layer'):
-            where = "layer %d/%d, %s" % (p['layer'], p['total_layer'], where)
+            where = "%s, %s" % (self._t('layer') % (p['layer'],
+                                                    p['total_layer']), where)
         mins = int((time.time() - p.get('saved_at', time.time())) / 60.)
-        ago = "%d min ago" % mins if mins < 120 else "%.1f h ago" % (mins/60.)
-        return name, pct, where, ago
+        ago = self._t('min') % mins if mins < 120 \
+            else self._t('hour') % (mins / 60.)
+        return {'name': name, 'pct': pct, 'where': where, 'ago': ago}
+
+    def _stopped_text(self, p):
+        return self._t('stopped') % self._describe(p)
 
     def _show_prompt(self):
         p = self.pending
         if p is None:
             return
-        name, pct, where, ago = self._describe(p)
         info = lambda m: self.gcode.respond_info("action:" + m, log=False)
-        info("prompt_begin Print interrupted")
-        info("prompt_text %s stopped at %d%% (%s), saved %s."
-             % (name, pct, where, ago))
-        info("prompt_text Resume it? The bed heats first, then the nozzle "
-             "heats parked at the X stop so it cannot drip on the part.")
-        info("prompt_text Only resume if the part is still stuck to the "
-             "bed and the axes were not moved by hand.")
+        info("prompt_begin " + self._t('title'))
+        info("prompt_text " + self._stopped_text(p))
+        info("prompt_text " + self._t('ask_park' if self.park_enable
+                                      else 'ask'))
+        info("prompt_text " + self._t('warn'))
         info("prompt_button_group_start")
-        info("prompt_button Resume print|PRINT_RECOVERY_RESUME|primary")
-        info("prompt_button Discard|PRINT_RECOVERY_DISCARD|error")
+        info("prompt_button %s|PRINT_RECOVERY_RESUME|primary"
+             % (self._t('resume'),))
+        info("prompt_button %s|PRINT_RECOVERY_DISCARD|error"
+             % (self._t('discard'),))
         info("prompt_button_group_end")
         info("prompt_show")
 
@@ -327,11 +495,9 @@ class PrintRecovery:
         "Show the interrupted print that can be resumed, if any"
     def cmd_PRINT_RECOVERY_STATUS(self, gcmd):
         if self.pending is None:
-            gcmd.respond_info("print_recovery: nothing to resume")
+            gcmd.respond_info("print_recovery: " + self._t('none'))
             return
-        name, pct, where, ago = self._describe(self.pending)
-        gcmd.respond_info("print_recovery: %s stopped at %d%% (%s), saved %s"
-                          % (name, pct, where, ago))
+        gcmd.respond_info("print_recovery: " + self._stopped_text(self.pending))
         self._show_prompt()
 
     cmd_PRINT_RECOVERY_DISCARD_help = \
@@ -340,10 +506,10 @@ class PrintRecovery:
         self.pending = None
         self._clear_state()
         self._end_prompt()
-        gcmd.respond_info("print_recovery: interrupted print discarded")
+        gcmd.respond_info("print_recovery: " + self._t('discarded'))
 
     cmd_PRINT_RECOVERY_RESUME_help = \
-        "Resume the interrupted print (PARK_X= PARK_Y= PURGE= " \
+        "Resume the interrupted print (PARK= PARK_X= PARK_Y= PURGE= " \
         "PURGE_LENGTH= LIFT_Z=)"
     def cmd_PRINT_RECOVERY_RESUME(self, gcmd):
         p = self.pending
@@ -359,7 +525,8 @@ class PrintRecovery:
         park_x = gcmd.get_float('PARK_X', self.park_x
                                 if self.park_x is not None else amin[0])
         park_y = gcmd.get_float('PARK_Y', self.park_y)
-        purge = gcmd.get_int('PURGE', 1 if self.purge else 0) != 0
+        purge = self._get_bool(gcmd, 'PURGE', self.purge)
+        park = self._get_bool(gcmd, 'PARK', self.park_enable)
         purge_len = gcmd.get_float('PURGE_LENGTH', self.purge_length,
                                    minval=0.)
         lift = gcmd.get_float('LIFT_Z', self.lift_z, minval=0.)
@@ -375,16 +542,23 @@ class PrintRecovery:
         self.resuming = True
         try:
             self._end_prompt()
-            self._resume(gcmd, p, sd, amax, park_x, park_y, purge,
+            self._resume(gcmd, p, sd, amax, park, park_x, park_y, purge,
                          purge_len, lift)
         finally:
             self.resuming = False
 
+    @staticmethod
+    def _get_bool(gcmd, name, default):
+        raw = gcmd.get(name, None)
+        if raw is None:
+            return default
+        return raw.strip().lower() in ('1', 'true', 'yes', 'on')
+
     def _run(self, script):
         self.gcode.run_script_from_command(script)
 
-    def _resume(self, gcmd, p, sd, amax, park_x, park_y, purge, purge_len,
-                lift):
+    def _resume(self, gcmd, p, sd, amax, park, park_x, park_y, purge,
+                purge_len, lift):
         info = gcmd.respond_info
         raw = p['raw_position']
         gpos = p['gcode_position']
@@ -397,26 +571,33 @@ class PrintRecovery:
             raise gcmd.error("print_recovery: not enough Z room (%.1f mm) to "
                              "lift the nozzle before homing X/Y" % (room,))
         lift = max(0., min(lift, room))
-        info("print_recovery: heating the bed to %.0f C" % (bed,))
+        info("print_recovery: " + self._t('bed') % (bed,))
         script = ["G90", "BED_MESH_CLEAR",
                   "SET_GCODE_OFFSET X=0 Y=0 Z=0"]
         if bed:
             script.append("M140 S%.1f" % (bed,))
         self._run("\n".join(script))
-        # Z is assumed unchanged: set it, lift, then find X/Y again
+        # Z is assumed unchanged: set it and lift. With parking, X/Y are then
+        # homed and the nozzle waits at the X stop; without it, X/Y are also
+        # assumed unchanged and the nozzle heats where it is (lifted).
         toolhead = self.printer.lookup_object('toolhead')
         pos = list(toolhead.get_position())
         pos[2] = raw[2]
-        toolhead.set_position(pos, homing_axes="z")
+        if park:
+            toolhead.set_position(pos, homing_axes="z")
+        else:
+            pos[0], pos[1] = raw[0], raw[1]
+            toolhead.set_position(pos, homing_axes="xyz")
         self._run("G91\nG1 Z%.3f F600\nG90" % (lift,))
-        info("print_recovery: homing X/Y")
-        self._run("G28 X Y")
-        move = "G1 X%.3f" % (park_x,)
-        if park_y is not None:
-            move += " Y%.3f" % (park_y,)
-        self._run("G90\n%s F%.0f" % (move, fast))
-        info("print_recovery: heating the nozzle to %.0f C at the X stop"
-             % (ext,))
+        if park:
+            info("print_recovery: " + self._t('home'))
+            self._run("G28 X Y")
+            move = "G1 X%.3f" % (park_x,)
+            if park_y is not None:
+                move += " Y%.3f" % (park_y,)
+            self._run("G90\n%s F%.0f" % (move, fast))
+        info("print_recovery: "
+             + self._t('nozzle_park' if park else 'nozzle_here') % (ext,))
         script = ["M83"]
         if ext:
             script.append("M104 S%.1f" % (ext,))
@@ -426,8 +607,9 @@ class PrintRecovery:
             script.append("M109 S%.1f" % (ext,))
         self._run("\n".join(script))
         retract = p_retract = 0.
-        if purge and purge_len > 0.:
-            info("print_recovery: purging %.1f mm" % (purge_len,))
+        # Purging in place would drop filament on the part: only when parked
+        if park and purge and purge_len > 0.:
+            info("print_recovery: " + self._t('purge') % (purge_len,))
             retract = p_retract = self.purge_retract
             script = ["G1 E%.3f F%.0f" % (purge_len, self.purge_speed * 60.)]
             if retract:
@@ -435,7 +617,7 @@ class PrintRecovery:
             script.append("G4 P800")
             self._run("\n".join(script))
         self._restore_mesh(p)
-        info("print_recovery: returning to the print")
+        info("print_recovery: " + self._t('back'))
         script = ["SET_GCODE_OFFSET X=%.4f Y=%.4f Z=%.4f"
                   % (org[0], org[1], org[2]),
                   "G90",
@@ -449,8 +631,8 @@ class PrintRecovery:
         self._reopen_file(gcmd, p, sd)
         self.pending = None
         self.recording = True
-        info("print_recovery: resumed %s from byte %d"
-             % (p['filename'], p['file_position']))
+        info("print_recovery: " + self._t('resumed')
+             % {'name': p['filename'], 'pos': p['file_position']})
 
     def _restore_mesh(self, p):
         mesh = p.get('mesh')
@@ -465,8 +647,8 @@ class PrintRecovery:
             bm.set_mesh(zmesh)
         except Exception:
             logging.exception("print_recovery: bed mesh not restored")
-            self.gcode.respond_info("print_recovery: WARNING the bed mesh "
-                                    "could not be restored")
+            self.gcode.respond_info("print_recovery: "
+                                    + self._t('mesh_fail'))
 
     def _restore_state(self, p):
         script = []

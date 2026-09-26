@@ -20,9 +20,9 @@ segura mesmo com a impressora desligada.
 3. Se tocar em **Resume print**, a impressora:
    1. aquece a mesa;
    2. levanta o bico, faz home **só em X e Y** e vai até o **batente do eixo X**
-      (longe da peça);
+      (longe da peça) — opcional, veja `park_enable`;
    3. aquece o bico ali, para nada escorrer sobre a impressão;
-   4. opcionalmente purga um pouco de filamento;
+   4. opcionalmente purga um pouco de filamento — veja `purge`;
    5. volta à posição salva e continua imprimindo do byte salvo do arquivo.
 
 **Discard** descarta a impressão. Se fechou a janela, execute
@@ -42,21 +42,41 @@ Tudo abaixo é opcional; os valores mostrados são os padrões.
 ```ini
 [print_recovery]
 snapshot_interval: 2      # segundos entre gravações (0.5 - 300)
+park_enable: True         # True: home de X/Y e aquece o bico no batente do X
+                          # False: não move X/Y, aquece no lugar (veja abaixo)
 park_x:                   # X para aquecer/purgar (padrão: mínimo do eixo X)
 park_y:                   # Y para aquecer/purgar (padrão: o do home)
 park_speed: 100           # mm/s de deslocamento
 lift_z: 10                # mm que o bico sobe antes do home de X/Y
-purge: True               # purgar antes de continuar
+purge: True               # True/False: purgar antes de continuar (só com
+                          # park_enable True)
 purge_length: 20          # mm de filamento na purga
 purge_speed: 5            # mm/s
 purge_retract: 2          # mm de retração após a purga
 min_extruded: 5           # mm extrudados antes da primeira gravação
+language: auto            # idioma da janela/console (veja abaixo)
 prompt: True              # mostrar a janela no Fluidd/Mainsail
 prompt_repeat: 60         # segundos entre lembretes (0 = uma vez)
 ```
 
 Ao retomar manualmente, dá para sobrescrever valores:
-`PRINT_RECOVERY_RESUME PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5`.
+`PRINT_RECOVERY_RESUME PARK=1 PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5`
+(`PARK` e `PURGE` aceitam `1`/`0` ou `True`/`False`). O que não for informado
+usa o valor do `printer.cfg` ou o padrão acima.
+
+### Sem mover para o batente do X (`park_enable: False`)
+
+O bico **não** faz home nem se move: depois de subir `lift_z`, ele aquece no
+lugar, sobre a peça, e a purga é ignorada (derramaria filamento na impressão).
+X, Y e Z são assumidos como inalterados, então use só se tiver certeza de que
+nada se moveu. O bico pode escorrer um pouco enquanto aquece.
+
+### Idioma
+
+A janela e as mensagens do console seguem o idioma escolhido no Fluidd ou no
+Mainsail (inglês, português, russo, chinês simplificado/tradicional; qualquer
+outro mostra inglês). Use `language: pt` (ou `en`, `ru`, `zh`, `zh-TW`) para
+forçar um idioma.
 
 ## Comandos
 

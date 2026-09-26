@@ -30,20 +30,31 @@
 ```ini
 [print_recovery]
 snapshot_interval: 2      # 保存间隔（秒，0.5 - 300）
+park_enable: True         # True：X/Y 回零并在 X 限位处加热喷嘴
+                          # False：不移动 X/Y，原地加热（见下）
 park_x:                   # 加热/清洗时的 X（默认：X 最小值）
 park_y:                   # 加热/清洗时的 Y（默认：回零后的位置）
 park_speed: 100           # 移动速度 mm/s
 lift_z: 10                # X/Y 回零前抬高喷嘴的毫米数
-purge: True               # 继续前是否清洗
+purge: True               # True/False：继续前是否清洗（仅 park_enable 为 True 时）
 purge_length: 20          # 清洗耗材长度 mm
 purge_speed: 5            # mm/s
 purge_retract: 2          # 清洗后回抽 mm
 min_extruded: 5           # 首次保存前需挤出的 mm
+language: auto            # 窗口/控制台语言（见下）
 prompt: True              # 是否显示 Fluidd/Mainsail 窗口
 prompt_repeat: 60         # 提醒间隔（秒，0 = 仅一次）
 ```
 
-手动恢复时可覆盖：`PRINT_RECOVERY_RESUME PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5`。
+手动恢复时可覆盖：`PRINT_RECOVERY_RESUME PARK=1 PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5`（`PARK`、`PURGE` 接受 `1`/`0` 或 `True`/`False`）。未指定的项使用 `printer.cfg` 中的值或上述默认值。
+
+### 不移动到 X 限位（`park_enable: False`）
+
+喷嘴**不会**回零或移动：抬高 `lift_z` 后在原地（模型上方）加热，并跳过清洗（否则耗材会落在模型上）。X、Y、Z 均假定未变化，仅在确定没有移动时使用。加热时喷嘴可能会滴料。
+
+### 语言
+
+窗口和控制台消息跟随 Fluidd 或 Mainsail 所选语言（英语、葡萄牙语、俄语、简体/繁体中文；其他语言显示英语）。可用 `language: zh`（或 `en`、`pt`、`ru`、`zh-TW`）强制指定。
 
 ## 命令
 

@@ -20,9 +20,9 @@ when the printer is off.
 3. If you tap **Resume print**, the printer:
    1. heats the bed;
    2. lifts the nozzle, homes **X and Y only**, and moves to the **X stop**
-      (away from the part);
+      (away from the part) — optional, see `park_enable`;
    3. heats the nozzle there, so nothing drips on the print;
-   4. optionally purges a little filament;
+   4. optionally purges a little filament — see `purge`;
    5. goes back to the saved position and keeps printing from the saved byte
       of the file.
 
@@ -43,21 +43,41 @@ Everything below is optional; the values shown are the defaults.
 ```ini
 [print_recovery]
 snapshot_interval: 2      # seconds between saves (0.5 - 300)
+park_enable: True         # True: home X/Y and heat the nozzle at the X stop
+                          # False: do not move X/Y, heat in place (see below)
 park_x:                   # X used for heating/purging (default: X minimum)
 park_y:                   # Y used for heating/purging (default: after homing)
 park_speed: 100           # mm/s travel speed
 lift_z: 10                # mm the nozzle is lifted before homing X/Y
-purge: True               # purge before continuing
+purge: True               # True/False: purge before continuing (only when
+                          # park_enable is True)
 purge_length: 20          # mm of filament to purge
 purge_speed: 5            # mm/s
 purge_retract: 2          # mm retracted after purging
 min_extruded: 5           # mm extruded before the first save
+language: auto            # window/console language (see below)
 prompt: True              # show the Fluidd/Mainsail window
 prompt_repeat: 60         # seconds between reminders (0 = once)
 ```
 
 You can also override some values when resuming by hand:
-`PRINT_RECOVERY_RESUME PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5`.
+`PRINT_RECOVERY_RESUME PARK=1 PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5`
+(`PARK` and `PURGE` accept `1`/`0` or `True`/`False`). Anything you leave out
+uses the value from `printer.cfg`, or the default above.
+
+### Without moving to the X stop (`park_enable: False`)
+
+The nozzle is **not** homed or moved: after lifting it by `lift_z` it heats in
+place, above the part, and the purge is skipped (it would drop filament on the
+print). X, Y and Z are all assumed unchanged, so use this only if you are sure
+nothing moved. The nozzle may drip a little while it heats.
+
+### Language
+
+The window and console messages follow the language chosen in Fluidd or
+Mainsail (English, Portuguese, Russian, Chinese simplified/traditional; any
+other language shows English). Set `language: pt` (or `en`, `ru`, `zh`,
+`zh-TW`) to force one.
 
 ## Commands
 
