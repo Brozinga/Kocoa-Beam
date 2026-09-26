@@ -243,7 +243,27 @@ class WebService : Service() {
         return ParsedCmd(fps, inputPath, outputPath, filter)
     }
 
+    // ffmpeg's image2 sequence pattern: %d, %6d, %06d ...
+    private val PRINTF_INT = Regex("%0?\\d*d")
+
     private fun expandWildcard(path: String): List<File> {
+        // moonraker-timelapse asks for "frameNNNNNN.jpg" as "frame%6d.jpg", which
+        // is a printf-style sequence, not a shell wildcard: match the frames by
+        // number and keep them in numeric order.
+        val printf = PRINTF_INT.find(File(path).name)
+        if (printf != null) {
+            val name = File(path).name
+            val parent = File(path).parentFile ?: File("/")
+            val pattern = Regex(
+                Regex.escape(name.substring(0, printf.range.first)) + "(\\d+)" +
+                    Regex.escape(name.substring(printf.range.last + 1))
+            )
+            return (parent.listFiles() ?: emptyArray())
+                .filter { it.isFile }
+                .mapNotNull { f -> pattern.matchEntire(f.name)?.let { it.groupValues[1].toLong() to f } }
+                .sortedBy { it.first }
+                .map { it.second }
+        }
         if (!path.contains("*") && !path.contains("?")) {
             val f = File(path)
             return if (f.exists()) listOf(f) else emptyList()
