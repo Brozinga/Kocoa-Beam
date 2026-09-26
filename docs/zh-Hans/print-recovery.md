@@ -4,6 +4,8 @@
 
 打印中如果打印机断电、USB 线松脱或 Klipper 关机，Kocoa Beam 可以让你**从中断处继续打印**。这是尽力而为的功能：模型仍牢固粘在热床上时效果最好。手机有电池，因此即使打印机断电，打印位置也不会丢失。
 
+<p align="center"><img src="../images/powerless-recovery.png" alt="Fluidd 询问是否继续被中断的打印" width="720"></p>
+
 ## 工作方式
 
 1. 打印时，每 **2 秒**（可配置）把 G-code 文件位置、喷嘴位置、温度、风扇、速度/流量、Z 偏移和热床网格保存到一个小文件。
@@ -48,6 +50,7 @@ language: auto            # 窗口/控制台语言（见下）
 macro_variables: *        # 要保存/恢复的宏变量：* = 所有不以 _ 开头的宏，留空 = 不保存，或列表：PRINT_START, MY_MACRO
 prompt: True              # 是否显示 Fluidd/Mainsail 窗口
 prompt_repeat: 60         # 提醒间隔（秒，0 = 仅一次）
+state_file:               # 快照保存位置（默认：printer.cfg 同目录）
 ```
 
 手动恢复时可覆盖：`PRINT_RECOVERY_RESUME PARK_ENABLE_X=1 PARK_ENABLE_Y=0 PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5`（`*_ENABLE_*`、`PURGE` 以及 Discard 的 `HOME_X`/`HOME_Y` 接受 `1`/`0` 或 `True`/`False`；Discard 还接受 `LIFT_Z`）。未指定的项使用 `printer.cfg` 中的值或上述默认值。

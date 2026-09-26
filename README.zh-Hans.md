@@ -84,8 +84,11 @@ Kocoa Beam 具有完全的 UI 重新设计：
 ### 额外功能
 - **10 个并发实例** — 同时运行最多 10 个打印机配置文件（对比 Beam Klipper 的 4 个）
 - **双固件支持** — 运行 Klipper 或 Kalico 固件引擎
+- **断电续打** — 断电或断线后，Fluidd/Mainsail 会询问是否从中断处继续打印（[指南](docs/zh-Hans/print-recovery.md)）
 - **原生延时摄影** — 使用 Android 硬件 MediaCodec 而非捆绑 FFmpeg
 - **本地运行** — 无云端连接，所有数据留在设备上（已移除 Beam Cloud 支持）
+
+<p align="center"><img src="docs/images/powerless-recovery.png" alt="Fluidd 询问是否继续被中断的打印" width="720"></p>
 
 ## 选择正确的安装包
 

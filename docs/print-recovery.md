@@ -10,6 +10,8 @@ firmly stuck to the bed.
 The phone keeps running (it has a battery), so the print position is safe even
 when the printer is off.
 
+<p align="center"><img src="images/powerless-recovery.png" alt="Fluidd asking whether to resume an interrupted print" width="720"></p>
+
 ## How it works
 
 1. While printing, the position in the G-code file, the nozzle position, the
@@ -65,6 +67,7 @@ macro_variables: *        # macro variables to save/restore: * = all macros not
                           # starting with _, empty = none, or a list: PRINT_START, MY_MACRO
 prompt: True              # show the Fluidd/Mainsail window
 prompt_repeat: 60         # seconds between reminders (0 = once)
+state_file:               # where the snapshot is kept (default: next to printer.cfg)
 ```
 
 You can also override some values when resuming by hand:

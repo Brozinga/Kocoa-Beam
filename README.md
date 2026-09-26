@@ -86,7 +86,10 @@ Kocoa Beam features a complete UI redesign with:
 - **10 concurrent instances** — run up to 10 printer profiles simultaneously (vs. 4 in Beam Klipper)
 - **Dual firmware support** — run Klipper or Kalico firmware engines
 - **Native timelapse** — uses Android's hardware MediaCodec instead of bundled FFmpeg
+- **Print recovery** — after a power loss or disconnection, Fluidd/Mainsail offer to resume the print from where it stopped ([guide](docs/print-recovery.md))
 - **Local-only operation** — no cloud connectivity; all data stays on your device (Beam Cloud support removed)
+
+<p align="center"><img src="docs/images/powerless-recovery.png" alt="Fluidd asking whether to resume an interrupted print" width="720"></p>
 
 ## Choosing the Right Package
 
