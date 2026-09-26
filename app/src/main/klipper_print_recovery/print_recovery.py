@@ -429,12 +429,11 @@ class PrintRecovery:
                 value = value['result']['value']
                 if isinstance(value, str) and value:
                     found = self._normalize_lang(value)
-                    break
-                # the reachable front end has no language saved: English
-                break
+                # else the front end has no language saved: English
+                self.lang_cache = (now, found)
+                return found
             except Exception:
                 continue
-        self.lang_cache = (now, found)
         return found
 
     @staticmethod
