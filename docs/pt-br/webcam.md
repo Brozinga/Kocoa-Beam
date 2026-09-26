@@ -51,6 +51,26 @@ servidor de câmera rapidamente.
 
 <p align="center"><img src="../images/camera-settings-zoom.png" alt="Configurações da câmera com a nova linha Zoom da câmera" width="288"></p>
 
+### Toque para focar
+
+Na **aba de pré-visualização da câmera**, toque em qualquer ponto da imagem
+para focar naquele local. Um quadrado amarelo mostra onde o foco foi pedido,
+se fecha sobre o ponto e desaparece. A lente foca uma vez nessa área e mantém,
+e o Fluidd/Mainsail também veem o novo foco, pois recebem o mesmo stream.
+
+<p align="center"><img src="../images/camera-tap-focus.png" alt="Pré-visualização da câmera com o quadrado amarelo de foco após um toque" width="288"></p>
+
+- Funciona em câmeras cujo hardware permite focar em uma área escolhida (a
+  maioria das câmeras de celular). Se a câmera selecionada não suporta — muitas
+  webcams USB têm foco fixo ou contínuo — a dica abaixo da imagem mostra
+  "Esta câmera não suporta foco por toque." e o toque não faz nada, sem
+  quebrar nada.
+- O toque cai no ponto certo mesmo com **rotação** e **zoom** configurados.
+- Ao tocar, a câmera passa para o autofoco de um disparo; o modo de foco das
+  configurações do app volta a valer na próxima vez que a câmera reiniciar.
+- Funciona em aparelhos antigos (Android 5.0+): usa só os controles de foco
+  padrão da Camera2 e confere o que a câmera informa antes de se habilitar.
+
 ### Suporte a webcam USB
 
 Isso depende do aparelho expor a webcam USB pela API Camera2 padrão do

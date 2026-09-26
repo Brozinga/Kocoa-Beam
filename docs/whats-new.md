@@ -56,6 +56,10 @@ network can actually carry instead of a fixed size that just gets dropped
 under congestion. Full guide, including how to add it to Fluidd/Mainsail:
 [`webcam.md`](webcam.md).
 
+In the live preview tab you can also **tap the picture to focus** on that spot,
+with a yellow square showing where the focus was requested. It only appears
+for cameras that support it, so older phones and simple webcams are unaffected.
+
 ## OctoEverywhere remote access
 
 **Settings → Remote access → Enable OctoEverywhere** runs the real

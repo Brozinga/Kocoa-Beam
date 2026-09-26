@@ -145,6 +145,8 @@
     <string name="CameraPreviewGrant">授予摄像头权限</string>
     <string name="CameraPreviewConnecting">正在连接摄像头服务器…</string>
     <string name="CameraPreviewHint">Fluidd/Mainsail 将看到的实时画面，包含旋转、分辨率和缩放。离开此标签页将断开预览。</string>
+    <string name="CameraPreviewFocusHint">点击预览画面即可对该位置对焦。</string>
+    <string name="CameraPreviewFocusUnsupported">此摄像头不支持点击对焦。</string>
     <string name="LogsSourceNotFound">未找到日志来源。</string>
     <string name="LogsLoadFailed">加载失败：%1$s</string>
     <string name="LogsLoading">加载中…</string>

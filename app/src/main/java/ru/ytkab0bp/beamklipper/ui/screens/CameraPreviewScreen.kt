@@ -1,12 +1,17 @@
 package ru.ytkab0bp.beamklipper.ui.screens
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -31,7 +36,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -44,7 +53,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.R
+import ru.ytkab0bp.beamklipper.service.CameraService
+import ru.ytkab0bp.beamklipper.utils.CameraFocus
 import ru.ytkab0bp.beamklipper.ui.components.BrutalButton
 import ru.ytkab0bp.beamklipper.ui.theme.Ink
 import java.io.BufferedInputStream
@@ -53,6 +65,8 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.coroutines.coroutineContext
+
+private data class FocusTap(val point: Offset, val id: Int)
 
 // Local MJPEG endpoint served by CameraService (same stream Fluidd/Mainsail use).
 private const val STREAM_URL = "http://127.0.0.1:8889/"
@@ -65,6 +79,17 @@ fun CameraPreviewScreen() {
     }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = it }
     var frame by remember { mutableStateOf<Bitmap?>(null) }
+    val focusSupported = remember { CameraFocus.isSupportedForSelectedCamera(context) }
+    // Where the last tap landed (in box pixels) + a counter so repeated taps
+    // on the same spot still restart the animation.
+    var focusTap by remember { mutableStateOf<FocusTap?>(null) }
+    val focusAnim = remember { Animatable(0f) }
+    LaunchedEffect(focusTap) {
+        if (focusTap == null) return@LaunchedEffect
+        focusAnim.snapTo(0f)
+        focusAnim.animateTo(1f, tween(1400))
+        focusTap = null
+    }
 
     // Only connected while this tab is on screen — CameraService skips JPEG
     // encoding entirely when nobody is watching, so leaving the tab is free.
@@ -105,12 +130,48 @@ fun CameraPreviewScreen() {
                 .align(Alignment.CenterHorizontally)
                 .aspectRatio(4f / 3f)
                 .background(Color.Black, RectangleShape)
-                .border(2.dp, Ink, RectangleShape),
+                .border(2.dp, Ink, RectangleShape)
+                .pointerInput(focusSupported) {
+                    if (!focusSupported) return@pointerInput
+                    detectTapGestures { tap ->
+                        val bmp = frame ?: return@detectTapGestures
+                        // Image is drawn with ContentScale.Fit: map the tap onto
+                        // the fitted frame, ignoring the letterbox bars.
+                        val boxW = size.width.toFloat()
+                        val boxH = size.height.toFloat()
+                        val aspect = bmp.width.toFloat() / bmp.height
+                        val w = if (boxW / boxH > aspect) boxH * aspect else boxW
+                        val h = if (boxW / boxH > aspect) boxH else boxW / aspect
+                        val left = (boxW - w) / 2f
+                        val top = (boxH - h) / 2f
+                        val nx = (tap.x - left) / w
+                        val ny = (tap.y - top) / h
+                        if (nx !in 0f..1f || ny !in 0f..1f) return@detectTapGestures
+                        focusTap = FocusTap(tap, (focusTap?.id ?: 0) + 1)
+                        KlipperApp.INSTANCE.sendBroadcast(
+                            Intent(CameraService.ACTION_TAP_FOCUS)
+                                .putExtra(CameraService.KEY_TAP_X, nx)
+                                .putExtra(CameraService.KEY_TAP_Y, ny),
+                            KlipperApp.PERMISSION
+                        )
+                    }
+                },
             contentAlignment = Alignment.Center
         ) {
             val bmp = frame
             if (bmp != null) {
                 Image(bmp.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+                focusTap?.let { tap ->
+                    val t = focusAnim.value
+                    // Ring closes in on the point, holds, then fades out.
+                    Canvas(Modifier.fillMaxSize()) {
+                        val side = 72.dp.toPx() * (1.5f - 0.5f * (t / 0.2f).coerceAtMost(1f))
+                        val alpha = if (t < 0.7f) 1f else 1f - (t - 0.7f) / 0.3f
+                        val topLeft = Offset(tap.point.x - side / 2, tap.point.y - side / 2)
+                        drawRect(Color.Black.copy(alpha = alpha * 0.6f), topLeft, Size(side, side), style = Stroke(5.dp.toPx()))
+                        drawRect(Color(0xFFFFD60A).copy(alpha = alpha), topLeft, Size(side, side), style = Stroke(2.5.dp.toPx()))
+                    }
+                }
             } else {
                 Text(
                     stringResource(R.string.CameraPreviewConnecting),
@@ -121,6 +182,11 @@ fun CameraPreviewScreen() {
             }
         }
         Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(if (focusSupported) R.string.CameraPreviewFocusHint else R.string.CameraPreviewFocusUnsupported),
+            style = MaterialTheme.typography.bodySmall, color = Ink
+        )
+        Spacer(Modifier.height(4.dp))
         Text(stringResource(R.string.CameraPreviewHint), style = MaterialTheme.typography.bodySmall, color = Ink)
     }
 }
