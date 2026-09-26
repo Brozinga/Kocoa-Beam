@@ -61,6 +61,8 @@ purge_speed: 5            # mm/s
 purge_retract: 2          # mm retracted after purging
 min_extruded: 5           # mm extruded before the first save
 language: auto            # window/console language (see below)
+macro_variables: *        # macro variables to save/restore: * = all macros not
+                          # starting with _, empty = none, or a list: PRINT_START, MY_MACRO
 prompt: True              # show the Fluidd/Mainsail window
 prompt_repeat: 60         # seconds between reminders (0 = once)
 ```
@@ -99,6 +101,14 @@ The window and console messages follow the language chosen in Fluidd or
 Mainsail (English, Portuguese, Russian, Chinese simplified/traditional; any
 other language shows English). Set `language: pt` (or `en`, `ru`, `zh`,
 `zh-TW`) to force one.
+
+## Macro variables
+
+If your macros keep state in variables (`variable_xxx:` in their section, for
+example a start macro or a layer counter), the values at the last snapshot are
+saved and put back before the file is reopened. Only plain values (numbers,
+text, `True`/`False`, lists) are kept. This does not undo what a macro did
+outside its variables. Use `macro_variables` to save only some macros or none.
 
 ## Commands
 

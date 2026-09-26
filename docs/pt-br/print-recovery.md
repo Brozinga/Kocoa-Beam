@@ -60,6 +60,9 @@ purge_speed: 5            # mm/s
 purge_retract: 2          # mm de retração após a purga
 min_extruded: 5           # mm extrudados antes da primeira gravação
 language: auto            # idioma da janela/console (veja abaixo)
+macro_variables: *        # variáveis de macro a salvar/restaurar: * = todos os
+                          # macros que não começam com _, vazio = nenhum, ou
+                          # uma lista: PRINT_START, MEU_MACRO
 prompt: True              # mostrar a janela no Fluidd/Mainsail
 prompt_repeat: 60         # segundos entre lembretes (0 = uma vez)
 ```
@@ -97,6 +100,15 @@ A janela e as mensagens do console seguem o idioma escolhido no Fluidd ou no
 Mainsail (inglês, português, russo, chinês simplificado/tradicional; qualquer
 outro mostra inglês). Use `language: pt` (ou `en`, `ru`, `zh`, `zh-TW`) para
 forçar um idioma.
+
+## Variáveis de macro
+
+Se seus macros guardam estado em variáveis (`variable_xxx:` na seção deles, por
+exemplo um macro inicial ou um contador de camada), os valores do último
+snapshot são salvos e recolocados antes de reabrir o arquivo. Só valores
+simples (números, texto, `True`/`False`, listas) são mantidos. Isso não desfaz
+o que um macro fez fora das variáveis. Use `macro_variables` para salvar só
+alguns macros ou nenhum.
 
 ## Comandos
 

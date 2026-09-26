@@ -45,6 +45,7 @@ purge_speed: 5            # mm/s
 purge_retract: 2          # 清洗后回抽 mm
 min_extruded: 5           # 首次保存前需挤出的 mm
 language: auto            # 窗口/控制台语言（见下）
+macro_variables: *        # 要保存/恢复的宏变量：* = 所有不以 _ 开头的宏，留空 = 不保存，或列表：PRINT_START, MY_MACRO
 prompt: True              # 是否显示 Fluidd/Mainsail 窗口
 prompt_repeat: 60         # 提醒间隔（秒，0 = 仅一次）
 ```
@@ -67,6 +68,10 @@ prompt_repeat: 60         # 提醒间隔（秒，0 = 仅一次）
 ### 语言
 
 窗口和控制台消息跟随 Fluidd 或 Mainsail 所选语言（英语、葡萄牙语、俄语、简体/繁体中文；其他语言显示英语）。可用 `language: zh`（或 `en`、`pt`、`ru`、`zh-TW`）强制指定。
+
+## 宏变量
+
+如果你的宏用变量保存状态（宏段中的 `variable_xxx:`，例如起始宏或层计数器），最近一次快照的值会被保存，并在重新打开文件前写回。仅保留简单值（数字、文本、`True`/`False`、列表）。这不会撤销宏在变量之外所做的事。可用 `macro_variables` 只保存部分宏或全部不保存。
 
 ## 命令
 

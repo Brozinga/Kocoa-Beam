@@ -175,6 +175,12 @@ class PrintRecovery:
         self.purge_length = config.getfloat('purge_length', 20., minval=0.)
         self.purge_speed = config.getfloat('purge_speed', 5., above=0.)
         self.purge_retract = config.getfloat('purge_retract', 2., minval=0.)
+        # Macro variables to keep: '*' = every macro not starting with '_',
+        # empty = none, or a comma separated list of macro names
+        raw = config.get('macro_variables', '*').strip()
+        self.macro_all = raw == '*'
+        self.macro_names = set(n.strip().upper() for n in raw.split(',')
+                               if n.strip() and raw != '*')
         self.min_extruded = config.getfloat('min_extruded', 5., minval=0.)
         self.prompt = config.getboolean('prompt', True)
         self.prompt_repeat = config.getfloat('prompt_repeat', 60., minval=0.)
@@ -310,6 +316,40 @@ class PrintRecovery:
         self.mesh_cache = (zmesh, mesh)
         return mesh
 
+    @staticmethod
+    def _plain(value, depth=0):
+        # Only values that survive JSON and repr() unchanged are kept
+        if depth > 4:
+            return False
+        if value is None or isinstance(value, (bool, int, float, str)):
+            return True
+        if isinstance(value, list):
+            return all(PrintRecovery._plain(v, depth + 1) for v in value)
+        if isinstance(value, dict):
+            return all(isinstance(k, str) and
+                       PrintRecovery._plain(v, depth + 1)
+                       for k, v in value.items())
+        return False
+
+    def _macro_state(self):
+        if not self.macro_all and not self.macro_names:
+            return {}
+        saved = {}
+        for name, obj in self.printer.lookup_objects('gcode_macro'):
+            macro = name[len('gcode_macro '):].upper()
+            if name == 'gcode_macro' or not obj.variables:
+                continue
+            if self.macro_all:
+                if macro.startswith('_'):
+                    continue
+            elif macro not in self.macro_names:
+                continue
+            values = dict((k, v) for k, v in obj.variables.items()
+                          if self._plain(v))
+            if values:
+                saved[macro] = values
+        return saved
+
     def _take_sample(self, eventtime, sd, stats):
         toolhead = self.printer.lookup_object('toolhead')
         th = toolhead.get_status(eventtime)
@@ -348,6 +388,7 @@ class PrintRecovery:
             'total_layer': stats.info_total_layer,
             'excluded_objects': list(excl.get('excluded_objects', [])),
             'current_object': excl.get('current_object'),
+            'macro_variables': self._macro_state(),
         }
         return sample
 
@@ -748,6 +789,19 @@ class PrintRecovery:
             script.append("M73 P%d" % int(round(p['progress'] * 100.)))
         script.append("G90" if p['absolute_coordinates'] else "G91")
         self._run("\n".join(script))
+        self._restore_macro_variables(p)
+
+    def _restore_macro_variables(self, p):
+        for macro, values in (p.get('macro_variables') or {}).items():
+            obj = self.printer.lookup_object('gcode_macro ' + macro, None)
+            if obj is None:
+                continue
+            # Same swap SET_GCODE_VARIABLE does; unknown names are skipped
+            merged = dict(obj.variables)
+            for k, v in values.items():
+                if k in merged:
+                    merged[k] = v
+            obj.variables = merged
 
     def _object_definitions(self, path, limit):
         lines = []
