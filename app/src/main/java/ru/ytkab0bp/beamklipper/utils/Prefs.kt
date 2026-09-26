@@ -314,6 +314,32 @@ object Prefs {
         get() = getSafeFloat("focus", 0f)
         set(value) { mPrefs.edit().putFloat("focus", value).apply() }
 
+    // Focus set by tap-to-focus, kept so it survives an app restart. Tied to
+    // the camera it was set on: a different camera starts unfocused again.
+    // distance < 0 = the lens position was not reported (re-run AF at x/y).
+    var savedFocusCamera: String?
+        get() = getSafeStringNullable("saved_focus_camera")
+        set(value) { mPrefs.edit().putString("saved_focus_camera", value).apply() }
+
+    var savedFocusDistance: Float
+        get() = getSafeFloat("saved_focus_distance", -1f)
+        set(value) { mPrefs.edit().putFloat("saved_focus_distance", value).apply() }
+
+    var savedFocusX: Float
+        get() = getSafeFloat("saved_focus_x", -1f)
+        set(value) { mPrefs.edit().putFloat("saved_focus_x", value).apply() }
+
+    var savedFocusY: Float
+        get() = getSafeFloat("saved_focus_y", -1f)
+        set(value) { mPrefs.edit().putFloat("saved_focus_y", value).apply() }
+
+    fun clearSavedFocus() {
+        mPrefs.edit()
+            .remove("saved_focus_camera").remove("saved_focus_distance")
+            .remove("saved_focus_x").remove("saved_focus_y")
+            .apply()
+    }
+
     fun getLastCommit(): String? = getSafeStringNullable("last_commit")
 
     fun setLastCommit() {

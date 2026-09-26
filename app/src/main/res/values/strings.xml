@@ -159,6 +159,8 @@
     <string name="CameraPreviewHint">Live view of what Fluidd/Mainsail will see, including rotation, resolution and zoom. Leaving this tab disconnects the preview.</string>
     <string name="CameraPreviewFocusHint">Tap the preview to focus on that spot.</string>
     <string name="CameraPreviewFocusUnsupported">This camera does not support tap-to-focus.</string>
+    <string name="CameraPreviewFocusReset">Reset focus</string>
+    <string name="CameraPreviewFocusSaved">The focus is remembered after the app restarts. Reset it after changing the camera or its position.</string>
     <string name="LogsSourceNotFound">Log source not found.</string>
     <string name="LogsLoadFailed">Failed to load: %1$s</string>
     <string name="LogsLoading">Loading…</string>

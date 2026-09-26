@@ -149,6 +149,8 @@
     <string name="CameraPreviewHint">Visão ao vivo do que o Fluidd/Mainsail vão ver, com rotação, resolução e zoom. Ao sair desta aba a pré-visualização é desconectada.</string>
     <string name="CameraPreviewFocusHint">Toque na pré-visualização para focar naquele ponto.</string>
     <string name="CameraPreviewFocusUnsupported">Esta câmera não suporta foco por toque.</string>
+    <string name="CameraPreviewFocusReset">Redefinir foco</string>
+    <string name="CameraPreviewFocusSaved">O foco é lembrado quando o app reinicia. Redefina-o ao trocar a câmera ou a posição dela.</string>
     <string name="LogsSourceNotFound">Fonte de log não encontrada.</string>
     <string name="LogsLoadFailed">Falha ao carregar: %1$s</string>
     <string name="LogsLoading">Carregando…</string>

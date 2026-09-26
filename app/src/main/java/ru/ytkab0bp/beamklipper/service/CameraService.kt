@@ -20,6 +20,8 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureResult
+import android.hardware.camera2.TotalCaptureResult
 import android.media.Image
 import android.media.ImageReader
 import android.net.wifi.WifiManager
@@ -31,6 +33,7 @@ import android.content.pm.ServiceInfo
 import android.os.IBinder
 import android.os.PowerManager
 import android.os.Process
+import android.os.SystemClock
 import android.util.Log
 import android.util.Range
 import android.view.Surface
@@ -63,6 +66,7 @@ class CameraService : Service() {
         const val ACTION_TOGGLE_FOCUS = "${BuildConfig.APPLICATION_ID}.action.TOGGLE_FOCUS"
         const val KEY_FLASHLIGHT = "flashlight"
         const val ACTION_TAP_FOCUS = "${BuildConfig.APPLICATION_ID}.action.TAP_FOCUS"
+        const val ACTION_RESET_FOCUS = "${BuildConfig.APPLICATION_ID}.action.RESET_FOCUS"
         const val KEY_TAP_X = "tap_x"
         const val KEY_TAP_Y = "tap_y"
         const val KEY_AUTOFOCUS = "autofocus"
@@ -193,7 +197,9 @@ class CameraService : Service() {
                     intent.getFloatExtra(KEY_TAP_X, 0.5f),
                     intent.getFloatExtra(KEY_TAP_Y, 0.5f)
                 )
+                ACTION_RESET_FOCUS -> resetFocus()
                 ACTION_TOGGLE_FOCUS -> {
+                    Prefs.clearSavedFocus()
                     val autofocus = intent.getBooleanExtra(KEY_AUTOFOCUS, false)
                     Prefs.isAutofocusEnabled = autofocus
                     val focus = intent.getFloatExtra(KEY_FOCUS, 0f)
@@ -230,10 +236,85 @@ class CameraService : Service() {
             builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START)
             session.capture(builder.build(), null, null)
             builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
-            session.setRepeatingRequest(builder.build(), null, null)
+            pendingFocusTap = floatArrayOf(nx, ny)
+            focusTapAt = SystemClock.elapsedRealtime()
+            sawFocusScan = false
+            session.setRepeatingRequest(builder.build(), focusSaveCallback, cameraHandler)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to focus at $nx,$ny", e)
         }
+    }
+
+    // Tap-to-focus that is waiting for the lens to settle so it can be saved.
+    private var pendingFocusTap: FloatArray? = null
+    private var focusTapAt = 0L
+    private var sawFocusScan = false
+
+    private val focusSaveCallback = object : CameraCaptureSession.CaptureCallback() {
+        override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
+            val tap = pendingFocusTap ?: return
+            val state = result.get(CaptureResult.CONTROL_AF_STATE) ?: return
+            if (state == CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN) {
+                sawFocusScan = true
+                return
+            }
+            if (state != CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED &&
+                state != CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED) return
+            // A lock reported before any scan is the previous one, unless the
+            // HAL simply focused instantly.
+            if (!sawFocusScan && SystemClock.elapsedRealtime() - focusTapAt < 800) return
+            pendingFocusTap = null
+            if (state == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED) return
+            val id = activeCameraId ?: return
+            Prefs.savedFocusCamera = id
+            Prefs.savedFocusX = tap[0]
+            Prefs.savedFocusY = tap[1]
+            Prefs.savedFocusDistance = result.get(CaptureResult.LENS_FOCUS_DISTANCE) ?: -1f
+            Log.i(TAG, "Saved focus for camera $id: distance=${Prefs.savedFocusDistance}")
+        }
+    }
+
+    // Forgets the saved focus and goes back to the configured focus mode.
+    private fun resetFocus() {
+        Prefs.clearSavedFocus()
+        pendingFocusTap = null
+        val builder = captureRequestBuilder ?: return
+        val session = captureSession ?: return
+        try {
+            builder.set(CaptureRequest.CONTROL_AF_MODE,
+                if (Prefs.isAutofocusEnabled) CaptureRequest.CONTROL_AF_MODE_AUTO else CaptureRequest.CONTROL_AF_MODE_OFF)
+            builder.set(CaptureRequest.LENS_FOCUS_DISTANCE, Prefs.focusDistance)
+            builder.set(CaptureRequest.CONTROL_AF_REGIONS, null)
+            builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL)
+            session.capture(builder.build(), null, null)
+            builder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
+            session.setRepeatingRequest(builder.build(), null, null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to reset focus", e)
+        }
+    }
+
+    // Puts the focus saved by tap-to-focus back when a session starts.
+    // Returns the tap point to re-run AF at when the lens position wasn't
+    // saved (some HALs never report it); null otherwise.
+    private fun applySavedFocus(builder: CaptureRequest.Builder, chars: CameraCharacteristics, id: String): FloatArray? {
+        val savedId = Prefs.savedFocusCamera ?: return null
+        if (savedId != id) {
+            // A different camera than the one that was focused: start over.
+            Prefs.clearSavedFocus()
+            return null
+        }
+        val minDistance = chars.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE) ?: 0f
+        val distance = Prefs.savedFocusDistance
+        if (distance >= 0f && minDistance > 0f) {
+            builder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
+            builder.set(CaptureRequest.LENS_FOCUS_DISTANCE, distance.coerceAtMost(minDistance))
+            Log.i(TAG, "Restored saved focus for camera $id: distance=$distance")
+            return null
+        }
+        val x = Prefs.savedFocusX
+        val y = Prefs.savedFocusY
+        return if (x in 0f..1f && y in 0f..1f && CameraFocus.isSupported(chars)) floatArrayOf(x, y) else null
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -333,7 +414,7 @@ class CameraService : Service() {
         }
         cameraHandler?.post { openSelectedCamera() }
 
-        val filter = IntentFilter(ACTION_TOGGLE_FLASHLIGHT).apply { addAction(ACTION_TOGGLE_FOCUS); addAction(ACTION_TAP_FOCUS) }
+        val filter = IntentFilter(ACTION_TOGGLE_FLASHLIGHT).apply { addAction(ACTION_TOGGLE_FOCUS); addAction(ACTION_TAP_FOCUS); addAction(ACTION_RESET_FOCUS) }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(receiver, filter, KlipperApp.PERMISSION, ViewUtils.getUiHandler(), Context.RECEIVER_EXPORTED)
         } else {
@@ -569,9 +650,14 @@ class CameraService : Service() {
                             captureRequestBuilder!!.set(CaptureRequest.LENS_FOCUS_DISTANCE, Prefs.focusDistance)
                             captureRequestBuilder!!.set(CaptureRequest.CONTROL_AF_MODE,
                                 if (Prefs.isAutofocusEnabled) CaptureRequest.CONTROL_AF_MODE_AUTO else CaptureRequest.CONTROL_AF_MODE_OFF)
+                            val refocus = applySavedFocus(captureRequestBuilder!!, chars, camera.id)
                             CameraZoom.apply(captureRequestBuilder!!, chars, Prefs.cameraZoom)
                             captureRequestBuilder!!.addTarget(reader.surface)
                             session.setRepeatingRequest(captureRequestBuilder!!.build(), null, null)
+                            if (refocus != null) {
+                                // Let the stream warm up before triggering AF
+                                cameraHandler?.postDelayed({ focusAt(refocus[0], refocus[1]) }, 1500)
+                            }
                         } catch (e: CameraAccessException) {
                             Log.e(TAG, "Failed to start repeating request", e)
                         }
