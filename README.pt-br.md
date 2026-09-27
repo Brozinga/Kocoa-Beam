@@ -101,7 +101,7 @@ Tudo o que foi adicionado ou corrigido sobre o Beam Klipper (detalhes nos guias 
 - [x] Atualização do Fluidd (1.37.5)
 - [x] Atualização do Mainsail (2.19.0)
 - [x] Atualização do Happy Hare (v4.0.0)
-- [x] Voyager UI como terceiro front end web
+- [x] Voyager UI (v0.23)
 - [x] Add-ons do Klipper: KAMP, LED Effect, Z Calibration, Auto Speed, TMC Autotune — [`mods/klipper-addons.md`](docs/pt-br/mods/klipper-addons.md)
 - [x] Input shaper sem acelerômetro — [`mods/input-shaper-manual.md`](docs/pt-br/mods/input-shaper-manual.md)
 - [x] Modelo inicial de `printer.cfg` e perfis de impressora — [`getting-started.md`](docs/pt-br/getting-started.md)

@@ -100,7 +100,7 @@ Kocoa Beam 具有完全的 UI 重新設計：
 - [x] 更新 Fluidd（1.37.5）
 - [x] 更新 Mainsail（2.19.0）
 - [x] 更新 Happy Hare（v4.0.0）
-- [x] 新增 Voyager UI 作為第三個網頁前端
+- [x] 新增 Voyager UI (v0.23)
 - [x] Klipper 附加模組：KAMP、LED Effect、Z Calibration、Auto Speed、TMC Autotune — [`mods/klipper-addons.md`](docs/zh-Hans/mods/klipper-addons.md)
 - [x] 無加速度計的 input shaper — [`mods/input-shaper-manual.md`](docs/zh-Hans/mods/input-shaper-manual.md)
 - [x] 起始 `printer.cfg` 範本與印表機設定檔 — [`getting-started.md`](docs/zh-Hans/getting-started.md)
