@@ -176,8 +176,10 @@ class PrintRecovery:
         self.purge_speed = config.getfloat('purge_speed', 5., above=0.)
         self.purge_retract = config.getfloat('purge_retract', 2., minval=0.)
         # Macro variables to keep: '*' = every macro not starting with '_',
-        # empty = none, or a comma separated list of macro names
+        # 'none' (or empty) = none, or a comma separated list of macro names
         raw = config.get('macro_variables', '*').strip()
+        if raw.lower() == 'none':
+            raw = ''
         self.macro_all = raw == '*'
         self.macro_names = set(n.strip().upper() for n in raw.split(',')
                                if n.strip() and raw != '*')
