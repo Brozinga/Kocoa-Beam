@@ -54,6 +54,18 @@ the first build) and regenerates `app/src/main/assets/` from the vendored
   chaquopy.python=/absolute/path/to/python3.10
   ```
 
+## Tests
+
+| What | Command |
+|---|---|
+| Kotlin unit tests (front end selection, camera zoom), no device needed | `./gradlew :app:testArm64DebugUnitTest` |
+| Klipper add-on tests (`print_recovery`), plain Python | `python3 -m unittest discover -s app/src/test/python -v` |
+| UI tests (Compose components and the front end tile), on a connected device or emulator | `./gradlew :app:connectedArm64DebugAndroidTest` |
+
+The UI tests install a test APK next to the app, and Gradle uninstalls both when
+they finish — that erases the app's data on that device, so use an emulator or a
+spare device.
+
 ## Signing
 
 Debug builds use the debug keystore. For a signed release, add these keys to

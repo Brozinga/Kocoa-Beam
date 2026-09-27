@@ -11,6 +11,8 @@ Obico Server auto-hospedado. O Kocoa Beam roda o companion real do
 adaptado para rodar direto no aparelho em vez do serviço systemd que ele
 normalmente instala.
 
+<p align="center"><img src="../images/obico-control.jpg" alt="Página de controle do Obico mostrando a impressora, a webcam ao vivo e as temperaturas" width="640"></p>
+
 ## Ativando
 
 1. Inicie um perfil de impressora (ele precisa estar **rodando** — o Obico

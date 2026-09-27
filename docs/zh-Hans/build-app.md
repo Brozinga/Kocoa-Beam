@@ -52,6 +52,16 @@
   chaquopy.python=/python3.10 的绝对路径
   ```
 
+## 测试
+
+| 内容 | 命令 |
+|---|---|
+| Kotlin 单元测试（前端选择、摄像头缩放），无需设备 | `./gradlew :app:testArm64DebugUnitTest` |
+| Klipper 附加模块测试（`print_recovery`），纯 Python | `python3 -m unittest discover -s app/src/test/python -v` |
+| 界面测试（Compose 组件和前端切换卡片），需连接设备或模拟器 | `./gradlew :app:connectedArm64DebugAndroidTest` |
+
+界面测试会在应用旁安装一个测试 APK，结束后 Gradle 会把两者都卸载 —— 这会清除该设备上的应用数据，请使用模拟器或备用设备。
+
 ## 签名
 
 Debug 构建使用 debug keystore。要签名的 release，在 `local.properties`（已 gitignore）中加入：

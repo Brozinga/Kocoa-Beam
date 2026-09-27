@@ -23,13 +23,11 @@
 
 - [名字的由來](#名字的由來)
 - [為什麼選擇 Kocoa Beam?](#為什麼選擇-kocoa-beam)
-- [選擇正確的安裝包](#選擇正確的安裝包)
 - [本專案改變了什麼](#本專案改變了什麼)
+- [選擇正確的安裝包](#選擇正確的安裝包)
 - [快速入門](#快速入門)
 - [截圖](#截圖)
-- [韌體（MCU）版本](#韌體mcu版本)
 - [文件](#文件)
-- [安裝 Kocoa Beam 後裝置還能正常使用嗎?](#安裝-kocoa-beam-後裝置還能正常使用嗎)
 - [IP:連接埠是什麼?](#ip連接埠是什麼)
 - [內建了什麼?](#內建了什麼)
 - [更新](#更新)
@@ -81,14 +79,49 @@ Kocoa Beam 具有完全的 UI 重新設計：
 - 現代 Jetpack Compose 實作
 - 改進的版面配置和可用性
 
-### 額外功能
-- **10 個並行執行個體** — 同時執行最多 10 個印表機設定檔（對比 Beam Klipper 的 4 個）
-- **雙韌體支援** — 執行 Klipper 或 Kalico 韌體引擎
-- **斷電續印** — 斷電或斷線後，Fluidd/Mainsail 會詢問是否從中斷處繼續列印（[指南](docs/zh-Hans/print-recovery.md)）
-- **原生縮時攝影** — 使用 Android 硬體 MediaCodec 而非捆綁 FFmpeg
-- **本機運作** — 無雲端連線，所有資料留在裝置上（已移除 Beam Cloud 支援）
+## 本專案改變了什麼
 
-<p align="center"><img src="docs/images/powerless-recovery.png" alt="Fluidd 詢問是否繼續被中斷的列印" width="720"></p>
+在 Beam Klipper 基礎上新增或修復的全部內容（詳情見連結的指南）：
+
+**平台與介面**
+- [x] Kotlin 重寫
+- [x] 全新的 UI
+- [x] 10 個並行印表機實例
+- [x] Klipper 與 Kalico 韌體引擎
+- [x] 僅本機執行（移除 Beam Cloud）
+- [x] 巴西葡萄牙語應用程式介面
+- [x] 應用程式內 Logs 分頁
+- [x] 當機日誌
+- [x] 每個前端使用獨立的網頁連接埠
+
+**內建軟體**
+- [x] 支援 Klipper 0.13 — [`build-firmware.md`](docs/zh-Hans/build-firmware.md)
+- [x] 更新 Moonraker（0.11.0）
+- [x] 更新 Fluidd（1.37.5）
+- [x] 更新 Mainsail（2.19.0）
+- [x] 更新 Happy Hare（v4.0.0）
+- [x] 新增 Voyager UI 作為第三個網頁前端
+- [x] Klipper 附加模組：KAMP、LED Effect、Z Calibration、Auto Speed、TMC Autotune — [`mods/klipper-addons.md`](docs/zh-Hans/mods/klipper-addons.md)
+- [x] 無加速度計的 input shaper — [`mods/input-shaper-manual.md`](docs/zh-Hans/mods/input-shaper-manual.md)
+- [x] 起始 `printer.cfg` 範本與印表機設定檔 — [`getting-started.md`](docs/zh-Hans/getting-started.md)
+- [x] MCU 韌體編譯工具（Docker 與本機腳本）— [`build-firmware.md`](docs/zh-Hans/build-firmware.md)
+
+**功能**
+- [x] 原生縮時攝影（以 MediaCodec 取代 FFmpeg）— [`timelapse.md`](docs/zh-Hans/timelapse.md)
+- [x] USB 相機支援、相機解析度與旋轉 — [`webcam.md`](docs/zh-Hans/webcam.md)
+- [x] 相機即時預覽、縮放與點擊對焦 — [`webcam.md`](docs/zh-Hans/webcam.md)
+- [x] 弱 WiFi 下的串流穩定性 — [`webcam.md`](docs/zh-Hans/webcam.md)
+- [x] 斷電續印 — [`print-recovery.md`](docs/zh-Hans/print-recovery.md)
+- [x] 新增 OctoEverywhere 遠端存取 — [`octoeverywhere.md`](docs/zh-Hans/octoeverywhere.md)
+- [x] 新增 Obico 遠端存取 — [`obico.md`](docs/zh-Hans/obico.md)
+
+**修復**
+- [x] 修復縮時攝影算繪 — [`timelapse.md`](docs/zh-Hans/timelapse.md)
+- [x] 修復 G-code 中繼資料與縮圖
+- [x] 修復 Fluidd/Mainsail 靜態資源（MIME 類型）
+- [x] 修復 Klipper 巨集不執行任何動作的問題
+- [x] 修復 Klipper 因標準 `[mcu]` 選項而啟動中止的問題
+
 
 ## 選擇正確的安裝包
 
@@ -105,38 +138,11 @@ Kocoa Beam 提供三種 APK 版本：
 - 或安裝 CPU 資訊 App 如「CPU-Z」或「AIDA64」
 - 如有疑問，請選擇 armv7 — 它相容的裝置範圍最廣
 
-## 本專案改變了什麼
-
-本專案讓內建的 Klipper / Moonraker / Fluidd / Mainsail / Happy Hare 保持最新，並加入裝置端診斷、可選的 Klipper 附加模組和韌體工具。詳情：
-
-- [`docs/zh-Hans/whats-new.md`](docs/zh-Hans/whats-new.md)（簡體）— 完整變更清單
-- [`docs/zh-Hans/build-firmware.md`](docs/zh-Hans/build-firmware.md)（簡體）— 為任意主機板建置 MCU 韌體
-- [`docs/zh-Hans/mods/klipper-addons.md`](docs/zh-Hans/mods/klipper-addons.md)（簡體）— 內建的附加模組
-- [`docs/zh-Hans/mods/input-shaper-manual.md`](docs/zh-Hans/mods/input-shaper-manual.md)（簡體）— 無加速度計調校 input shaper
-- [`docs/zh-Hans/`](docs/zh-Hans/index.md)（簡體）— 文件索引
-
-> 目前完整文件只有簡體中文版，繁體使用者也能順利閱讀；歡迎協助翻譯成繁體。
-
 ## 快速入門
 
-1. **MCU 韌體** — 燒錄印表機主機板，可以使用：
-   - [Beam Klipper 韌體清單](https://github.com/utkabobr/klipper/releases) 中的預先編譯映像檔
-     （`prebuilt-v0.12.0` 系列涵蓋大多數主機板），**或者**
-   - 全新編譯的 Klipper 0.13 —— 透過
-     [`docs/zh-Hans/build-firmware.md`](docs/zh-Hans/build-firmware.md) 一條指令完成（Docker
-     或本機腳本，支援任意受支援的主機板）。
+**從這裡開始：[`docs/zh-Hans/getting-started.md`](docs/zh-Hans/getting-started.md)**（簡體）—— 附截圖的逐步指南，涵蓋安裝 Kocoa Beam 並首次執行（APK、第一台印表機、MCU 韌體、開啟網頁介面）。
 
-   建議使用 Klipper 0.13；較舊的預先編譯映像檔同樣可用。
-2. 從 [Releases 頁面](https://github.com/Brozinga/Kocoa-Beam/releases/latest) 安裝對應 CPU 架構的 APK。
-3. 授予所需的權限。
-4. 新增印表機執行個體（清單中沒有你的印表機時，選擇 `generic-*.cfg`）。
-5. 啟動該執行個體。
-6. 開啟網頁介面：Fluidd `http://IP:4408/` 或 Mainsail `http://IP:4409/` —— 目前生效的
-   網址會顯示在主畫面上。序列埠會自動偵測。
-
-> **卡住了？** 應用程式內的 **Logs** 分頁（上方截圖）會顯示 Klipper、Moonraker
-> 和應用程式本身的記錄，並可直接複製/分享，不需要電腦 —— 如果上面哪一步沒有
-> 按預期運作，先去看看記錄檔。
+> **卡住了？** 應用程式內的 **Logs** 分頁（上方截圖）會顯示 Klipper、Moonraker 和應用程式自身的日誌，並可直接複製/分享，不需要電腦 —— 如果哪一步沒有照預期運作，先去看看日誌。
 
 ## 截圖
 
@@ -155,22 +161,11 @@ Kocoa Beam 提供三種 APK 版本：
 </p>
 <p align="center"><sub>Fluidd（左）與 Mainsail（右）</sub></p>
 
+**斷電續印** —— 斷電後，Fluidd 和 Mainsail 會提示是否繼續列印（[指南](docs/zh-Hans/print-recovery.md)）：
+
+<p align="center"><img src="docs/images/powerless-recovery.png" alt="Fluidd asking whether to resume an interrupted print" width="720"></p>
+
 應用內 **Logs** 分頁見本頁頂部。
-
-## 韌體（MCU）版本
-
-印表機主機板（MCU）需要自己的 Klipper 韌體，只需在電腦上燒錄**一次**。有三種方式：
-
-| 方式 | 適合 | 做法 |
-|---|---|---|
-| **預編譯映像檔** | 新手 —— 無需編譯 | 從 [Beam Klipper 韌體發布頁](https://github.com/utkabobr/klipper/releases) 下載對應主機板的檔案（`prebuilt-v0.12.0` 系列涵蓋許多主機板），依主機板慣例燒錄（SD 卡、DFU 等） |
-| **Docker 建置** | 進階使用者、最新 Klipper | `docker compose -f firmware/docker-compose.yml run --rm fw <主機板>` |
-| **本機腳本** | 同上，無需 Docker | `./scripts/build_firmware.sh <主機板>` |
-
-- 建議使用 **Klipper 0.13**，但較舊的預編譯映像檔（如 0.12）同樣可用：Klipper 對 MCU 與主機沒有嚴格的版本鎖定。
-- 沒有你的主機板？用 `make menuconfig` 儲存 `.config`，再傳給建置腳本。
-
-完整指南：[`docs/zh-Hans/build-firmware.md`](docs/zh-Hans/build-firmware.md)（簡體）。
 
 ## 文件
 
@@ -178,18 +173,11 @@ Kocoa Beam 提供三種 APK 版本：
 
 | 我想要… | 閱讀 |
 |---|---|
-| 了解相較 Beam Klipper 有哪些改動 | [`whats-new.md`](docs/zh-Hans/whats-new.md) |
 | 設定相機、USB 網路攝影機、預覽與縮放 | [`webcam.md`](docs/zh-Hans/webcam.md) |
 | 遠端存取印表機 | [`octoeverywhere.md`](docs/zh-Hans/octoeverywhere.md) · [`obico.md`](docs/zh-Hans/obico.md) |
 | 建置/燒錄 MCU 韌體 | [`build-firmware.md`](docs/zh-Hans/build-firmware.md) |
 | 自行建置 APK | [`build-app.md`](docs/zh-Hans/build-app.md) |
 | 啟用 Klipper 附加模組 / 調校 input shaper | [`mods/klipper-addons.md`](docs/zh-Hans/mods/klipper-addons.md) · [`mods/input-shaper-manual.md`](docs/zh-Hans/mods/input-shaper-manual.md) |
-
-## 安裝 Kocoa Beam 後裝置還能正常使用嗎?
-
-**當然可以！**
-
-Kocoa Beam 不會對 Android 系統做任何更動，它以一般 Android 應用程式的形式執行在使用者空間。
 
 ## IP:連接埠是什麼?
 
@@ -197,68 +185,9 @@ Kocoa Beam 不會對 Android 系統做任何更動，它以一般 Android 應用
 
 - Fluidd => `http://IP:4408/`
 - Mainsail => `http://IP:4409/`
-
-相機位址：
-- /webcam/?action=stream => `http://IP:8889/`
-- /webcam/?action=snapshot => `http://IP:8889/snapshot`
-
-Fluidd 建議使用 mjpeg-**stream**（非 adaptive mjpeg）相機設定，Mainsail 建議使用 UV4L-MJPEG。
+- Voyager UI => `http://IP:4010/`
 
 <p align="center"><img src="docs/images/fluidd-screen-klipper-version.png" alt="從主畫面顯示的 IP:連接埠開啟的 Fluidd" width="960"></p>
-
-## 內建了什麼?
-
-Kocoa Beam 內建了：
-- [Klipper](https://github.com/KevinOConnor/klipper)
-- [Kalico](https://github.com/KalicoDTU/kalico)
-- [Moonraker](https://github.com/Arksine/moonraker)
-- [Fluidd](https://github.com/fluidd-core/fluidd)
-- [Mainsail](https://github.com/mainsail-crew/mainsail)
-- [Happy Hare](https://github.com/moggieuk/Happy-Hare)
-- [Klipper TMC Autotune](https://github.com/andrewmcgr/klipper_tmc_autotune)
-- [Moonraker-timelapse](https://github.com/mainsail-crew/moonraker-timelapse)
-
-## 更新
-
-本專案內建元件的版本：
-
-| 元件 | 版本 |
-|---|---|
-| Klipper / Kalico | 目前上游版本（MCU 韌體目標：0.13） |
-| Moonraker | 0.11.0 |
-| Fluidd | 1.37.5 |
-| Mainsail | 2.19.0 |
-| Happy Hare | v4.0.0 |
-| OctoEverywhere | 隨附的伴生程式，經改造原生執行於 Android |
-| Obico | 隨附的伴生程式，經改造原生執行於 Android（Cloud 或自架伺服器） |
-
-可選啟用的 Klipper 附加模組也已內建（KAMP、LED Effect、Z Calibration、Auto Speed、TMC Autotune）—— 見 [`docs/zh-Hans/mods/klipper-addons.md`](docs/zh-Hans/mods/klipper-addons.md)。完整變更清單：[`docs/zh-Hans/whats-new.md`](docs/zh-Hans/whats-new.md)。
-
-### 近期新增
-
-- **通用 USB 相機支援** — 自動偵測已連接的 USB UVC 相機，並優先使用它而非內建
-  相機，支援即時熱插拔切換、能區分多個鏡頭的選擇器（主鏡頭/超廣角/望遠，依
-  35mm 等效焦距區分），以及旋轉控制。指南：
-  [`docs/zh-Hans/webcam.md`](docs/zh-Hans/webcam.md)。
-- **OctoEverywhere 遠端存取** — 真實的 OctoEverywhere Klipper 伴生程式，經改造
-  以獨立 Android 處理程序執行，而不是它通常安裝的 systemd 服務。在「設定 →
-  遠端存取」中開啟，透過 QR code 連結帳號。指南：
-  [`docs/zh-Hans/octoeverywhere.md`](docs/zh-Hans/octoeverywhere.md)。
-- **多語言應用程式介面** — 新增巴西葡萄牙語作為完整的應用程式內語言，與英文/
-  俄文/中文（簡體與繁體）並列。
-- **應用程式內 OctoEverywhere 記錄** — 它的記錄現在與 Klipper/Moonraker 一起顯示
-  在 Logs 分頁中，不需要 adb 即可排查問題。
-- **相機解析度設定 + 串流穩定性** — 新增可設定的解析度（低/中/高），加上旋轉
-  控制，並修正了 WiFi 壅塞時串流卡頓/延遲的問題（依觀看者做背壓控制，避免單一
-  慢速連線拖垮所有人的畫面；JPEG 畫質會依網路狀況自動調整）。
-- **Obico 遠端存取** — 真實的 Obico Klipper/Moonraker 伴生程式，經改造以獨立
-  Android 處理程序執行，連線到 Obico Cloud 或自架的 Obico Server。在「設定 →
-  遠端存取」中開啟；應用程式會自行產生並顯示連結驗證碼（與 Obico「Klipper,
-  self-installed」導引流程相同），也提供手動輸入驗證碼的替代方式。指南：
-  [`docs/zh-Hans/obico.md`](docs/zh-Hans/obico.md)。
-
-- **相機即時預覽分頁** —— 啟用相機伺服器後，Logs 旁會出現新分頁，顯示即時畫面（與 Fluidd/Mainsail 取得的相同）。需要時會請求相機權限，離開分頁即中斷。
-- **相機縮放** —— 設定 → 相機 → 相機縮放。只提供所選相機真正支援的縮放檔位（手機的超廣角、長焦或 USB 攝影機限制各不相同）。指南：[`docs/zh-Hans/webcam.md`](docs/zh-Hans/webcam.md)（簡體）。
 
 ## Android 擴充功能
 
@@ -321,6 +250,7 @@ Kocoa Beam 提供了一些附加擴充功能，用於控制內建功能。
 - **[ProtonKicker/Kocoa-Beam](https://github.com/ProtonKicker)** —— 將應用程式移植到 Kotlin 並重做了介面。
 - **[Beam Klipper](https://github.com/utkabobr/BeamKlipper)** —— 本專案的原始來源。
 - Klipper、Kalico、Moonraker、Fluidd、Mainsail 及其他內建元件歸各自作者所有（見[內建了什麼?](#內建了什麼)）。
+- **[Voyager UI](https://github.com/ozancs/voyager-ui)**，作者 [ozancs](https://github.com/ozancs) —— 除 Fluidd 和 Mainsail 之外可選的第三個網頁前端。
 
 ## 貢獻
 

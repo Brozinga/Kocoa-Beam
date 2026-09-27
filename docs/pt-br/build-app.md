@@ -54,6 +54,18 @@ primeiro build) e regera `app/src/main/assets/` a partir das fontes vendoradas e
   chaquopy.python=/caminho/absoluto/para/python3.10
   ```
 
+## Testes
+
+| O quê | Comando |
+|---|---|
+| Testes unitários em Kotlin (escolha do front end, zoom da câmera), sem aparelho | `./gradlew :app:testArm64DebugUnitTest` |
+| Testes do add-on do Klipper (`print_recovery`), Python puro | `python3 -m unittest discover -s app/src/test/python -v` |
+| Testes de interface (componentes Compose e o tile de front end), em aparelho ou emulador conectado | `./gradlew :app:connectedArm64DebugAndroidTest` |
+
+Os testes de interface instalam um APK de teste ao lado do app, e o Gradle
+desinstala os dois no fim — isso apaga os dados do app naquele aparelho, então
+use um emulador ou um aparelho reserva.
+
 ## Assinatura
 
 Builds de debug usam a debug keystore. Para um release assinado, adicione ao

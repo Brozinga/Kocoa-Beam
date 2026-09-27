@@ -10,6 +10,8 @@ runs the real `moonraker-obico` companion (vendored from
 adapted to run on-device instead of the systemd service it normally installs
 as.
 
+<p align="center"><img src="images/obico-control.jpg" alt="Obico control page showing the printer, live webcam and temperatures" width="640"></p>
+
 ## Enabling it
 
 1. Start a printer profile (it has to be **running** — Obico connects to
