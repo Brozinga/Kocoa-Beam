@@ -31,16 +31,14 @@ import androidx.compose.ui.window.Dialog
 import ru.ytkab0bp.beamklipper.ui.components.BrutalButton
 import ru.ytkab0bp.beamklipper.ui.theme.Ink
 import ru.ytkab0bp.beamklipper.ui.theme.Paper
-import org.json.JSONObject
+import ru.ytkab0bp.beamklipper.utils.ChangelogText
 import java.nio.charset.StandardCharsets
 import java.util.Locale
 
 class ChangeLogDialog(context: Context) : Dialog(context) {
     private val changelogText: String? = runCatching {
         context.assets.open("update.json").use { inp ->
-            val obj = JSONObject(inp.readBytes().toString(StandardCharsets.UTF_8))
-            val code = Locale.getDefault().language
-            if (obj.has(code)) obj.getString(code) else obj.getString("en")
+            ChangelogText.pick(inp.readBytes().toString(StandardCharsets.UTF_8), Locale.getDefault().language)
         }
     }.getOrNull()
 

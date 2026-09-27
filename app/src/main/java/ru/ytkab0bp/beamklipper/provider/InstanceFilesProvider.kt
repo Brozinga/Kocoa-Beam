@@ -98,16 +98,8 @@ class InstanceFilesProvider : DocumentsProvider() {
         }
     }
 
-    private fun getDocIdForFile(instance: KlipperInstance, file: File): String {
-        var path = file.absolutePath
-        val rootPath = instance.publicDirectory.path
-        path = when {
-            rootPath == path -> ""
-            rootPath.endsWith("/") -> path.substring(rootPath.length)
-            else -> path.substring(rootPath.length + 1)
-        }
-        return "instance:${instance.id}:$path"
-    }
+    private fun getDocIdForFile(instance: KlipperInstance, file: File): String =
+        DocumentIds.format(instance.id, instance.publicDirectory.path, file.absolutePath)
 
     private fun getChildMimeTypes(): String {
         val mimeTypes = setOf("image/*", "text/*")
@@ -115,24 +107,14 @@ class InstanceFilesProvider : DocumentsProvider() {
     }
 
     private fun getInstanceForDocId(docId: String): KlipperInstance? {
-        if (docId.startsWith("instance:")) {
-            val str = docId.substring("instance:".length)
-            val i = str.indexOf(':')
-            if (i == -1) return null
-            return KlipperInstance.getInstance(str.substring(0, i))
-        }
-        return null
+        val parsed = DocumentIds.parse(docId) ?: return null
+        return KlipperInstance.getInstance(parsed.instanceId)
     }
 
     private fun getFileForDocId(docId: String): File? {
-        if (docId.startsWith("instance:")) {
-            val str = docId.substring("instance:".length)
-            val i = str.indexOf(':')
-            if (i == -1) return null
-            val inst = KlipperInstance.getInstance(str.substring(0, i)) ?: return null
-            return File(inst.publicDirectory, str.substring(i + 1))
-        }
-        return null
+        val parsed = DocumentIds.parse(docId) ?: return null
+        val inst = KlipperInstance.getInstance(parsed.instanceId) ?: return null
+        return File(inst.publicDirectory, parsed.relativePath)
     }
 
     private fun includeFile(result: MatrixCursor, docId: String?, inst: KlipperInstance?, file: File?) {

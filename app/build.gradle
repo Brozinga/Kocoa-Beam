@@ -10,6 +10,7 @@ plugins {
     id 'com.android.application'
     id 'com.chaquo.python'
     id 'org.jetbrains.kotlin.android'
+    id 'jacoco'
     id 'org.jetbrains.kotlin.plugin.compose'
 }
 
@@ -195,6 +196,10 @@ android {
 
     testOptions {
         unitTests.returnDefaultValues = true
+        unitTests.includeAndroidResources = true
+        unitTests.all {
+            jacoco { includeNoLocationClasses = true; excludes = ['jdk.internal.*'] }
+        }
     }
 
     buildFeatures {
@@ -252,6 +257,11 @@ dependencies {
     debugImplementation 'androidx.compose.ui:ui-tooling'
 
     testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20240303'
+    testImplementation 'org.robolectric:robolectric:4.14.1'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1'
+    testImplementation 'androidx.test:core:1.6.1'
+    testImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test:runner:1.6.2'
     androidTestImplementation composeBom
@@ -630,3 +640,21 @@ tasks.getByName('preBuild').dependsOn('bundleKlipper')
 tasks.getByName('preBuild').dependsOn('bundleFluidd')
 tasks.getByName('preBuild').dependsOn('bundleMainsail')
 tasks.getByName('preBuild').dependsOn('bundleVoyager')
+
+// Line coverage of the unit tests: ./gradlew :app:jacocoUnitTestReport
+// (report in app/build/reports/jacoco/jacocoUnitTestReport/html/index.html).
+// Compose screens, generated code and the vendored NanoHTTPD are left out.
+tasks.register('jacocoUnitTestReport', JacocoReport) {
+    dependsOn 'testArm64DebugUnitTest'
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    classDirectories.setFrom(fileTree(dir: "$buildDir/tmp/kotlin-classes/arm64Debug", excludes: [
+        '**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/*ComposableSingletons*',
+        '**/ui/screens/**', '**/ui/theme/**', '**/ui/components/**', '**/ui/NavHost*', '**/ui/CreamApp*',
+        '**/*\\$WhenMappings*', '**/*\\$Companion*'
+    ]))
+    sourceDirectories.setFrom(files('src/main/java'))
+    executionData.setFrom(fileTree(dir: "$buildDir", includes: ['jacoco/testArm64DebugUnitTest.exec', 'outputs/unit_test_code_coverage/**/*.exec']))
+}

@@ -9,16 +9,23 @@ import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.KlipperInstance
+import ru.ytkab0bp.beamklipper.utils.CameraResolutions
+import ru.ytkab0bp.beamklipper.utils.CameraRules
+import ru.ytkab0bp.beamklipper.utils.CompanionFiles
+import ru.ytkab0bp.beamklipper.utils.Engines
+import ru.ytkab0bp.beamklipper.utils.Languages
+import ru.ytkab0bp.beamklipper.utils.UsbNaming
 import ru.ytkab0bp.beamklipper.utils.CameraZoom
 import ru.ytkab0bp.beamklipper.utils.Frontends
+import ru.ytkab0bp.beamklipper.utils.ObicoLink
+import ru.ytkab0bp.beamklipper.utils.OctoEverywhereLink
+import ru.ytkab0bp.beamklipper.utils.PrefValues
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLEncoder
 import java.util.Locale
 
 class SettingsViewModel(app: Application) : AndroidViewModel(app) {
@@ -54,21 +61,11 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     val appLanguage: StateFlow<String> = AppState.appLanguage
 
     fun cycleEngine() {
-        val next = if (Prefs.engine == Prefs.ENGINE_KLIPPER) Prefs.ENGINE_KALICO else Prefs.ENGINE_KLIPPER
-        if (next == Prefs.ENGINE_KALICO &&
-            !File(KlipperApp.INSTANCE.filesDir, "kalico/klippy/klippy.py").exists()
-        ) {
-            return
-        }
-        Prefs.engine = next
+        setEngine(Engines.next(Prefs.engine))
     }
 
     fun setEngine(engine: String) {
-        if (engine == Prefs.ENGINE_KALICO &&
-            !File(KlipperApp.INSTANCE.filesDir, "kalico/klippy/klippy.py").exists()
-        ) {
-            return
-        }
+        if (!Engines.isInstalled(KlipperApp.INSTANCE.filesDir, engine)) return
         Prefs.engine = engine
     }
 
@@ -81,9 +78,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun cycleUsbNaming() {
-        Prefs.usbDeviceNaming =
-            if (Prefs.usbDeviceNaming == Prefs.USB_DEVICE_NAMING_BY_PATH) Prefs.USB_DEVICE_NAMING_BY_VID_PID
-            else Prefs.USB_DEVICE_NAMING_BY_PATH
+        Prefs.usbDeviceNaming = UsbNaming.next(Prefs.usbDeviceNaming)
     }
 
     fun setCameraEnabled(enabled: Boolean) {
@@ -107,26 +102,14 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     // file under the instance's own storage dir once it first starts (see
     // linux_host/secrets.py). Only one instance ever runs the companion at a
     // time, so scanning all of them for whichever has it is simplest.
-    fun octoEverywhereLinkUrl(): String? {
-        for (inst in KlipperInstance.getInstances()) {
-            val secrets = File(inst.directory, "octoeverywhere/octoeverywhere.secrets")
-            if (!secrets.exists()) continue
-            val printerId = try {
-                Regex("(?m)^\\s*printer_id\\s*=\\s*(.+?)\\s*$").find(secrets.readText())?.groupValues?.get(1)
-            } catch (_: Throwable) { null }
-            if (!printerId.isNullOrBlank()) {
-                return "https://octoeverywhere.com/getstarted?printerid=$printerId"
-            }
-        }
-        return null
-    }
+    fun octoEverywhereLinkUrl(): String? =
+        CompanionFiles.octoEverywhereLinkUrl(KlipperInstance.getInstances().map { it.directory })
 
     fun setObicoEnabled(enabled: Boolean) {
         Prefs.isObicoEnabled = enabled
         KlipperInstance.onObicoConfigChanged(enabled)
     }
 
-    data class ObicoDiscoveryStatus(val isLinked: Boolean, val passcode: String, val passlink: String)
 
     // moonraker_obico's own PrinterDiscovery (running inside ObicoService
     // once Obico is enabled and not yet linked) polls the configured server
@@ -137,21 +120,8 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     // (meant for a printer.cfg macro + KlipperScreen panel this app doesn't
     // require); BundleInstaller patches it to also write a small JSON
     // status file next to moonraker-obico.cfg, read here instead.
-    fun obicoDiscoveryStatus(): ObicoDiscoveryStatus? {
-        for (inst in KlipperInstance.getInstances()) {
-            val statusFile = File(inst.directory, "obico/obico_link_status.json")
-            if (!statusFile.exists()) continue
-            return try {
-                val json = org.json.JSONObject(statusFile.readText())
-                ObicoDiscoveryStatus(
-                    isLinked = json.optBoolean("is_linked", false),
-                    passcode = json.optString("one_time_passcode", ""),
-                    passlink = json.optString("one_time_passlink", "")
-                )
-            } catch (_: Throwable) { null }
-        }
-        return null
-    }
+    fun obicoDiscoveryStatus(): ObicoLink.DiscoveryStatus? =
+        CompanionFiles.obicoStatus(KlipperInstance.getInstances().map { it.directory })
 
     // Discovery linking a printer completes entirely inside the Python
     // process — it writes the auth_token straight into moonraker-obico.cfg
@@ -159,25 +129,16 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     // polling obicoDiscoveryStatus(): the moment that file reports
     // is_linked, pull the token it already wrote back into Prefs so the
     // rest of the app (the "Linked ✓" row, future service restarts) agrees.
-    fun syncObicoLinkStatus(): ObicoDiscoveryStatus? {
+    fun syncObicoLinkStatus(): ObicoLink.DiscoveryStatus? {
         val status = obicoDiscoveryStatus() ?: return null
         if (status.isLinked && Prefs.obicoAuthToken.isNullOrBlank()) {
-            for (inst in KlipperInstance.getInstances()) {
-                val cfgFile = File(inst.directory, "obico/moonraker-obico.cfg")
-                if (!cfgFile.exists()) continue
-                val token = try {
-                    Regex("(?m)^\\s*auth_token\\s*=\\s*(\\S+)\\s*$").find(cfgFile.readText())?.groupValues?.get(1)
-                } catch (_: Throwable) { null }
-                if (!token.isNullOrBlank()) {
-                    Prefs.obicoAuthToken = token
-                    break
-                }
-            }
+            CompanionFiles.obicoToken(KlipperInstance.getInstances().map { it.directory })
+                ?.let { Prefs.obicoAuthToken = it }
         }
         return status
     }
 
-    fun isObicoCloud(url: String): Boolean = url == Prefs.OBICO_CLOUD_URL
+    fun isObicoCloud(url: String): Boolean = ObicoLink.isCloud(url)
 
     fun obicoServerLabel(url: String): String =
         if (isObicoCloud(url)) localizedContext().getString(ru.ytkab0bp.beamklipper.R.string.ObicoServerCloud)
@@ -191,12 +152,6 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         Prefs.obicoAuthToken = null
     }
 
-    sealed class ObicoLinkResult {
-        object Success : ObicoLinkResult()
-        object InvalidCode : ObicoLinkResult()
-        data class NetworkError(val message: String?) : ObicoLinkResult()
-    }
-
     // Obico's own linking flow (moonraker_obico.link) is an interactive
     // terminal script: it either waits for a UDP-discovered "Link Now" tap
     // in the Obico app, or falls back to reading a 6-digit code from stdin.
@@ -205,30 +160,23 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     // verify_link_code: POST {server}/api/v1/octo/verify/?code=XXXXXX ->
     // {"printer": {"auth_token": "..."}}) directly, from a code the user
     // gets from the Obico app/website and types into our own dialog.
-    suspend fun linkObico(code: String): ObicoLinkResult = withContext(Dispatchers.IO) {
+    suspend fun linkObico(code: String): ObicoLink.Result = withContext(Dispatchers.IO) {
         try {
-            val trimmed = code.trim()
-            if (trimmed.isEmpty()) return@withContext ObicoLinkResult.InvalidCode
-            val serverUrl = Prefs.obicoServerUrl.trimEnd('/')
-            val url = URL("$serverUrl/api/v1/octo/verify/?code=" + URLEncoder.encode(trimmed, "UTF-8"))
+            if (code.trim().isEmpty()) return@withContext ObicoLink.Result.InvalidCode
+            val url = URL(ObicoLink.verifyUrl(Prefs.obicoServerUrl, code))
             val conn = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
                 connectTimeout = 10_000
                 readTimeout = 10_000
             }
-            val responseCode = try { conn.responseCode } finally {}
-            when {
-                responseCode in 200..299 -> {
-                    val body = conn.inputStream.bufferedReader().use { it.readText() }
-                    val authToken = JSONObject(body).getJSONObject("printer").getString("auth_token")
-                    Prefs.obicoAuthToken = authToken
-                    ObicoLinkResult.Success
-                }
-                responseCode in 400..499 -> ObicoLinkResult.InvalidCode
-                else -> ObicoLinkResult.NetworkError("HTTP $responseCode")
+            val responseCode = conn.responseCode
+            ObicoLink.classifyResponse(responseCode) ?: run {
+                val body = conn.inputStream.bufferedReader().use { it.readText() }
+                Prefs.obicoAuthToken = ObicoLink.authTokenFromResponse(body)
+                ObicoLink.Result.Success
             }
         } catch (e: Exception) {
-            ObicoLinkResult.NetworkError(e.message)
+            ObicoLink.Result.NetworkError(e.message)
         }
     }
 
@@ -239,11 +187,11 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun cycleCameraRotation() {
-        Prefs.cameraRotation = (Prefs.cameraRotation + 90) % 360
+        Prefs.cameraRotation = PrefValues.nextRotation(Prefs.cameraRotation)
     }
 
     fun cycleCameraResolution() {
-        Prefs.cameraResolution = (Prefs.cameraResolution + 1) % 3
+        Prefs.cameraResolution = PrefValues.nextResolution(Prefs.cameraResolution, Prefs.CAMERA_RESOLUTION_PRESETS.size)
     }
 
     // Mirrors CameraService.resolveCameraId() so the zoom steps offered here
@@ -254,15 +202,11 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
             val manager = KlipperApp.INSTANCE.getSystemService(Context.CAMERA_SERVICE) as CameraManager
             val ids = manager.cameraIdList
             val pinned = Prefs.cameraId
-            val id = when {
-                pinned != null && ids.contains(pinned) -> pinned
-                pinned == null -> ids.firstOrNull {
-                    try {
-                        manager.getCameraCharacteristics(it).get(CameraCharacteristics.LENS_FACING) ==
-                            CameraCharacteristics.LENS_FACING_EXTERNAL
-                    } catch (_: Throwable) { false }
-                } ?: ids.firstOrNull()
-                else -> ids.firstOrNull()
+            val id = CameraRules.resolveId(ids.toList(), pinned) {
+                try {
+                    manager.getCameraCharacteristics(it).get(CameraCharacteristics.LENS_FACING) ==
+                        CameraCharacteristics.LENS_FACING_EXTERNAL
+                } catch (_: Throwable) { false }
             } ?: return listOf(1f)
             CameraZoom.options(CameraZoom.maxZoom(manager.getCameraCharacteristics(id)))
         } catch (_: Throwable) {
@@ -278,17 +222,11 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     fun cycleCameraZoom() {
         val options = zoomOptionsForSelectedCamera()
         if (options.size <= 1) return
-        val current = CameraZoom.clamp(Prefs.cameraZoom, options)
-        Prefs.cameraZoom = options[(options.indexOf(current) + 1) % options.size]
+        Prefs.cameraZoom = CameraRules.nextZoom(Prefs.cameraZoom, options)
     }
 
-    fun cameraResolutionTitle(resolution: Int): String = localizedContext().getString(
-        when (resolution) {
-            Prefs.CAMERA_RESOLUTION_MEDIUM -> ru.ytkab0bp.beamklipper.R.string.CameraResolutionMedium
-            Prefs.CAMERA_RESOLUTION_HIGH -> ru.ytkab0bp.beamklipper.R.string.CameraResolutionHigh
-            else -> ru.ytkab0bp.beamklipper.R.string.CameraResolutionLow
-        }
-    )
+    fun cameraResolutionTitle(resolution: Int): String =
+        localizedContext().getString(CameraResolutions.nameRes(resolution))
 
     fun cameraSourceOptions(): List<CameraSourceOption> {
         val options = mutableListOf(
@@ -357,35 +295,15 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     private fun focalLengthHint(chars: CameraCharacteristics): String? {
         val focal = chars.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)?.firstOrNull() ?: return null
         val sensor = chars.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE) ?: return null
-        val diagMm = kotlin.math.sqrt(sensor.width * sensor.width + sensor.height * sensor.height)
-        if (diagMm <= 0f) return null
-        // 43.27mm is the diagonal of a 36x24mm full-frame sensor — the
-        // standard "35mm equivalent" reference used for this conversion.
-        val equiv35 = focal * (43.27f / diagMm)
-        return "${Math.round(equiv35)}mm"
+        return CameraRules.equivalentFocalLength35mm(focal, sensor.width, sensor.height)?.let { "${it}mm" }
     }
 
-    fun engineTitle(engine: String): String = localizedContext().getString(
-        if (engine == Prefs.ENGINE_KALICO) ru.ytkab0bp.beamklipper.R.string.Kalico
-        else ru.ytkab0bp.beamklipper.R.string.Klipper
-    )
+    fun engineTitle(engine: String): String = localizedContext().getString(Engines.nameRes(engine))
 
     fun frontendTitle(frontend: String): String =
         localizedContext().getString(Frontends.nameRes(frontend))
 
-    fun usbNamingTitle(naming: Int): String = localizedContext().getString(
-        if (naming == Prefs.USB_DEVICE_NAMING_BY_PATH) ru.ytkab0bp.beamklipper.R.string.USBDeviceNamingByPath
-        else ru.ytkab0bp.beamklipper.R.string.USBDeviceNamingByVidPid
-    )
+    fun usbNamingTitle(naming: Int): String = localizedContext().getString(UsbNaming.nameRes(naming))
 
-    fun languageTitle(language: String): String = localizedContext().getString(
-        when (language) {
-            Prefs.LANGUAGE_ENGLISH -> ru.ytkab0bp.beamklipper.R.string.LanguageEnglish
-            Prefs.LANGUAGE_PORTUGUESE_BRAZIL -> ru.ytkab0bp.beamklipper.R.string.LanguagePortuguese
-            Prefs.LANGUAGE_RUSSIAN -> ru.ytkab0bp.beamklipper.R.string.LanguageRussian
-            Prefs.LANGUAGE_CHINESE_SIMPLIFIED -> ru.ytkab0bp.beamklipper.R.string.LanguageChineseSimplified
-            Prefs.LANGUAGE_CHINESE_TRADITIONAL -> ru.ytkab0bp.beamklipper.R.string.LanguageChineseTraditional
-            else -> ru.ytkab0bp.beamklipper.R.string.LanguageSystem
-        }
-    )
+    fun languageTitle(language: String): String = localizedContext().getString(Languages.nameRes(language))
 }

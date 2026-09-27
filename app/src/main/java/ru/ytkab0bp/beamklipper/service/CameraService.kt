@@ -42,6 +42,9 @@ import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.R
 import ru.ytkab0bp.beamklipper.utils.CameraFocus
 import ru.ytkab0bp.beamklipper.utils.CameraZoom
+import ru.ytkab0bp.beamklipper.utils.CameraHttp
+import ru.ytkab0bp.beamklipper.utils.CameraRules
+import ru.ytkab0bp.beamklipper.utils.JpegQualityController
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import ru.ytkab0bp.beamklipper.utils.ViewUtils
 import java.io.BufferedOutputStream
@@ -73,16 +76,9 @@ class CameraService : Service() {
         const val KEY_FOCUS = "focus"
         private const val TAG = "beam_camera"
         private const val DESCRIPTOR = "ru.ytkab0bp.beamklipper.ICameraService"
-        private val PATH_PATTERN = Pattern.compile("GET ([^\\r\\n]+) HTTP/1\\.[0-1]")
         private const val PORT = 8889
         private const val ID = 400000
         private const val WRITE_TIMEOUT_MS = 4000L
-        private const val BASE_JPEG_QUALITY = 75
-        private const val MIN_JPEG_QUALITY = 35
-        // ~25fps-equivalent slack over the 33ms a true 30fps frame budget
-        // would allow — avoids reacting to normal jitter, only sustained
-        // congestion (2x this, i.e. <12.5fps-equivalent for one write).
-        private const val FRAME_BUDGET_MS = 40L
         private val IO_POOL = Executors.newSingleThreadExecutor()
         // Only used to force-close a socket whose write() has been blocking
         // past WRITE_TIMEOUT_MS (a client on a bad/dead connection) — plain
@@ -110,42 +106,20 @@ class CameraService : Service() {
     private val stoppedByUser = java.util.concurrent.atomic.AtomicBoolean(false)
 
     // Shrinks new frames automatically when a viewer's network can't keep
-    // up (e.g. a congested 2.4GHz network) instead of leaving the frame
-    // size fixed and letting the per-viewer backpressure in deliverFrame()
-    // just drop whichever frames miss the send-timing window — which is
-    // what turns a transient WiFi hiccup into a hard FPS cliff (30 -> 10 or
-    // less) instead of a smaller, smoother dip. Read from the IO_POOL
-    // encode thread, written from client handler threads (guarded below).
-    @Volatile
-    private var jpegQuality = BASE_JPEG_QUALITY
-    // A per-call streak (reset by any single fast sample) turned out not to
-    // work on real hardware: the OS socket send buffer absorbs a burst of
-    // frames almost instantly even while the client is genuinely
-    // bandwidth-starved, so write() only blocks for real once that buffer
-    // fills — individual samples come back bimodal (near-0ms, then one very
-    // long one), and a streak resets on every fast sample in between even
-    // though the client is consistently only draining ~150KB/s. An EWMA
-    // over ALL samples still converges to the true sustained rate despite
-    // that noise, so react to it instead.
-    private var writeTimeEwmaMs = FRAME_BUDGET_MS.toDouble()
-    private var framesSinceAdjust = 0
+    // up (e.g. a congested 2.4GHz network) instead of leaving the frame size
+    // fixed and letting the per-viewer backpressure in deliverFrame() just
+    // drop whichever frames miss the send-timing window. Read from the
+    // IO_POOL encode thread, written from client handler threads.
+    private val jpegQualityController = JpegQualityController()
+    private val jpegQuality: Int get() = jpegQualityController.quality
 
     private fun onFrameWriteTiming(elapsedMs: Long) {
-        synchronized(this) {
-            writeTimeEwmaMs = writeTimeEwmaMs * 0.8 + elapsedMs * 0.2
-            framesSinceAdjust++
-            // Let a handful of samples fold into the average before acting
-            // on it, so one adjustment doesn't immediately chase the next.
-            if (framesSinceAdjust < 5) return@synchronized
-            if (writeTimeEwmaMs > FRAME_BUDGET_MS * 1.5 && jpegQuality > MIN_JPEG_QUALITY) {
-                jpegQuality = (jpegQuality - 10).coerceAtLeast(MIN_JPEG_QUALITY)
-                framesSinceAdjust = 0
-                Log.i(TAG, "Sustained slow client writes (avg ${writeTimeEwmaMs.toInt()}ms), lowering JPEG quality to $jpegQuality")
-            } else if (writeTimeEwmaMs < FRAME_BUDGET_MS * 0.5 && jpegQuality < BASE_JPEG_QUALITY) {
-                jpegQuality = (jpegQuality + 5).coerceAtMost(BASE_JPEG_QUALITY)
-                framesSinceAdjust = 0
-                Log.i(TAG, "Client writes fast again (avg ${writeTimeEwmaMs.toInt()}ms), raising JPEG quality to $jpegQuality")
-            }
+        val before = jpegQualityController.quality
+        val after = jpegQualityController.onWriteTiming(elapsedMs)
+        if (after < before) {
+            Log.i(TAG, "Sustained slow client writes, lowering JPEG quality to $after")
+        } else if (after > before) {
+            Log.i(TAG, "Client writes fast again, raising JPEG quality to $after")
         }
     }
 
@@ -166,13 +140,7 @@ class CameraService : Service() {
 
     private fun resolveCameraId(): String? {
         val ids = try { cameraManager.cameraIdList } catch (_: CameraAccessException) { return null }
-        if (ids.isEmpty()) return null
-        val preferred = Prefs.cameraId
-        if (preferred != null && ids.contains(preferred)) return preferred
-        if (preferred == null) {
-            ids.firstOrNull { isExternal(it) }?.let { return it }
-        }
-        return ids[0]
+        return CameraRules.resolveId(ids.toList(), Prefs.cameraId) { isExternal(it) }
     }
 
     private val serviceBinder = object : Binder() {
@@ -464,10 +432,9 @@ class CameraService : Service() {
                 try {
                     val out = t.out
                     if (!t.oneShot) {
-                        out.write("--camera-frame\r\n".toByteArray())
-                        out.write("Content-Type: image/jpeg\r\nContent-Length: $size\r\n\r\n".toByteArray())
+                        out.write(CameraHttp.framePartHeader(size).toByteArray())
                     } else {
-                        out.write(CameraHandlerThread.snapshotHeaders(size).toByteArray())
+                        out.write(CameraHttp.snapshotHeaders(size).toByteArray())
                     }
                     out.write(data, 0, size)
                     if (!t.oneShot) {
@@ -514,9 +481,7 @@ class CameraService : Service() {
         // Start each fresh session at the base quality rather than
         // carrying over whatever a previous, possibly-congested session
         // had throttled down to.
-        jpegQuality = BASE_JPEG_QUALITY
-        writeTimeEwmaMs = FRAME_BUDGET_MS.toDouble()
-        framesSinceAdjust = 0
+        jpegQualityController.reset()
         try {
             cameraManager.openCamera(id, CaptureStateCallback(), cameraHandler)
         } catch (e: CameraAccessException) {
@@ -735,21 +700,6 @@ class CameraService : Service() {
     }
 
     private class CameraHandlerThread(sock: Socket) : HandlerThread("beam_camera_handler", -10) {
-        companion object {
-            // Fluidd/Mainsail's webcam preview fetches the snapshot URL to
-            // validate it; a mismatched multipart Content-Type on what's
-            // actually a single raw JPEG body (no boundary at all) made that
-            // fail even though a plain browser tab or curl -o (which doesn't
-            // care about Content-Type) "worked". CORS headers are also needed
-            // since the webcam viewer's origin (Fluidd's own port) differs
-            // from this server's port.
-            private const val CORS_HEADER = "Access-Control-Allow-Origin: *\r\n"
-            private const val HEADERS = "HTTP/1.0 200 OK\r\nConnection: close\r\nMax-Age: 0\r\nExpires: 0\r\nCache-Control: no-cache, private\r\nPragma: no-cache\r\n$CORS_HEADER" +
-                "Content-Type: multipart/x-mixed-replace; boundary=camera-frame\r\n\r\n"
-            fun snapshotHeaders(size: Int) = "HTTP/1.0 200 OK\r\nConnection: close\r\nCache-Control: no-cache, private\r\nPragma: no-cache\r\n$CORS_HEADER" +
-                "Content-Type: image/jpeg\r\nContent-Length: $size\r\n\r\n"
-        }
-
         val socket: Socket = sock
         // Buffered so the boundary/headers/JPEG-body writes for one frame
         // coalesce into a single flush() instead of 3-4 separate small
@@ -764,13 +714,7 @@ class CameraService : Service() {
         init {
             val input = sock.getInputStream()
             val r = BufferedReader(InputStreamReader(input))
-            val line = r.readLine()
-            if (line != null) {
-                val m = PATH_PATTERN.matcher(line)
-                oneShot = m.find() && m.group(1).startsWith("/snapshot")
-            } else {
-                oneShot = false
-            }
+            oneShot = CameraHttp.isSnapshotRequest(r.readLine())
 
             start()
             handler = Handler(looper)
@@ -780,7 +724,7 @@ class CameraService : Service() {
                     // they're written once the frame size is known, in
                     // deliverFrame() below — not here.
                     if (!oneShot) {
-                        out.write(HEADERS.toByteArray())
+                        out.write(CameraHttp.STREAM_HEADERS.toByteArray())
                         out.flush()
                     }
                     handlerThreads.add(this@CameraHandlerThread)

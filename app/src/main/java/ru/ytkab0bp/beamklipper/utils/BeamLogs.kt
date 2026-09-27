@@ -7,6 +7,7 @@ import android.os.Process
 import android.provider.MediaStore
 import android.util.Log
 import ru.ytkab0bp.beamklipper.KlipperInstance
+import ru.ytkab0bp.beamklipper.LogSources
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -21,9 +22,6 @@ import java.util.Locale
  * Everything here is best-effort and never throws to the caller.
  */
 object BeamLogs {
-
-    /** How much of any single source we keep in memory / show / share. */
-    private const val MAX_CHARS = 240_000
 
     data class Source(
         val id: String,
@@ -51,19 +49,9 @@ object BeamLogs {
         }
 
         for (inst in KlipperInstance.getInstances()) {
-            val name = inst.name.ifBlank { inst.id ?: "?" }
             val logs = File(inst.publicDirectory, "logs")
-            list += Source("klippy_${inst.id}", "Klipper · $name") {
-                readInstanceLog(File(logs, "klippy.log"))
-            }
-            list += Source("moonraker_${inst.id}", "Moonraker · $name") {
-                readInstanceLog(File(logs, "moonraker.log"))
-            }
-            list += Source("octoeverywhere_${inst.id}", "OctoEverywhere · $name") {
-                readInstanceLog(File(logs, "octoeverywhere.log"))
-            }
-            list += Source("obico_${inst.id}", "Obico · $name") {
-                readInstanceLog(File(logs, "obico.log"))
+            for (entry in LogSources.forInstance(inst.id, inst.name)) {
+                list += Source(entry.id, entry.label) { readInstanceLog(File(logs, entry.fileName)) }
             }
         }
         return list
@@ -81,7 +69,7 @@ object BeamLogs {
             append(runCatching(s.load).getOrElse { "<falha ao ler: ${it.message}>" })
             append('\n')
         }
-    }.let { if (it.length > MAX_CHARS) it.substring(it.length - MAX_CHARS) else it }
+    }.let { LogText.capCombined(it) }
 
     /**
      * Write [combined] to a file the user can find with a file manager and
@@ -126,9 +114,7 @@ object BeamLogs {
     // --- internals -----------------------------------------------------------
 
     private fun readInstanceLog(f: File): String {
-        if (!f.exists()) return "(${f.name} ainda não foi criado — o serviço não chegou a rodar nesta sessão)"
-        val txt = readTextOrEmpty(f)
-        return if (txt.isBlank()) "(${f.name} está vazio)" else tail(txt)
+        return LogText.describeInstanceLog(f.name, f.exists(), if (f.exists()) readTextOrEmpty(f) else "")
     }
 
     /** Dump this process's own logcat (main process → app + WebService + instance orchestration). */
@@ -156,8 +142,5 @@ object BeamLogs {
     private fun readTextOrEmpty(f: File): String =
         try { f.readText() } catch (t: Throwable) { "<erro ao ler ${f.name}: ${t.message}>" }
 
-    private fun tail(s: String): String =
-        if (s.length <= MAX_CHARS) s
-        else "…(início cortado, mostrando os últimos ${MAX_CHARS / 1000} KB)…\n" +
-                s.substring(s.length - MAX_CHARS)
+    private fun tail(s: String): String = LogText.tail(s)
 }

@@ -58,13 +58,20 @@ primeiro build) e regera `app/src/main/assets/` a partir das fontes vendoradas e
 
 | O quê | Comando |
 |---|---|
-| Testes unitários em Kotlin (escolha do front end, zoom da câmera), sem aparelho | `./gradlew :app:testArm64DebugUnitTest` |
-| Testes do add-on do Klipper (`print_recovery`), Python puro | `python3 -m unittest discover -s app/src/test/python -v` |
+| Testes unitários em Kotlin (todas as regras de negócio do app: front ends, câmera, integração do add-on de recuperação de impressão, Prefs, o banco de perfis de impressora e os view models, configs do moonraker.conf/companions, edições do printer.cfg, roteamento/proxy do servidor web embutido, nomeação USB, o provedor de arquivos SAF, logs), sem aparelho | `./gradlew :app:testArm64DebugUnitTest` |
+| Relatório de cobertura de linhas dos testes unitários | `./gradlew :app:jacocoUnitTestReport` (`app/build/reports/jacoco/jacocoUnitTestReport/html/index.html`) |
+| Testes do add-on do Klipper (`print_recovery`, `beam_beeper`/`beam_camera`), Python puro | `python3 -m unittest discover -s app/src/test/python -v` |
 | Testes de interface (componentes Compose e o tile de front end), em aparelho ou emulador conectado | `./gradlew :app:connectedArm64DebugAndroidTest` |
 
 Os testes de interface instalam um APK de teste ao lado do app, e o Gradle
 desinstala os dois no fim — isso apaga os dados do app naquele aparelho, então
 use um emulador ou um aparelho reserva.
+
+Os testes unitários cobrem cada regra de negócio como um pequeno objeto Kotlin
+testado de forma independente (portas, modelos de configuração, nomeação,
+interpretação de texto, ...); a integração com Activity/Service, a E/S real de
+Camera2/USB e a inicialização do processo Python são verificadas rodando o
+próprio app, não por esses testes.
 
 ## Assinatura
 

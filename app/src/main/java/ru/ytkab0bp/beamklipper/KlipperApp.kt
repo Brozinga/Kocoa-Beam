@@ -11,8 +11,6 @@ import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import java.io.File
 import java.io.IOException
-import java.io.RandomAccessFile
-import java.nio.channels.FileLock
 import androidx.multidex.MultiDexApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -23,6 +21,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ru.ytkab0bp.beamklipper.db.BeamDB
 import ru.ytkab0bp.beamklipper.serial.UsbSerialManager
+import ru.ytkab0bp.beamklipper.utils.CrashReport
+import ru.ytkab0bp.beamklipper.utils.FileLocks
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import ru.ytkab0bp.eventbus.EventBus
 
@@ -90,15 +90,11 @@ class KlipperApp : MultiDexApplication() {
             try {
                 val dir = getExternalFilesDir(null) ?: filesDir
                 val f = File(dir, "last_crash.txt")
-                f.writeText(buildString {
-                    append("time=").append(System.currentTimeMillis()).append('\n')
-                    append("process=").append(getProcessNameCompatInternal()).append('\n')
-                    append("thread=").append(thread.name).append('\n')
-                    append("device=").append(Build.MANUFACTURER).append(' ').append(Build.MODEL)
-                        .append(" sdk=").append(Build.VERSION.SDK_INT).append('\n')
-                    append("abi=").append(Build.SUPPORTED_ABIS.joinToString(",")).append("\n\n")
-                    append(Log.getStackTraceString(throwable))
-                })
+                f.writeText(CrashReport.format(
+                    System.currentTimeMillis(), getProcessNameCompatInternal(), thread.name,
+                    Build.MANUFACTURER, Build.MODEL, Build.VERSION.SDK_INT,
+                    Build.SUPPORTED_ABIS.toList(), Log.getStackTraceString(throwable)
+                ))
                 Log.e("beam_crash", "Uncaught exception on ${thread.name}", throwable)
             } catch (_: Throwable) {
             }
@@ -137,19 +133,8 @@ class KlipperApp : MultiDexApplication() {
         private const val MOONRAKER_LOCK_NAME = ".moonraker_port_lock"
         private const val BUNDLE_INSTALL_LOCK_NAME = ".bundle_install_lock"
 
-        fun withChaquopyLock(ctx: Context, action: () -> Unit) {
-            val lockFile = File(ctx.filesDir, CHAQUOPY_LOCK_NAME)
-            var raf: RandomAccessFile? = null
-            var lock: FileLock? = null
-            try {
-                raf = RandomAccessFile(lockFile, "rw")
-                lock = raf.channel.lock()
-                action()
-            } finally {
-                try { lock?.release() } catch (_: Throwable) {}
-                try { raf?.close() } catch (_: Throwable) {}
-            }
-        }
+        fun withChaquopyLock(ctx: Context, action: () -> Unit) =
+            FileLocks.withFileLock(File(ctx.filesDir, CHAQUOPY_LOCK_NAME), action)
 
         // BundleInstaller.init() unpacks the vendored klipper/kalico/moonraker/
         // octoeverywhere bundles into shared app storage. Every KlippyService,
@@ -162,71 +147,11 @@ class KlipperApp : MultiDexApplication() {
         // beforehand" when the directory is mutated mid-walk by another
         // process) — this crashed KlippyService_0 in practice once
         // OctoEverywhereService made a 3-way race common instead of a 2-way one.
-        fun withBundleInstallLock(ctx: Context, action: () -> Unit) {
-            val lockFile = File(ctx.filesDir, BUNDLE_INSTALL_LOCK_NAME)
-            var raf: RandomAccessFile? = null
-            var lock: FileLock? = null
-            try {
-                raf = RandomAccessFile(lockFile, "rw")
-                lock = raf.channel.lock()
-                action()
-            } finally {
-                try { lock?.release() } catch (_: Throwable) {}
-                try { raf?.close() } catch (_: Throwable) {}
-            }
-        }
+        fun withBundleInstallLock(ctx: Context, action: () -> Unit) =
+            FileLocks.withFileLock(File(ctx.filesDir, BUNDLE_INSTALL_LOCK_NAME), action)
 
-        private fun isProcessAlive(pid: Int): Boolean {
-            return try {
-                val f = File("/proc/$pid/cmdline")
-                f.exists() && f.readBytes().isNotEmpty()
-            } catch (_: Throwable) {
-                false
-            }
-        }
-
-        fun withMoonrakerPortLock(ctx: Context, action: () -> Unit) {
-            val lockFile = File(ctx.filesDir, MOONRAKER_LOCK_NAME)
-            val deadline = System.currentTimeMillis() + 15_000
-            var acquired = false
-            while (System.currentTimeMillis() < deadline && !acquired) {
-                try {
-                    if (lockFile.createNewFile()) {
-                        lockFile.writeText("${android.os.Process.myPid()}")
-                        acquired = true
-                        break
-                    }
-                } catch (_: Throwable) {}
-                try {
-                    val content = try { lockFile.readText().trim() } catch (_: Throwable) { "" }
-                    val lastMod = lockFile.lastModified()
-                    val staleByTime = System.currentTimeMillis() - lastMod > 10_000
-                    val staleByPid = if (content.isNotEmpty() && content.all(Char::isDigit)) {
-                        try { !isProcessAlive(content.toInt()) } catch (_: Throwable) { true }
-                    } else staleByTime
-                    if (staleByTime || staleByPid) {
-                        lockFile.delete()
-                    }
-                } catch (_: Throwable) {}
-                try { Thread.sleep(30) } catch (_: InterruptedException) { break }
-            }
-            if (!acquired) {
-                try { lockFile.delete() } catch (_: Throwable) {}
-                try {
-                    if (lockFile.createNewFile()) {
-                        lockFile.writeText("${android.os.Process.myPid()}")
-                        acquired = true
-                    }
-                } catch (_: Throwable) {}
-            }
-            try {
-                action()
-            } finally {
-                if (acquired) {
-                    try { lockFile.delete() } catch (_: Throwable) {}
-                }
-            }
-        }
+        fun withMoonrakerPortLock(ctx: Context, action: () -> Unit) =
+            FileLocks.withMoonrakerPortLock(File(ctx.filesDir, MOONRAKER_LOCK_NAME), android.os.Process.myPid(), action = action)
 
         fun seedChaquopyDirLocked(ctx: Context) {
             withChaquopyLock(ctx) {

@@ -56,11 +56,14 @@
 
 | 内容 | 命令 |
 |---|---|
-| Kotlin 单元测试（前端选择、摄像头缩放），无需设备 | `./gradlew :app:testArm64DebugUnitTest` |
-| Klipper 附加模块测试（`print_recovery`），纯 Python | `python3 -m unittest discover -s app/src/test/python -v` |
+| Kotlin 单元测试（应用的全部业务规则：前端、摄像头、断电续打附加模块的接入、Prefs、打印机配置数据库与视图模型、moonraker.conf/伴生程序配置、printer.cfg 编辑、内置网页服务器的路由/代理、USB 命名、SAF 文件提供者、日志），无需设备 | `./gradlew :app:testArm64DebugUnitTest` |
+| 单元测试的行覆盖率报告 | `./gradlew :app:jacocoUnitTestReport`（`app/build/reports/jacoco/jacocoUnitTestReport/html/index.html`） |
+| Klipper 附加模块测试（`print_recovery`、`beam_beeper`/`beam_camera`），纯 Python | `python3 -m unittest discover -s app/src/test/python -v` |
 | 界面测试（Compose 组件和前端切换卡片），需连接设备或模拟器 | `./gradlew :app:connectedArm64DebugAndroidTest` |
 
 界面测试会在应用旁安装一个测试 APK，结束后 Gradle 会把两者都卸载 —— 这会清除该设备上的应用数据，请使用模拟器或备用设备。
+
+单元测试把每条业务规则都当作一个独立测试的小型 Kotlin 对象来覆盖（端口、配置模板、命名、解析……）；Activity/Service 的胶水代码、真实的 Camera2/USB I/O 以及 Python 进程的启动，则通过实际运行应用来验证，而不是这些测试。
 
 ## 签名
 

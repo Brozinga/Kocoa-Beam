@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import ru.ytkab0bp.beamklipper.KlipperApp
+import ru.ytkab0bp.beamklipper.InstanceLists
 import ru.ytkab0bp.beamklipper.KlipperInstance
 import ru.ytkab0bp.beamklipper.events.CameraSourceChangedEvent
 import ru.ytkab0bp.beamklipper.events.EngineChangedEvent
@@ -42,11 +43,7 @@ object AppState {
 
     private val _instances = MutableStateFlow<List<KlipperInstance>>(emptyList())
     val instances: StateFlow<List<KlipperInstance>> = _instances.distinct { a, b ->
-        a.size == b.size && a.asSequence().zip(b.asSequence()).all { (x, y) ->
-            val xi = x.id ?: x.name
-            val yi = y.id ?: y.name
-            xi === yi || xi == yi
-        }
+        InstanceLists.sameInstances(a, b)
     }
 
     private val _instanceStates = MutableStateFlow<Map<String, KlipperInstance.State>>(emptyMap())

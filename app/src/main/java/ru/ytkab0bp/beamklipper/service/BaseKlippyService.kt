@@ -162,45 +162,7 @@ open class BaseKlippyService(private val num: Int) : BasePythonService() {
                     File(inst.publicDirectory, "gcodes").absolutePath
                 }
 
-                // Drop any existing [virtual_sdcard] header plus its option lines
-                // (only ever "path:") and blank lines in between. Line-by-line so
-                // we never eat a following comment or another section.
-                val outLines = ArrayList<String>()
-                val lines = str.split("\n")
-                var i = 0
-                while (i < lines.size) {
-                    val line = lines[i]
-                    if (line.trim().equals("[virtual_sdcard]", ignoreCase = true)) {
-                        i++
-                        while (i < lines.size) {
-                            val t = lines[i].trim()
-                            val isOpt = t.isEmpty() ||
-                                t.startsWith("path", ignoreCase = true) ||
-                                lines[i].firstOrNull()?.isWhitespace() == true
-                            if (t.startsWith("[") || t.startsWith("#") || !isOpt) break
-                            i++
-                        }
-                        // trim trailing blank lines we accumulated before this
-                        while (outLines.isNotEmpty() && outLines.last().isBlank()) {
-                            outLines.removeAt(outLines.size - 1)
-                        }
-                        continue
-                    }
-                    outLines.add(line)
-                    i++
-                }
-                val stripped = outLines.joinToString("\n")
-
-                val block = "[virtual_sdcard]\npath: $wantPath\n"
-                // Klipper always writes its autosave block starting with a "#*#"
-                // line; keep [virtual_sdcard] above it so SAVE_CONFIG won't drop it.
-                val markerIdx = stripped.indexOf("#*#")
-                val rebuilt = if (markerIdx >= 0) {
-                    stripped.substring(0, markerIdx).trimEnd('\n', ' ', '\t') +
-                        "\n\n" + block + "\n\n" + stripped.substring(markerIdx)
-                } else {
-                    stripped.trimEnd('\n', ' ', '\t') + "\n\n" + block
-                }
+                val rebuilt = PrinterCfg.withVirtualSdcard(str, wantPath)
 
                 if (rebuilt != str) {
                     str = rebuilt
@@ -245,7 +207,7 @@ open class BaseKlippyService(private val num: Int) : BasePythonService() {
             if (!engineDir.isDirectory) engineDir.mkdirs()
             try {
                 bsFile.writeText(
-                    "import os\nimport importlib.util\nimport sys\n\ndef main():\n    here = os.path.dirname(os.path.abspath(__file__))\n    sys.path.insert(0, os.path.join(here, \"beam_ext\"))\n    sub = os.path.join(here, \"klippy\")\n    sys.path.insert(0, sub)\n    init = os.path.join(sub, \"__init__.py\")\n    if os.path.exists(init):\n        spec = importlib.util.spec_from_file_location(\"klippy\", init, submodule_search_locations=[sub])\n        m = importlib.util.module_from_spec(spec)\n        sys.modules[\"klippy\"] = m\n        spec.loader.exec_module(m)\n        from klippy.printer import main as _m\n        _m()\n    else:\n        entry = os.path.join(sub, \"klippy.py\")\n        spec = importlib.util.spec_from_file_location(\"klippy\", entry, submodule_search_locations=[sub])\n        m = importlib.util.module_from_spec(spec)\n        sys.modules[\"klippy\"] = m\n        spec.loader.exec_module(m)\n        if hasattr(m, \"main\"):\n            m.main()\n        else:\n            from klippy.printer import main as _m\n            _m()\n",
+                    BootstrapScripts.KLIPPY,
                     StandardCharsets.UTF_8
                 )
             } catch (e: Throwable) {

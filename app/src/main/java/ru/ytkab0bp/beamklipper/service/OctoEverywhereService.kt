@@ -9,7 +9,6 @@ import android.content.pm.ServiceInfo
 import android.os.IBinder
 import android.util.Base64
 import android.util.Log
-import org.json.JSONObject
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.R
 import java.io.File
@@ -124,23 +123,10 @@ class OctoEverywhereService : BasePythonService() {
                 return
             }
 
-            val config = JSONObject().apply {
-                put("ServiceName", "kocoa-beam-${inst.id}")
-                // Config-writes are disabled below, so the venv/repo paths are
-                // never actually read for anything but RepoRootFolder's
-                // pyproject.toml version string — see docs/octoeverywhere notes.
-                put("VirtualEnvPath", oeDir.absolutePath)
-                put("RepoRootFolder", oeDir.absolutePath)
-                put("LocalFileStoragePath", localStorage.absolutePath)
-                put("ConfigFolder", configFolder.absolutePath)
-                put("LogFolder", logFolder.absolutePath)
-                put("IsCompanion", false)
-                put("IsDockerContainer", false)
-                put("MoonrakerConfigFile", moonrakerCfg.absolutePath)
-                // We template moonraker.conf ourselves; never let the plugin's
-                // own git/systemd-oriented self-update logic touch it.
-                put("DisableMoonrakerConfigFileWrites", true)
-            }
+            val config = OctoEverywhereConfig.build(
+                inst.id, oeDir.absolutePath, localStorage.absolutePath,
+                configFolder.absolutePath, logFolder.absolutePath, moonrakerCfg.absolutePath
+            )
             val configB64 = Base64.encodeToString(
                 config.toString().toByteArray(StandardCharsets.UTF_8),
                 Base64.URL_SAFE or Base64.NO_WRAP
@@ -152,7 +138,7 @@ class OctoEverywhereService : BasePythonService() {
             val bsFile = File(oeDir, "octoeverywhere_bs.py")
             try {
                 bsFile.writeText(
-                    "import os\nimport sys\nimport runpy\n\ndef main():\n    here = os.path.dirname(os.path.abspath(__file__))\n    if here not in sys.path:\n        sys.path.insert(0, here)\n    runpy.run_module(\"moonraker_octoeverywhere\", run_name=\"__main__\", alter_sys=True)\n",
+                    BootstrapScripts.OCTOEVERYWHERE,
                     StandardCharsets.UTF_8
                 )
             } catch (e: Throwable) {

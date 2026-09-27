@@ -66,13 +66,7 @@ class BeamDB(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null, VERSI
             inst.id = id
             inst.name = cv.getAsString(COLUMN_NAME) ?: continue
             inst.icon = InstanceIcon.byKey(cv.getAsString(COLUMN_ICON) ?: continue)
-            inst.autostart = when (val raw = cv.get(COLUMN_AUTOSTART)) {
-                is Boolean -> raw
-                is Int -> raw != 0
-                is Long -> raw != 0L
-                is String -> raw == "1"
-                else -> false
-            }
+            inst.autostart = InstanceRow.autostart(cv.get(COLUMN_AUTOSTART))
             instances.add(inst)
         }
         c.close()

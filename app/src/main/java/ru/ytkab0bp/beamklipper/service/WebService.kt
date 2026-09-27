@@ -31,7 +31,6 @@ import com.hoho.android.usbserial.driver.UsbSerialProber
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import org.nanohttpd.protocols.http.IHTTPSession
-import org.nanohttpd.protocols.http.request.Method
 import org.nanohttpd.protocols.http.response.Response
 import org.nanohttpd.protocols.http.response.Status
 import org.nanohttpd.protocols.websockets.CloseCode
@@ -45,6 +44,13 @@ import ru.ytkab0bp.beamklipper.R
 import ru.ytkab0bp.beamklipper.events.WebFrontendChangedEvent
 import ru.ytkab0bp.beamklipper.serial.KlipperProbeTable
 import ru.ytkab0bp.beamklipper.serial.UsbSerialManager
+import ru.ytkab0bp.beamklipper.service.web.EncoderSize
+import ru.ytkab0bp.beamklipper.service.web.FfmpegCommand
+import ru.ytkab0bp.beamklipper.service.web.FilterOp
+import ru.ytkab0bp.beamklipper.service.web.FrameSequence
+import ru.ytkab0bp.beamklipper.service.web.ProxyRules
+import ru.ytkab0bp.beamklipper.service.web.VideoFilters
+import ru.ytkab0bp.beamklipper.service.web.WebRouting
 import ru.ytkab0bp.beamklipper.utils.Frontends
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import ru.ytkab0bp.beamklipper.utils.ViewUtils
@@ -71,17 +77,8 @@ class WebService : Service() {
         fun getPort(): Int = Frontends.portFor(Prefs.webFrontend)
         private const val ID = 300000
         private const val BEEPER_SAMPLE_RATE = 8000
-        private val API_PATTERN = Pattern.compile("^/(printer|api|access|machine|server)/")
         private var mPrefs: SharedPreferences? = null
         private val dateFormat = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ROOT)
-        // Moonraker's config is Python-configparser style: the key/value separator
-        // may be ':' or '='. assets/moonraker/default.conf writes "port: <n>", and
-        // BaseMoonrakerService.MOONRAKER_PORT_PATTERN also expects the colon form —
-        // an '='-only regex here never matched, so getMoonrakerPort() always fell
-        // through to the fragile /proc/net/tcp scan (or the 7125 fallback) and the
-        // proxy pointed at the wrong port ("Cannot connect to Moonraker").
-        private val MOONRAKER_PORT_RE = Regex("^\\s*port\\s*[:=]\\s*(\\d+)", RegexOption.MULTILINE)
-
         init {
             System.loadLibrary("beeper")
         }
@@ -156,8 +153,7 @@ class WebService : Service() {
                 val cfg = File(inst.publicDirectory, "config/moonraker.conf")
                 if (cfg.exists()) {
                     try {
-                        val m = MOONRAKER_PORT_RE.find(cfg.readText())
-                        if (m != null) return m.groupValues[1].toInt()
+                        WebRouting.moonrakerPortFromConfig(cfg.readText())?.let { return it }
                     } catch (_: Exception) {}
                 }
                 try {
@@ -165,18 +161,13 @@ class WebService : Service() {
                     val raf2 = RandomAccessFile("/proc/net/tcp6", "r")
                     val text1 = try { raf1.channel.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, 0, raf1.channel.size()).let { buf -> val arr = ByteArray(buf.remaining()); buf.get(arr); String(arr, Charsets.US_ASCII) } } finally { raf1.close() }
                     val text2 = try { raf2.channel.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, 0, raf2.channel.size()).let { buf -> val arr = ByteArray(buf.remaining()); buf.get(arr); String(arr, Charsets.US_ASCII) } } finally { raf2.close() }
-                    val all = "$text1\n$text2"
-                    val re = Regex("^\\s*[0-9A-Fa-f]+:\\s*[0-9A-Fa-f]+:([0-9A-Fa-f]{4})\\s+[0-9A-Fa-f]+:[0-9A-Fa-f]+\\s+0A", RegexOption.MULTILINE)
-                    for (match in re.findAll(all)) {
-                        val p = match.groupValues[1].toInt(16)
-                        if (p in 7100..9000 && (fallback == null || p < fallback)) {
-                            fallback = p
-                        }
+                    WebRouting.lowestListeningPort("$text1\n$text2")?.let { p ->
+                        if (fallback == null || p < fallback!!) fallback = p
                     }
                 } catch (_: Throwable) {}
             }
         }
-        return fallback ?: 7125
+        return fallback ?: WebRouting.DEFAULT_MOONRAKER_PORT
     }
 
     private external fun generateTone(numSamples: Int, freq: Float): FloatArray
@@ -206,111 +197,13 @@ class WebService : Service() {
         beeperHandler?.postDelayed({ track.release() }, duration.toLong())
     }
 
-    private data class ParsedCmd(
-        val fps: Int?,
-        val inputPath: String,
-        val outputPath: String,
-        val filter: String?
-    )
-
-    private fun parseFfmpegCmd(cmd: String): ParsedCmd {
-        var fps: Int? = null
-        var inputPath = ""
-        var outputPath = ""
-        var filter: String? = null
-
-        val fpsMatch = Regex("""-r\s+(\d+)""").find(cmd)
-        if (fpsMatch != null) {
-            fps = fpsMatch.groupValues[1].toInt()
-        }
-
-        val inputMatch = Regex("""-i\s+'([^']+)'""").find(cmd)
-        if (inputMatch != null) {
-            inputPath = inputMatch.groupValues[1]
-        }
-
-        val filterMatch = Regex("""-vf\s+'([^']+)'""").find(cmd)
-        if (filterMatch != null) {
-            filter = filterMatch.groupValues[1]
-        }
-
-        val quotedPaths = Regex("""'([^']+)'""").findAll(cmd).map { it.groupValues[1] }.toList()
-        if (quotedPaths.isNotEmpty()) {
-            outputPath = quotedPaths.last()
-        }
-
-        return ParsedCmd(fps, inputPath, outputPath, filter)
-    }
-
-    // ffmpeg's image2 sequence pattern: %d, %6d, %06d ...
-    private val PRINTF_INT = Regex("%0?\\d*d")
-
-    private fun expandWildcard(path: String): List<File> {
-        // moonraker-timelapse asks for "frameNNNNNN.jpg" as "frame%6d.jpg", which
-        // is a printf-style sequence, not a shell wildcard: match the frames by
-        // number and keep them in numeric order.
-        val printf = PRINTF_INT.find(File(path).name)
-        if (printf != null) {
-            val name = File(path).name
-            val parent = File(path).parentFile ?: File("/")
-            val pattern = Regex(
-                Regex.escape(name.substring(0, printf.range.first)) + "(\\d+)" +
-                    Regex.escape(name.substring(printf.range.last + 1))
-            )
-            return (parent.listFiles() ?: emptyArray())
-                .filter { it.isFile }
-                .mapNotNull { f -> pattern.matchEntire(f.name)?.let { it.groupValues[1].toLong() to f } }
-                .sortedBy { it.first }
-                .map { it.second }
-        }
-        if (!path.contains("*") && !path.contains("?")) {
-            val f = File(path)
-            return if (f.exists()) listOf(f) else emptyList()
-        }
-        val parent = File(path).parentFile ?: File("/")
-        val namePattern = File(path).name
-            .replace(".", "\\.")
-            .replace("*", ".*")
-            .replace("?", ".")
-            .toRegex()
-        val files = parent.listFiles() ?: emptyArray()
-        return files.filter { namePattern.matches(it.name) && it.isFile }.sortedBy { it.name }
-    }
-
     private fun buildTransformMatrix(filter: String?, width: Int, height: Int): Matrix {
         val matrix = Matrix()
-        if (filter == null) return matrix
-
-        val filters = filter.split(",")
-        for (f in filters) {
-            val trimmed = f.trim()
-            when {
-                trimmed == "transpose=0" -> {
-                    matrix.postRotate(-90f)
-                    matrix.postScale(1f, -1f)
-                }
-                trimmed == "transpose=1" -> {
-                    matrix.postRotate(90f)
-                }
-                trimmed == "transpose=2" -> {
-                    matrix.postRotate(-90f)
-                }
-                trimmed == "transpose=3" -> {
-                    matrix.postRotate(90f)
-                    matrix.postScale(1f, -1f)
-                }
-                trimmed == "hflip" -> {
-                    matrix.postScale(-1f, 1f)
-                }
-                trimmed == "vflip" -> {
-                    matrix.postScale(1f, -1f)
-                }
-                trimmed.startsWith("rotate=") -> {
-                    val radStr = trimmed.substringAfter("=")
-                    val radians = radStr.toFloatOrNull() ?: 0f
-                    val degrees = Math.toDegrees(radians.toDouble()).toFloat()
-                    matrix.postRotate(degrees)
-                }
+        for (op in VideoFilters.parse(filter)) {
+            when (op) {
+                is FilterOp.Rotate -> matrix.postRotate(op.degrees)
+                FilterOp.FlipHorizontal -> matrix.postScale(-1f, 1f)
+                FilterOp.FlipVertical -> matrix.postScale(1f, -1f)
             }
         }
         return matrix
@@ -330,7 +223,7 @@ class WebService : Service() {
         return result
     }
 
-    private fun processSingleImage(cmd: ParsedCmd): String {
+    private fun processSingleImage(cmd: FfmpegCommand): String {
         val srcFile = File(cmd.inputPath)
         if (!srcFile.exists()) {
             Log.e("beam_ffmpeg", "Input file not found: ${cmd.inputPath}")
@@ -354,9 +247,9 @@ class WebService : Service() {
         return "frame=1 fps=0.0 video:${sizeKb}kB"
     }
 
-    private fun processTimelapse(cmd: ParsedCmd): String {
+    private fun processTimelapse(cmd: FfmpegCommand): String {
         val fps = cmd.fps ?: 30
-        val frames = expandWildcard(cmd.inputPath)
+        val frames = FrameSequence.expand(cmd.inputPath)
         if (frames.isEmpty()) {
             Log.e("beam_ffmpeg", "No input frames found for wildcard: ${cmd.inputPath}")
             return ""
@@ -370,14 +263,7 @@ class WebService : Service() {
         val previewMatrix = buildTransformMatrix(cmd.filter, firstBmp.width, firstBmp.height)
         val testRect = android.graphics.RectF(0f, 0f, firstBmp.width.toFloat(), firstBmp.height.toFloat())
         previewMatrix.mapRect(testRect)
-        var encW = Math.round(testRect.width())
-        var encH = Math.round(testRect.height())
-
-        val maxW = 1280
-        val maxH = 720
-        val scale = minOf(maxW.toFloat() / encW, maxH.toFloat() / encH, 1f)
-        encW = Math.round(encW * scale / 2f) * 2
-        encH = Math.round(encH * scale / 2f) * 2
+        val (encW, encH) = EncoderSize.fit(Math.round(testRect.width()), Math.round(testRect.height()))
         if (encW <= 0 || encH <= 0) {
             firstBmp.recycle()
             return ""
@@ -514,62 +400,34 @@ class WebService : Service() {
 
     private fun executeFfmpegReplacement(cmd: String): String {
         Log.d("beam_ffmpeg", "Received cmd: $cmd")
-        val parsed = parseFfmpegCmd(cmd)
+        val parsed = FfmpegCommand.parse(cmd)
         Log.d("beam_ffmpeg", "Parsed: fps=${parsed.fps} input=${parsed.inputPath} output=${parsed.outputPath} filter=${parsed.filter}")
 
-        if (parsed.inputPath.isBlank() || parsed.outputPath.isBlank()) {
+        if (!parsed.isComplete) {
             Log.e("beam_ffmpeg", "Missing input or output path")
             return ""
         }
 
-        return if (parsed.fps == null) {
-            processSingleImage(parsed)
-        } else {
+        return if (parsed.isTimelapse) {
             processTimelapse(parsed)
+        } else {
+            processSingleImage(parsed)
         }
     }
 
     private inner class HttpServer(port: Int) : NanoWSD(port) {
-        // Fluidd/Mainsail ship web fonts (.woff2/.woff/.ttf), SVG theme logos,
-        // PNG icons, a web manifest and JSON config alongside the JS/CSS bundle.
-        // NanoHTTPD does no content-type guessing, so anything not mapped here
-        // went out as text/plain — WebView then refuses to use it as a font or
-        // to render an <img>/CSS SVG, which is why the UI came up unstyled with
-        // missing logos.
-        private fun mimeTypeFor(path: String): String = when (path.substringAfterLast('.', "").lowercase()) {
-            "js", "mjs" -> "text/javascript"
-            "html", "htm" -> "text/html"
-            "css" -> "text/css"
-            "json", "map" -> "application/json"
-            "webmanifest" -> "application/manifest+json"
-            "svg" -> "image/svg+xml"
-            "png" -> "image/png"
-            "jpg", "jpeg" -> "image/jpeg"
-            "gif" -> "image/gif"
-            "webp" -> "image/webp"
-            "ico" -> "image/x-icon"
-            "woff2" -> "font/woff2"
-            "woff" -> "font/woff"
-            "ttf" -> "font/ttf"
-            "eot" -> "application/vnd.ms-fontobject"
-            "wasm" -> "application/wasm"
-            "xml" -> "application/xml"
-            "txt" -> "text/plain"
-            else -> "application/octet-stream"
-        }
-
         private fun serveStatic(path: String): Response {
             val ctx = KlipperApp.INSTANCE
-            val resolvedPath = if (path == "/") "/index.html" else path
+            val resolvedPath = WebRouting.resolveStaticPath(path)
             try {
-                val mimeType = mimeTypeFor(resolvedPath)
+                val mimeType = WebRouting.mimeTypeFor(resolvedPath)
                 val prefix = Prefs.webFrontend
-                val assetPath = prefix + resolvedPath
+                val assetPath = WebRouting.assetPath(prefix, resolvedPath)
                 val input = ctx.assets.open(assetPath)
                 val response = Response.newChunkedResponse(Status.OK, mimeType, input)
                 response.addHeader("Date", dateFormat.format(Date()))
                 response.addHeader("Last-Modified", lastModifiedString)
-                if (resolvedPath.endsWith(".html") || resolvedPath.endsWith(".json") || resolvedPath.endsWith(".webmanifest")) {
+                if (WebRouting.isRevalidated(resolvedPath)) {
                     response.addHeader("Cache-Control", "no-cache, no-store, must-revalidate")
                     response.addHeader("Pragma", "no-cache")
                     response.addHeader("Expires", "0")
@@ -582,8 +440,7 @@ class WebService : Service() {
                 // hashed chunk, a bad asset URL). Only extensionless paths are
                 // client-side routes that must fall through to index.html —
                 // returning HTML for a missing .js just yields a MIME error.
-                val hasExtension = resolvedPath.substringAfterLast('/').contains('.')
-                if (path == "/index.html" || path == "/" || hasExtension) {
+                if (WebRouting.isRealNotFound(path, resolvedPath)) {
                     return Response.newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "Not Found")
                 }
                 return serveStatic("/index.html")
@@ -597,7 +454,7 @@ class WebService : Service() {
             }
 
         private fun checkRemote(session: IHTTPSession): Boolean =
-            "127.0.0.1" != session.remoteIpAddress
+            !ProxyRules.isLocalRequest(session.remoteIpAddress)
 
         private fun pipeStream(src: InputStream, dst: OutputStream, bufSize: Int = 32768, timeoutMs: Long = 120_000L) {
             val buf = ByteArray(bufSize)
@@ -677,13 +534,12 @@ class WebService : Service() {
                 }
             }
 
-            val m = API_PATTERN.matcher(session.uri)
-            if (m.find()) {
+            if (WebRouting.isApiPath(session.uri)) {
                 var con: HttpURLConnection? = null
                 var socket: Socket? = null
                 try {
                     val qs = session.queryParameterString
-                    val urlStr = "http://127.0.0.1:${getMoonrakerPort()}/${session.uri.substring(1)}" + if (qs.isNullOrEmpty()) "" else "?$qs"
+                    val urlStr = ProxyRules.upstreamUrl(getMoonrakerPort(), session.uri, qs)
                     con = (URL(urlStr).openConnection() as HttpURLConnection).apply {
                         connectTimeout = 5_000
                         readTimeout = 45_000
@@ -700,17 +556,9 @@ class WebService : Service() {
                     socket?.soTimeout = 60_000
                     con.requestMethod = session.method.name
                     for ((key, value) in session.headers) {
-                        when (key.lowercase()) {
-                            // hop-by-hop + length headers we rebuild ourselves,
-                            // plus "remote-addr"/"http-client-ip" which NanoHTTPD
-                            // injects into the header map itself — forwarding
-                            // those upstream confuses Moonraker's proxy detection.
-                            "host", "connection", "content-length", "transfer-encoding",
-                            "keep-alive", "proxy-connection", "remote-addr", "http-client-ip" -> {}
-                            else -> con.addRequestProperty(key, value)
-                        }
+                        if (ProxyRules.forwardRequestHeader(key)) con.addRequestProperty(key, value)
                     }
-                    if (session.method == Method.POST || session.method == Method.PUT || session.method == Method.PATCH) {
+                    if (ProxyRules.hasBody(session.method.name)) {
                         // NanoHTTPD leaves the request body unconsumed on
                         // session.inputStream (it never auto-parses it) — but
                         // that stream is the raw client socket, shared with the
@@ -759,9 +607,7 @@ class WebService : Service() {
                         Response.newChunkedResponse(resStatus, con.contentType, responseStream)
                     }
                     for ((key, values) in con.headerFields) {
-                        if (key.isNullOrEmpty()) continue
-                        val lk = key.lowercase()
-                        if (lk == "content-length" || lk == "transfer-encoding" || lk == "connection" || lk == "keep-alive") continue
+                        if (!ProxyRules.forwardResponseHeader(key)) continue
                         val headerValues = values ?: continue
                         for (value in headerValues) {
                             r.addHeader(key, value)
@@ -791,7 +637,7 @@ class WebService : Service() {
             return try {
                 val localRef = AtomicReference<WebSocket>()
                 val qs = handshake.queryParameterString
-                val uriStr = "ws://127.0.0.1:${getMoonrakerPort()}/websocket" + if (qs.isNullOrEmpty()) "" else "?$qs"
+                val uriStr = ProxyRules.websocketUrl(getMoonrakerPort(), qs)
                 
                 val remoteClient = object : WebSocketClient(URI(uriStr)) {
                     private var pendingMsg = false

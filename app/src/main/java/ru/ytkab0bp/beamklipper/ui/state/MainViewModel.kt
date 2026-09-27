@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import ru.ytkab0bp.beamklipper.KlipperApp
+import ru.ytkab0bp.beamklipper.InstanceActions
 import ru.ytkab0bp.beamklipper.KlipperInstance
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
@@ -16,27 +17,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val webFrontend: StateFlow<String> = AppState.webFrontend
 
     val anyRunning: Boolean
-        get() = instances.value.any {
-            it.getState() == KlipperInstance.State.RUNNING ||
-                it.getState() == KlipperInstance.State.STARTING
-        }
+        get() = instances.value.any { InstanceActions.isActive(it.getState()) }
 
     fun toggle(instance: KlipperInstance) {
         val id = instance.id ?: return
         val canonical = KlipperInstance.getInstance(id) ?: return
         val state = canonical.getState()
-        when (state) {
-            KlipperInstance.State.RUNNING, KlipperInstance.State.STARTING -> {
-                canonical.stop()
-                if (canonical.autostart) {
-                    canonical.autostart = false
-                    KlipperApp.DATABASE.update(canonical)
-                }
+        if (InstanceActions.isActive(state)) {
+            canonical.stop()
+            if (canonical.autostart) {
+                canonical.autostart = false
+                KlipperApp.DATABASE.update(canonical)
             }
-            KlipperInstance.State.STOPPING, KlipperInstance.State.IDLE -> {
-                if (state == KlipperInstance.State.IDLE && !KlipperInstance.hasFreeSlots()) return
-                canonical.start()
-            }
+        } else if (InstanceActions.canStart(state, KlipperInstance.hasFreeSlots())) {
+            canonical.start()
         }
     }
 
@@ -45,14 +39,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             inst.id?.let { id -> KlipperInstance.getInstance(id) }
         }
         if (instances.isEmpty()) return
-        val anyActive = instances.any {
-            it.getState() == KlipperInstance.State.RUNNING ||
-                it.getState() == KlipperInstance.State.STARTING
-        }
-        if (anyActive) {
+        if (instances.any { InstanceActions.isActive(it.getState()) }) {
             for (inst in instances) {
-                val state = inst.getState()
-                if (state == KlipperInstance.State.RUNNING || state == KlipperInstance.State.STARTING) {
+                if (InstanceActions.isActive(inst.getState())) {
                     inst.stop()
                     if (inst.autostart) {
                         inst.autostart = false
@@ -64,7 +53,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             for (inst in instances) {
                 val state = inst.getState()
                 if (state == KlipperInstance.State.IDLE || state == KlipperInstance.State.STOPPING) {
-                    if (state == KlipperInstance.State.IDLE && !KlipperInstance.hasFreeSlots()) return
+                    // No free slot for the rest either: stop trying.
+                    if (!InstanceActions.canStart(state, KlipperInstance.hasFreeSlots())) return
                     inst.start()
                 }
             }
