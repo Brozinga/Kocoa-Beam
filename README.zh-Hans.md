@@ -193,7 +193,7 @@ Kocoa Beam 提供了一些附加扩展功能，用于控制内置功能。
 
 ### 摄像头
 
-在 printer.cfg 中加入 `[kocoa_camera]`
+在 printer.cfg 中加入 `[beam_camera]`
 
 `SET_CAMERA_FLASHLIGHT ENABLED=true/false` - 开关闪光灯
 
@@ -201,7 +201,7 @@ Kocoa Beam 提供了一些附加扩展功能，用于控制内置功能。
 
 ### 蜂鸣器
 
-在 printer.cfg 中加入 `[include kocoa_beeper.cfg]`
+在 printer.cfg 中加入 `[include beam_beeper.cfg]`
 
 使用[文档中定义](https://marlinfw.org/docs/gcode/M300.html)的 `M300` 宏。
 

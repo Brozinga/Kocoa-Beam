@@ -197,7 +197,7 @@ O Kocoa Beam oferece algumas extensões para controlar recursos nativos.
 
 ### Câmera
 
-Inclua `[kocoa_camera]` no seu printer.cfg
+Adicione `[beam_camera]` ao seu printer.cfg
 
 `SET_CAMERA_FLASHLIGHT ENABLED=true/false` - Liga/desliga a lanterna
 
@@ -205,7 +205,7 @@ Inclua `[kocoa_camera]` no seu printer.cfg
 
 ### Buzzer
 
-Inclua `[include kocoa_beeper.cfg]` no seu printer.cfg
+Adicione `[include beam_beeper.cfg]` ao seu printer.cfg
 
 Use a macro `M300` [como definida na doc](https://marlinfw.org/docs/gcode/M300.html)
 

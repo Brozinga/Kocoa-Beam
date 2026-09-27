@@ -75,11 +75,15 @@ class BundlePatchesTest {
 
     @Test
     fun `beam_beeper and beam_camera still carry the web port file placeholder`() {
-        assertTrue(source("assets/klipper/beam_ext/beam_beeper.py").contains(BundlePatches.WEB_PORT_FILE))
-        assertTrue(source("assets/klipper/beam_ext/beam_camera.py").contains(BundlePatches.WEB_PORT_FILE))
-        // kalico's copy is generated from the same source by the build.
-        assertTrue(source("assets/kalico/beam_ext/beam_beeper.py").contains(BundlePatches.WEB_PORT_FILE))
-        assertTrue(source("assets/kalico/beam_ext/beam_camera.py").contains(BundlePatches.WEB_PORT_FILE))
+        // klipper_beam_ext is the single canonical source; the build copies it
+        // verbatim into klippy/extras/ for both klipper and kalico so Klipper's
+        // config loader (extras.<name>) can resolve [beam_beeper]/[beam_camera].
+        assertTrue(source("klipper_beam_ext/beam_beeper.py").contains(BundlePatches.WEB_PORT_FILE))
+        assertTrue(source("klipper_beam_ext/beam_camera.py").contains(BundlePatches.WEB_PORT_FILE))
+        // kalico's generated copy is tracked in git (like print_recovery's),
+        // so it stays available even without running a build first.
+        assertTrue(source("assets/kalico/klippy/extras/beam_beeper.py").contains(BundlePatches.WEB_PORT_FILE))
+        assertTrue(source("assets/kalico/klippy/extras/beam_camera.py").contains(BundlePatches.WEB_PORT_FILE))
     }
 
     @Test

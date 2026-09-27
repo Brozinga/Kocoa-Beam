@@ -199,7 +199,7 @@ Kocoa Beam provides additional extensions to control some built-in features.
 
 ### Camera
 
-Include `[kocoa_camera]` into your printer.cfg
+Add `[beam_camera]` to your printer.cfg
 
 `SET_CAMERA_FLASHLIGHT ENABLED=true/false` - Toggles flashlight
 
@@ -207,7 +207,7 @@ Include `[kocoa_camera]` into your printer.cfg
 
 ### Beeper
 
-Include `[include kocoa_beeper.cfg]` into your printer.cfg
+Add `[include beam_beeper.cfg]` to your printer.cfg
 
 Use `M300` macro [as defined in docs](https://marlinfw.org/docs/gcode/M300.html)
 

@@ -96,10 +96,13 @@ object BundleInstaller {
 
             // PLAY_TONE / SET_CAMERA_FLASHLIGHT / SET_CAMERA_FOCUS call the
             // app's own web server, whose port depends on the selected front
-            // end (see WebPortFile) rather than being fixed.
+            // end (see WebPortFile) rather than being fixed. The two extras
+            // live under klippy/extras/ (not beam_ext/) so Klipper's config
+            // loader — importlib.import_module('extras.' + name) — can
+            // actually resolve a [beam_beeper]/[beam_camera] section to them.
             val webPortFile = WebPortFile.path(KlipperApp.INSTANCE.filesDir).absolutePath
             for (bundleKey in arrayOf("klipper", "kalico")) {
-                for (extra in arrayOf("beam_ext/beam_beeper.py", "beam_ext/beam_camera.py")) {
+                for (extra in arrayOf("klippy/extras/beam_beeper.py", "klippy/extras/beam_camera.py")) {
                     patchBundledFile(root, assets, bundleKey, extra) {
                         it.replace(BundlePatches.WEB_PORT_FILE, webPortFile)
                     }

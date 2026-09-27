@@ -428,7 +428,7 @@ tasks.register('bundleKlipper') {
             // Vendored Klipper add-on mods (pure-python extras, dormant until the
             // matching [section] is added to printer.cfg). See docs/mods/.
             ['klipper_tmc_autotune', 'klipper_led_effect', 'klipper_z_calibration',
-             'klipper_auto_speed', 'klipper_print_recovery'].each { modName ->
+             'klipper_auto_speed', 'klipper_print_recovery', 'klipper_beam_ext'].each { modName ->
                 files.clear()
                 klippy = file('src/main/' + modName)
                 collectFiles(klippy, files)
@@ -501,7 +501,7 @@ tasks.register('bundleKlipper') {
                 }
 
                 ['klipper_tmc_autotune', 'klipper_led_effect', 'klipper_z_calibration',
-                 'klipper_auto_speed', 'klipper_print_recovery'].each { modName ->
+                 'klipper_auto_speed', 'klipper_print_recovery', 'klipper_beam_ext'].each { modName ->
                     files.clear()
                     klippy = file('src/main/' + modName)
                     collectFiles(klippy, files)
