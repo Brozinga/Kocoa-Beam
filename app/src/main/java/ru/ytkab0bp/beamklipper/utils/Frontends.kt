@@ -7,7 +7,7 @@ import ru.ytkab0bp.beamklipper.R
 object Frontends {
     const val PORT_FLUIDD = 4408
     const val PORT_MAINSAIL = 4409
-    const val PORT_VOYAGER = 4010
+    const val PORT_VOYAGER = 4410
 
     // Order of the cycle offered by the settings tile.
     val ALL: List<String> = listOf(

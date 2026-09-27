@@ -189,7 +189,7 @@ Aparece na tela principal sempre que alguma instância está rodando. Cada front
 
 - Fluidd => `http://IP:4408/`
 - Mainsail => `http://IP:4409/`
-- Voyager UI => `http://IP:4010/`
+- Voyager UI => `http://IP:4410/`
 
 <p align="center"><img src="docs/images/fluidd-screen-klipper-version.png" alt="Fluidd aberto a partir do IP:porta mostrado na tela principal" width="960"></p>
 

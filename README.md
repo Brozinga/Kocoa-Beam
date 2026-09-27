@@ -193,7 +193,7 @@ its own port, following the front-end toggle on the main screen:
 
 - Fluidd => `http://IP:4408/`
 - Mainsail => `http://IP:4409/`
-- Voyager UI => `http://IP:4010/`
+- Voyager UI => `http://IP:4410/`
 
 ## Android Extensions
 

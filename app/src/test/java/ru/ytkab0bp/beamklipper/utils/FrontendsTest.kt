@@ -10,7 +10,7 @@ class FrontendsTest {
     fun `each front end has its documented port`() {
         assertEquals(4408, Frontends.portFor(Prefs.FRONTEND_FLUIDD))
         assertEquals(4409, Frontends.portFor(Prefs.FRONTEND_MAINSAIL))
-        assertEquals(4010, Frontends.portFor(Prefs.FRONTEND_VOYAGER))
+        assertEquals(4410, Frontends.portFor(Prefs.FRONTEND_VOYAGER))
     }
 
     @Test

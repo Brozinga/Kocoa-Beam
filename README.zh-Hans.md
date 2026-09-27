@@ -185,7 +185,7 @@ Kocoa Beam 提供三个 APK 版本：
 
 - Fluidd => `http://IP:4408/`
 - Mainsail => `http://IP:4409/`
-- Voyager UI => `http://IP:4010/`
+- Voyager UI => `http://IP:4410/`
 
 <p align="center"><img src="docs/images/fluidd-screen-klipper-version.png" alt="从主界面显示的 IP:端口打开的 Fluidd" width="960"></p>
 
