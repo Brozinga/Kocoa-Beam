@@ -7,6 +7,7 @@ import filecmp
 import importlib.util
 import logging
 import os
+import tempfile
 import unittest
 from unittest import mock
 
@@ -70,14 +71,20 @@ class FakeResponse:
 class Extras(unittest.TestCase):
     engines = ('klipper', 'kalico')
 
-    def urls(self, engine, module_name, command, **params):
+    def urls(self, engine, module_name, command, port_file=None, **params):
         module = load(engine, module_name)
+        if port_file is not None:
+            module.WEB_PORT_FILE = port_file
         extra = module.load_config(FakeConfig())
         func = extra.gcode.commands[command][0]
         with mock.patch.object(module.urllib.request, 'urlopen',
                                return_value=FakeResponse()) as urlopen:
             func(Gcmd(**params))
         return [c.args[0] for c in urlopen.call_args_list]
+
+    @staticmethod
+    def port_of(url):
+        return int(url.split('//')[1].split('/')[0].split(':')[1])
 
 
 class Beeper(Extras):
@@ -152,20 +159,91 @@ class Engines(unittest.TestCase):
                 shallow=False), name)
 
 
-class KnownIssues(Extras):
-    # The extras call the app's web server on a fixed port, but it listens on
-    # the port of the active front end (4408 Fluidd, 4409 Mainsail, 4410
-    # Voyager UI). Nothing answers on 8888, so M300 / SET_CAMERA_* only log
-    # an error. Remove the decorator when the extras reach the real server.
-    @unittest.expectedFailure
-    def test_extras_call_a_port_the_app_serves(self):
-        served = {4408, 4409, 4410}
-        for module, command, params in (
+class WebPort(Extras):
+    """The bug this covers: the extras used to hardcode port 8888, while the
+    app's web server actually listens on 4408/4409/4410 depending on the
+    selected front end (see WebService/Frontends), so PLAY_TONE and
+    SET_CAMERA_* silently did nothing. The extras now read the port from a
+    file (WEB_PORT_FILE) WebService keeps updated with the real port.
+    """
+    served_ports = {4408, 4409, 4410}
+
+    def test_placeholder_is_not_hardcoded_to_the_old_wrong_port(self):
+        for name in ('beam_beeper', 'beam_camera'):
+            source = load('klipper', name)
+            self.assertNotIn('8888', open(source.__file__).read())
+
+    def test_the_placeholder_is_still_present_for_bundleinstaller_to_patch(self):
+        for name in ('beam_beeper', 'beam_camera'):
+            text = open(load('klipper', name).__file__).read()
+            self.assertIn('${WEB_PORT_FILE}', text)
+
+    def test_without_a_real_port_file_it_falls_back_to_mainsail_s_port(self):
+        # Loaded straight from source, WEB_PORT_FILE is still the literal,
+        # unpatched placeholder text (BundleInstaller only substitutes it in
+        # the app's own unpacked copy) — opening it fails, so the default
+        # applies, same as a fresh install before the app has served anything.
+        for module_name, command, params in (
                 ('beam_beeper', 'PLAY_TONE', dict(DURATION='1', FREQUENCY='1')),
                 ('beam_camera', 'SET_CAMERA_FLASHLIGHT', dict(ENABLED='true'))):
-            url = self.urls('klipper', module, command, **params)[0]
-            port = int(url.split('//')[1].split('/')[0].split(':')[1])
-            self.assertIn(port, served, module)
+            url = self.urls('klipper', module_name, command, **params)[0]
+            self.assertEqual(4409, self.port_of(url))
+
+    def test_it_reads_whichever_port_the_app_is_really_serving_on(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            port_file = os.path.join(tmp, 'web_port')
+            for served_port in (4408, 4409, 4410):
+                with open(port_file, 'w') as f:
+                    f.write(str(served_port))
+                for module_name, command, params in (
+                        ('beam_beeper', 'PLAY_TONE', dict(DURATION='1', FREQUENCY='1')),
+                        ('beam_camera', 'SET_CAMERA_FOCUS', dict(AUTOFOCUS='true'))):
+                    url = self.urls('klipper', module_name, command,
+                                    port_file=port_file, **params)[0]
+                    self.assertEqual(served_port, self.port_of(url))
+
+    def test_surrounding_whitespace_in_the_port_file_is_tolerated(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            port_file = os.path.join(tmp, 'web_port')
+            with open(port_file, 'w') as f:
+                f.write('  4410\n')
+            url = self.urls('klipper', 'beam_beeper', 'PLAY_TONE', port_file=port_file,
+                            DURATION='1', FREQUENCY='1')[0]
+            self.assertEqual(4410, self.port_of(url))
+
+    def test_a_garbage_port_file_falls_back_to_mainsail_s_port(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            port_file = os.path.join(tmp, 'web_port')
+            with open(port_file, 'w') as f:
+                f.write('not-a-port')
+            url = self.urls('klipper', 'beam_beeper', 'PLAY_TONE', port_file=port_file,
+                            DURATION='1', FREQUENCY='1')[0]
+            self.assertEqual(4409, self.port_of(url))
+
+    def test_kalico_s_copy_resolves_the_port_the_same_way(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            port_file = os.path.join(tmp, 'web_port')
+            with open(port_file, 'w') as f:
+                f.write('4408')
+            url = self.urls('kalico', 'beam_camera', 'SET_CAMERA_FLASHLIGHT',
+                            port_file=port_file, ENABLED='true')[0]
+            self.assertEqual(4408, self.port_of(url))
+
+    def test_the_resolved_port_is_always_one_the_app_actually_serves(self):
+        # End-to-end sanity check standing in for the earlier known failure:
+        # whatever the extras resolve to (default or from a real port file)
+        # must be a port the app's web server can actually be listening on.
+        for served_port in (None,) + tuple(self.served_ports):
+            with tempfile.TemporaryDirectory() as tmp:
+                port_file = os.path.join(tmp, 'web_port')
+                kwargs = {}
+                if served_port is not None:
+                    with open(port_file, 'w') as f:
+                        f.write(str(served_port))
+                    kwargs['port_file'] = port_file
+                url = self.urls('klipper', 'beam_beeper', 'PLAY_TONE',
+                                DURATION='1', FREQUENCY='1', **kwargs)[0]
+                self.assertIn(self.port_of(url), self.served_ports)
 
 
 if __name__ == '__main__':

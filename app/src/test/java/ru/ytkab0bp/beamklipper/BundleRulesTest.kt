@@ -74,6 +74,15 @@ class BundlePatchesTest {
     }
 
     @Test
+    fun `beam_beeper and beam_camera still carry the web port file placeholder`() {
+        assertTrue(source("assets/klipper/beam_ext/beam_beeper.py").contains(BundlePatches.WEB_PORT_FILE))
+        assertTrue(source("assets/klipper/beam_ext/beam_camera.py").contains(BundlePatches.WEB_PORT_FILE))
+        // kalico's copy is generated from the same source by the build.
+        assertTrue(source("assets/kalico/beam_ext/beam_beeper.py").contains(BundlePatches.WEB_PORT_FILE))
+        assertTrue(source("assets/kalico/beam_ext/beam_camera.py").contains(BundlePatches.WEB_PORT_FILE))
+    }
+
+    @Test
     fun `patching twice does not duplicate the change`() {
         val once = BundlePatches.patchObicoLinkStatus(source("obico/moonraker_obico/printer_discovery.py"))
         // the patched text no longer contains the original, so a second pass is a no-op

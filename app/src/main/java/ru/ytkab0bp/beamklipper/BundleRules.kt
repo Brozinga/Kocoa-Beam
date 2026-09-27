@@ -11,6 +11,7 @@ object BundlePatches {
     const val DEST_LIB = "\${DEST_LIB}"
     const val TEMP_PATH = "\${TEMP_PATH}"
     const val TTY_PATH = "\${TTY_PATH}"
+    const val WEB_PORT_FILE = "\${WEB_PORT_FILE}"
 
     const val SYSFS_TTY_ORIGINAL = "TTY_PATH = \"/sys/class/tty\""
 

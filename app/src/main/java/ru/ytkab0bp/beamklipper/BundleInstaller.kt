@@ -2,6 +2,7 @@ package ru.ytkab0bp.beamklipper
 
 import android.content.Context
 import org.json.JSONObject
+import ru.ytkab0bp.beamklipper.service.WebPortFile
 import java.io.File
 import java.nio.charset.StandardCharsets
 
@@ -91,6 +92,18 @@ object BundleInstaller {
             }
             patchBundledFile(root, assets, "obico", "moonraker_obico/printer_discovery.py") {
                 BundlePatches.patchObicoLinkStatus(it)
+            }
+
+            // PLAY_TONE / SET_CAMERA_FLASHLIGHT / SET_CAMERA_FOCUS call the
+            // app's own web server, whose port depends on the selected front
+            // end (see WebPortFile) rather than being fixed.
+            val webPortFile = WebPortFile.path(KlipperApp.INSTANCE.filesDir).absolutePath
+            for (bundleKey in arrayOf("klipper", "kalico")) {
+                for (extra in arrayOf("beam_ext/beam_beeper.py", "beam_ext/beam_camera.py")) {
+                    patchBundledFile(root, assets, bundleKey, extra) {
+                        it.replace(BundlePatches.WEB_PORT_FILE, webPortFile)
+                    }
+                }
             }
             if (needsUnpack) marker.writeText(ver)
         } catch (e: Exception) {

@@ -113,6 +113,7 @@ class WebService : Service() {
         mPrefs = KlipperApp.INSTANCE.getSharedPreferences("web", 0)
         beeperThread = HandlerThread("beeper").also { it.start() }
         beeperHandler = Handler(beeperThread!!.looper)
+        WebPortFile.write(filesDir, getPort())
         try {
             httpServer.start()
         } catch (e: IOException) {
@@ -138,6 +139,7 @@ class WebService : Service() {
         if (newPort == httpServer.listeningPort) return
         httpServer.stop()
         httpServer = HttpServer(newPort)
+        WebPortFile.write(filesDir, newPort)
         try {
             httpServer.start()
         } catch (e: IOException) {
