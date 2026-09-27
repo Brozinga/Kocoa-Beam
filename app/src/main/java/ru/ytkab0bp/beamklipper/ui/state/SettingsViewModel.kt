@@ -13,6 +13,7 @@ import org.json.JSONObject
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.KlipperInstance
 import ru.ytkab0bp.beamklipper.utils.CameraZoom
+import ru.ytkab0bp.beamklipper.utils.Frontends
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import java.io.File
 import java.net.HttpURLConnection
@@ -72,8 +73,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun cycleFrontend() {
-        Prefs.webFrontend =
-            if (Prefs.webFrontend == Prefs.FRONTEND_FLUIDD) Prefs.FRONTEND_MAINSAIL else Prefs.FRONTEND_FLUIDD
+        Prefs.webFrontend = Frontends.next(Prefs.webFrontend)
     }
 
     fun setFrontend(frontend: String) {
@@ -370,10 +370,8 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         else ru.ytkab0bp.beamklipper.R.string.Klipper
     )
 
-    fun frontendTitle(frontend: String): String = localizedContext().getString(
-        if (frontend == Prefs.FRONTEND_FLUIDD) ru.ytkab0bp.beamklipper.R.string.Fluidd
-        else ru.ytkab0bp.beamklipper.R.string.Mainsail
-    )
+    fun frontendTitle(frontend: String): String =
+        localizedContext().getString(Frontends.nameRes(frontend))
 
     fun usbNamingTitle(naming: Int): String = localizedContext().getString(
         if (naming == Prefs.USB_DEVICE_NAMING_BY_PATH) ru.ytkab0bp.beamklipper.R.string.USBDeviceNamingByPath

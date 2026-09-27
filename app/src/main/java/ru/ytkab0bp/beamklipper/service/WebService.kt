@@ -45,6 +45,7 @@ import ru.ytkab0bp.beamklipper.R
 import ru.ytkab0bp.beamklipper.events.WebFrontendChangedEvent
 import ru.ytkab0bp.beamklipper.serial.KlipperProbeTable
 import ru.ytkab0bp.beamklipper.serial.UsbSerialManager
+import ru.ytkab0bp.beamklipper.utils.Frontends
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import ru.ytkab0bp.beamklipper.utils.ViewUtils
 import ru.ytkab0bp.eventbus.EventHandler
@@ -67,9 +68,7 @@ import java.util.regex.Pattern
 
 class WebService : Service() {
     companion object {
-        const val PORT_FLUIDD = 4408
-        const val PORT_MAINSAIL = 4409
-        fun getPort(): Int = if (Prefs.webFrontend == Prefs.FRONTEND_FLUIDD) PORT_FLUIDD else PORT_MAINSAIL
+        fun getPort(): Int = Frontends.portFor(Prefs.webFrontend)
         private const val ID = 300000
         private const val BEEPER_SAMPLE_RATE = 8000
         private val API_PATTERN = Pattern.compile("^/(printer|api|access|machine|server)/")

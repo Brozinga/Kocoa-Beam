@@ -107,6 +107,7 @@
     <string name="Autostart">Autostart</string>
     <string name="Fluidd" translatable="false">Fluidd</string>
     <string name="Mainsail" translatable="false">Mainsail</string>
+    <string name="Voyager" translatable="false">Voyager UI</string>
     <string name="Kalico" translatable="false">Kalico</string>
     <string name="Klipper" translatable="false">Klipper</string>
     <string name="IPInfo" translatable="false">http://%s:%d/</string>
@@ -139,7 +140,7 @@
 
     <string name="About">About Kocoa Beam</string>
     <string name="IntroTitle">What is Kocoa Beam?</string>
-    <string name="IntroText">Kocoa Beam is a Kotlin rewrite of Beam Klipper with a brand new UI and dramatically smaller size (138 MB → 36 MB).\n\nKey differences:\n• Kotlin — null-safe, leak-free coroutines\n• 10 concurrent instances (vs 4)\n• Native Android timelapse (no FFmpeg)\n• Klipper AND Kalico firmware support\n• Brutalist UI with Paper/Honey/Ink palette\n\n1. Tap \"+\" to create a printer profile.\n2. Tap the Run button to start the engine.\n3. Open Fluidd or Mainsail to control your printer.\n4. Use settings to switch engines and frontends.\n\nAll processing happens locally on your device.</string>
+    <string name="IntroText">Kocoa Beam is a Kotlin rewrite of Beam Klipper with a brand new UI and dramatically smaller size (138 MB → 36 MB).\n\nKey differences:\n• Kotlin — null-safe, leak-free coroutines\n• 10 concurrent instances (vs 4)\n• Native Android timelapse (no FFmpeg)\n• Klipper AND Kalico firmware support\n• Brutalist UI with Paper/Honey/Ink palette\n\n1. Tap \"+\" to create a printer profile.\n2. Tap the Run button to start the engine.\n3. Open Fluidd, Mainsail or Voyager UI to control your printer.\n4. Use settings to switch engines and frontends.\n\nAll processing happens locally on your device.</string>
     <string name="GitHubRepo">GitHub repository</string>
     <string name="OriginalBeamKlipper">Original: Beam Klipper by utkabobr</string>
     <string name="CreditsTitle">Credits</string>

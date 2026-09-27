@@ -46,8 +46,8 @@ android {
         multiDexEnabled true
         multiDexKeepFile file('multidex-keep.txt')
         multiDexKeepProguard file('multidex-keep.pro')
-        versionCode 12
-        versionName "v0.1"
+        versionCode 13
+        versionName "0.0.7r1"
 
         buildConfigField "int", "SLOTS_COUNT", "4"
 
@@ -193,6 +193,10 @@ android {
         ndkVersion "23.2.8568313"
     }
 
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
     buildFeatures {
         aidl true
         buildConfig true
@@ -247,6 +251,13 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.7'
     debugImplementation 'androidx.compose.ui:ui-tooling'
 
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation composeBom
+    androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest'
+
     implementation project(":eventbus")
     implementation project(":eventbus_api")
     kapt project(":eventbus_processor")
@@ -295,100 +306,64 @@ static void collectFiles(File f, List<File> files) {
     }
 }
 
-tasks.register('bundleFluidd') {
-    doFirst {
-        var assets = file('src/main/assets')
-        var versionFile = new File(assets, 'fluidd_version')
-        var configVersion = project.property('beam.fluidd_version')
+def registerFrontendBundle(String taskName, String dirName, String versionProp, Closure<String> zipUrl) {
+    tasks.register(taskName) {
+        doFirst {
+            var assets = file('src/main/assets')
+            var versionFile = new File(assets, dirName + '_version')
+            var configVersion = project.property(versionProp)
 
-        if (versionFile.exists() && configVersion == versionFile.text.trim()) {
-            return
-        }
-
-        var fluiddDir = new File(assets, 'fluidd')
-        var files = new ArrayList<File>()
-        collectFiles(fluiddDir, files)
-        files.each {
-            it.delete()
-        }
-
-        def con = new URL('https://github.com/fluidd-core/fluidd/releases/download/' + configVersion + '/fluidd.zip').openConnection() as HttpURLConnection
-        if (con.getResponseCode() == 200) {
-            ZipInputStream zis = new ZipInputStream(con.getInputStream())
-            ZipEntry entry
-            byte[] buf = new byte[10240]
-            int c
-
-            while (entry = zis.getNextEntry()) {
-                File f = new File(fluiddDir, entry.getName())
-                if (entry.isDirectory()) {
-                    f.mkdirs()
-                    continue
-                }
-
-                f.getParentFile().mkdirs()
-                var fos = new FileOutputStream(f)
-
-                while ((c = zis.read(buf)) != -1) {
-                    fos.write(buf, 0, c)
-                }
-                fos.close()
+            if (versionFile.exists() && configVersion == versionFile.text.trim()) {
+                return
             }
-            zis.close()
 
-            versionFile.text = configVersion
-        } else {
-            throw new IllegalStateException('Failed to download fluidd')
+            var frontendDir = new File(assets, dirName)
+            var files = new ArrayList<File>()
+            collectFiles(frontendDir, files)
+            files.each {
+                it.delete()
+            }
+
+            def con = new URL(zipUrl(configVersion)).openConnection() as HttpURLConnection
+            if (con.getResponseCode() == 200) {
+                ZipInputStream zis = new ZipInputStream(con.getInputStream())
+                ZipEntry entry
+                byte[] buf = new byte[10240]
+                int c
+
+                while (entry = zis.getNextEntry()) {
+                    File f = new File(frontendDir, entry.getName())
+                    if (entry.isDirectory()) {
+                        f.mkdirs()
+                        continue
+                    }
+
+                    f.getParentFile().mkdirs()
+                    var fos = new FileOutputStream(f)
+
+                    while ((c = zis.read(buf)) != -1) {
+                        fos.write(buf, 0, c)
+                    }
+                    fos.close()
+                }
+                zis.close()
+
+                versionFile.text = configVersion
+            } else {
+                throw new IllegalStateException('Failed to download ' + dirName)
+            }
         }
     }
 }
 
-tasks.register('bundleMainsail') {
-    doFirst {
-        var assets = file('src/main/assets')
-        var versionFile = new File(assets, 'mainsail_version')
-        var configVersion = project.property('beam.mainsail_version')
-
-        if (versionFile.exists() && configVersion == versionFile.text.trim()) {
-            return
-        }
-
-        var mainsailDir = new File(assets, 'mainsail')
-        var files = new ArrayList<File>()
-        collectFiles(mainsailDir, files)
-        files.each {
-            it.delete()
-        }
-
-        def con = new URL('https://github.com/mainsail-crew/mainsail/releases/download/' + configVersion + '/mainsail.zip').openConnection() as HttpURLConnection
-        if (con.getResponseCode() == 200) {
-            ZipInputStream zis = new ZipInputStream(con.getInputStream())
-            ZipEntry entry
-            byte[] buf = new byte[10240]
-            int c
-
-            while (entry = zis.getNextEntry()) {
-                File f = new File(mainsailDir, entry.getName())
-                if (entry.isDirectory()) {
-                    f.mkdirs()
-                    continue
-                }
-
-                f.getParentFile().mkdirs()
-                var fos = new FileOutputStream(f)
-
-                while ((c = zis.read(buf)) != -1) {
-                    fos.write(buf, 0, c)
-                }
-                fos.close()
-            }
-            zis.close()
-
-            versionFile.text = configVersion
-        } else {
-            throw new IllegalStateException('Failed to download mainsail')
-        }
-    }
+registerFrontendBundle('bundleFluidd', 'fluidd', 'beam.fluidd_version') { v ->
+    'https://github.com/fluidd-core/fluidd/releases/download/' + v + '/fluidd.zip'
+}
+registerFrontendBundle('bundleMainsail', 'mainsail', 'beam.mainsail_version') { v ->
+    'https://github.com/mainsail-crew/mainsail/releases/download/' + v + '/mainsail.zip'
+}
+registerFrontendBundle('bundleVoyager', 'voyager', 'beam.voyager_version') { v ->
+    'https://github.com/ozancs/voyager-ui/releases/download/' + v + '/voyager-ui.zip'
 }
 
 tasks.register('bundleKlipper') {
@@ -654,3 +629,4 @@ tasks.register('bundleKlipper') {
 tasks.getByName('preBuild').dependsOn('bundleKlipper')
 tasks.getByName('preBuild').dependsOn('bundleFluidd')
 tasks.getByName('preBuild').dependsOn('bundleMainsail')
+tasks.getByName('preBuild').dependsOn('bundleVoyager')

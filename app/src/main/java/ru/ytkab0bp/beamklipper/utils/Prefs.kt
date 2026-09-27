@@ -24,6 +24,7 @@ object Prefs {
     const val ENGINE_KALICO = "kalico"
     const val FRONTEND_FLUIDD = "fluidd"
     const val FRONTEND_MAINSAIL = "mainsail"
+    const val FRONTEND_VOYAGER = "voyager"
     @Deprecated("Kalico was never a frontend; duplicates Mainsail assets. Migrate to FRONTEND_MAINSAIL.")
     const val FRONTEND_KALICO = "kalico_frontend"
     const val LANGUAGE_SYSTEM = "system"
