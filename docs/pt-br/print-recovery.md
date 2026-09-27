@@ -41,68 +41,80 @@ Adicione ao `printer.cfg` (fora de outra seção) e reinicie:
 [print_recovery]
 ```
 
-Tudo abaixo é opcional; os valores mostrados são os padrões.
+Tudo abaixo é opcional; os valores mostrados são os padrões. Uma configuração
+que você não precisa mudar pode simplesmente ficar de fora. Uma linha sem valor
+não deve ser escrita (`park_x`, `park_y` e `state_file` só entram quando você
+realmente os define).
 
 ```ini
 [print_recovery]
-snapshot_interval: 2      # segundos entre gravações (0.5 - 300)
-park_enable_x: True       # True: home de X e aquece o bico no batente do X
-park_enable_y: True       # True: também home de Y (False: eixo não se move)
-park_x:                   # X para ir após o home de X (padrão: mínimo do X)
-park_y:                   # Y para ir após o home de Y (padrão: fica no home)
-park_speed: 100           # mm/s de deslocamento
-lift_z: 10                # mm que o bico sobe antes do home de X/Y
-discard_lift_z: 50        # mm que o bico sobe ao usar Discard (0 = não sobe)
-discard_home_x: True      # home de X após Discard
-discard_home_y: True      # home de Y após Discard
-purge: True               # True/False: purgar antes de continuar (só se X
-                          # ou Y estiver estacionado)
-purge_length: 20          # mm de filamento na purga
-purge_speed: 5            # mm/s
-purge_retract: 2          # mm de retração após a purga
-min_extruded: 5           # mm extrudados antes da primeira gravação
-language: auto            # idioma da janela/console (veja abaixo)
-macro_variables: *        # variáveis de macro a salvar/restaurar: * = todos os
-                          # macros que não começam com _, vazio = nenhum, ou
-                          # uma lista: PRINT_START, MEU_MACRO
-prompt: True              # mostrar a janela no Fluidd/Mainsail
-prompt_repeat: 60         # segundos entre lembretes (0 = uma vez)
-state_file:               # onde o snapshot é guardado (padrão: junto do printer.cfg)
+snapshot_interval: 2
+park_enable_x: True
+park_enable_y: True
+park_speed: 100
+lift_z: 10
+discard_lift_z: 50
+discard_home_x: True
+discard_home_y: True
+purge: True
+purge_length: 20
+purge_speed: 5
+purge_retract: 2
+min_extruded: 5
+macro_variables: *
+prompt: True
+prompt_repeat: 60
 ```
 
-Ao retomar manualmente, dá para sobrescrever valores:
-`PRINT_RECOVERY_RESUME PARK_ENABLE_X=1 PARK_ENABLE_Y=0 PARK_X=-6 PURGE=0
-PURGE_LENGTH=10 LIFT_Z=5` (`*_ENABLE_*`, `PURGE` e, no Discard, `HOME_X` /
-`HOME_Y` aceitam `1`/`0` ou `True`/`False`; o Discard também aceita `LIFT_Z`). O que não for informado
-usa o valor do `printer.cfg` ou o padrão acima.
+## Configurações, linha a linha
 
-### O que fazem `park_x` e `park_y`
+Números são decimais simples (`2`, `0.5`, `-6`). `True`/`False` também aceitam
+`1`/`0`, `yes`/`no` e `on`/`off`.
 
-Depois de uma queda de energia a impressora não sabe mais onde estão X e Y,
-então a retomada faz home deles primeiro. Quando um eixo faz home
-(`park_enable_x` / `park_enable_y`), o bico vai para `park_x` / `park_y` e
-aquece (e purga) ali, longe da impressão:
+| Configuração | O que faz | Valores aceitos |
+|---|---|---|
+| `snapshot_interval: 2` | Segundos entre gravações da posição da impressão. Menor = retomada mais exata, porém mais gravações. | Número de `0.5` a `300` |
+| `park_enable_x: True` | Ao retomar, faz home de X e vai ao batente do X para aquecer o bico longe da peça. `False`: X **não** faz home nem se move e é considerado exatamente onde estava. | `True` / `False` |
+| `park_enable_y: True` | O mesmo para Y. Com os dois em `False`, o bico apenas sobe `lift_z` e aquece parado sobre a peça, e a purga é ignorada (o filamento cairia na impressão). Use só se tiver certeza de que nada se moveu. | `True` / `False` |
+| `park_x: -6` | Posição X usada para aquecer e purgar após o home de X. **Deixe a linha de fora** para usar o mínimo do X da máquina, ou seja, o batente do X (na Neptune 3 Pro, `-6`, à esquerda da mesa). | Número dentro do curso do X |
+| `park_y: 0` | O mesmo para Y. **Deixe a linha de fora** para ficar onde o home de Y deixou o bico (normalmente a frente da mesa). | Número dentro do curso do Y |
+| `park_speed: 100` | Velocidade de deslocamento ao estacionar, em mm/s. | Número maior que `0` |
+| `lift_z: 10` | Milímetros que o bico sobe antes do home de X/Y, para livrar a peça. | Número `0` ou maior |
+| `discard_lift_z: 50` | Milímetros que o bico sobe ao usar **Discard**, para se afastar da peça abandonada. | Número `0` ou maior (`0` = não sobe) |
+| `discard_home_x: True` | Faz home de X após **Discard**. | `True` / `False` |
+| `discard_home_y: True` | Faz home de Y após **Discard**. | `True` / `False` |
+| `purge: True` | Purga um pouco de filamento antes de voltar à impressão. Só acontece se X ou Y estiver estacionado. | `True` / `False` |
+| `purge_length: 20` | Milímetros de filamento na purga. | Número `0` ou maior |
+| `purge_speed: 5` | Velocidade da purga em mm/s. | Número maior que `0` |
+| `purge_retract: 2` | Milímetros retraídos após a purga, para evitar fio de filamento. | Número `0` ou maior |
+| `min_extruded: 5` | Milímetros que precisam ser extrudados antes da primeira gravação, para não guardar uma impressão que nem começou. | Número `0` ou maior |
+| `macro_variables: *` | Quais macros têm os valores de `variable_xxx` salvos e restaurados. | `*` (todos os macros que não começam com `_`), `none` (nenhum) ou uma lista como `PRINT_START, MEU_MACRO` |
+| `prompt: True` | Mostra a janela "Print interrupted" no Fluidd/Mainsail. `False`: só a mensagem no console e os comandos abaixo. | `True` / `False` |
+| `prompt_repeat: 60` | Segundos entre lembretes enquanto uma impressão espera. | Número `0` ou maior (`0` = mostrar uma vez) |
+| `state_file: ~/recovery.json` | Onde o snapshot é guardado. **Deixe a linha de fora** para guardá-lo junto do `printer.cfg`. | Caminho de arquivo (`~` é aceito) |
 
-- `park_x` — posição X usada para aquecer e purgar. Vazio = mínimo do X da
-  máquina, ou seja, o batente do X (na Neptune 3 Pro, `-6`, à esquerda da mesa).
-- `park_y` — o mesmo para o Y. Vazio = "fica onde o home do Y deixou o bico"
-  (normalmente a frente da mesa).
+### Sobrescrever valores ao retomar manualmente
 
-Só configure se o canto padrão não for um bom lugar para escorrer filamento.
+`PRINT_RECOVERY_RESUME` aceita as mesmas configurações como parâmetros, só
+para aquela retomada:
 
-### Não mover um eixo (`park_enable_x: False` / `park_enable_y: False`)
+```gcode
+PRINT_RECOVERY_RESUME PARK_ENABLE_X=1 PARK_ENABLE_Y=0 PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5
+```
 
-Um eixo em `False` **não** faz home nem se move: assume-se que está exatamente
-onde estava. Com os dois em `False`, o bico só sobe `lift_z` e aquece no lugar,
-sobre a peça, e a purga é ignorada (derramaria filamento na impressão). Use só
-se tiver certeza de que nada se moveu; o bico pode escorrer um pouco.
+| Parâmetro | Equivale a | Valores aceitos |
+|---|---|---|
+| `PARK_ENABLE_X` | `park_enable_x` | `1`/`0`, `True`/`False`, `yes`/`no`, `on`/`off` |
+| `PARK_ENABLE_Y` | `park_enable_y` | igual ao acima |
+| `PARK_X` | `park_x` | número |
+| `PARK_Y` | `park_y` | número |
+| `PURGE` | `purge` | igual ao acima |
+| `PURGE_LENGTH` | `purge_length` | número `0` ou maior |
+| `LIFT_Z` | `lift_z` | número `0` ou maior |
 
-### Idioma
-
-A janela e as mensagens do console seguem o idioma escolhido no Fluidd ou no
-Mainsail (inglês, português, russo, chinês simplificado/tradicional; qualquer
-outro mostra inglês). Use `language: pt` (ou `en`, `ru`, `zh`, `zh-TW`) para
-forçar um idioma.
+`PRINT_RECOVERY_DISCARD` aceita `LIFT_Z` (número `0` ou maior), `HOME_X` e
+`HOME_Y` (mesmos valores liga/desliga acima). O que ficar de fora usa o valor
+do `printer.cfg`, ou o padrão.
 
 ## Variáveis de macro
 

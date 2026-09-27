@@ -59,6 +59,7 @@ import ru.ytkab0bp.beamklipper.ui.theme.Accent
 import ru.ytkab0bp.beamklipper.ui.theme.Ink
 import ru.ytkab0bp.beamklipper.ui.theme.InkMuted
 import ru.ytkab0bp.beamklipper.ui.theme.Paper
+import ru.ytkab0bp.beamklipper.utils.Frontends
 import ru.ytkab0bp.beamklipper.utils.Prefs
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -97,7 +98,6 @@ fun HomeScreen(
                     .background(Paper)
             ) {
                 Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 12.dp)) {
-                        val isFluidd = webFrontend == Prefs.FRONTEND_FLUIDD
                         val running = webState == KlipperInstance.State.RUNNING
                         val webBg = if (running) Accent else Paper
                         Box(
@@ -123,9 +123,7 @@ fun HomeScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    painter = painterResource(
-                                        if (isFluidd) R.drawable.ic_square_stack_up_outline_28 else R.drawable.ic_sailing_24
-                                    ),
+                                    painter = painterResource(Frontends.iconRes(webFrontend)),
                                     contentDescription = null,
                                     tint = Ink,
                                     modifier = Modifier.size(24.dp)
@@ -133,7 +131,7 @@ fun HomeScreen(
                                 Spacer(Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = stringResource(if (isFluidd) R.string.Fluidd else R.string.Mainsail),
+                                        text = stringResource(Frontends.nameRes(webFrontend)),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = Ink,
                                         fontWeight = FontWeight.Bold

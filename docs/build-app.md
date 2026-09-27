@@ -54,6 +54,24 @@ the first build) and regenerates `app/src/main/assets/` from the vendored
   chaquopy.python=/absolute/path/to/python3.10
   ```
 
+## Tests
+
+| What | Command |
+|---|---|
+| Kotlin unit tests (all the app's business rules: front ends, camera, print recovery add-on wiring, Prefs, the printer profile database and view models, moonraker.conf/companion configs, printer.cfg edits, the embedded web server's routing/proxy, USB naming, the SAF file provider, logs), no device needed | `./gradlew :app:testArm64DebugUnitTest` |
+| Line coverage report of the unit tests | `./gradlew :app:jacocoUnitTestReport` (`app/build/reports/jacoco/jacocoUnitTestReport/html/index.html`) |
+| Klipper add-on tests (`print_recovery`, `beam_beeper`/`beam_camera`), plain Python | `python3 -m unittest discover -s app/src/test/python -v` |
+| UI tests (Compose components and the front end tile), on a connected device or emulator | `./gradlew :app:connectedArm64DebugAndroidTest` |
+
+The UI tests install a test APK next to the app, and Gradle uninstalls both when
+they finish — that erases the app's data on that device, so use an emulator or a
+spare device.
+
+The unit tests cover every business rule as a small, independently tested
+Kotlin object (ports, config templates, naming, parsing, ...); Activity/Service
+plumbing, real Camera2/USB I/O and the Python process bootstrap are exercised
+by running the app itself, not by these tests.
+
 ## Signing
 
 Debug builds use the debug keystore. For a signed release, add these keys to

@@ -7,10 +7,11 @@ impressora (webcam, status, controle) pelo site octoeverywhere.com ou pelo
 app mobile, sem precisar abrir portas no roteador. O Kocoa Beam roda o
 companion real do OctoEverywhere para Klipper/Moonraker, adaptado para
 rodar direto no aparelho em vez do serviço systemd que ele normalmente
-instala — veja [whats-new.md](../whats-new.md) (seção "OctoEverywhere
-remote access") para o resumo técnico.
+instala.
 
 <p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="Tela de configurações mostrando as seções Câmera e Acesso remoto" width="336"></p>
+
+<p align="center"><img src="../images/octoeverywhere-view.jpg" alt="Quick View do OctoEverywhere mostrando a webcam ao vivo, o status e as temperaturas" width="480"></p>
 
 ## Ativando
 

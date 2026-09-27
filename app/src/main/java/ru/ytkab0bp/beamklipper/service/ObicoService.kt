@@ -10,6 +10,7 @@ import android.os.IBinder
 import android.util.Log
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.R
+import ru.ytkab0bp.beamklipper.service.web.WebRouting
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -133,48 +134,12 @@ class ObicoService : BasePythonService() {
                 Log.e(TAG, "moonraker.conf missing for instance ${inst.id} after waiting, aborting")
                 return
             }
-            val moonrakerPort = Regex("^\\s*port\\s*[:=]\\s*(\\d+)", RegexOption.MULTILINE)
-                .find(moonrakerCfg.readText())?.groupValues?.get(1)?.toIntOrNull() ?: 7125
+            val moonrakerPort = WebRouting.moonrakerPortFromConfig(moonrakerCfg.readText())
+                ?: WebRouting.DEFAULT_MOONRAKER_PORT
 
             val cfgFile = File(localStorage, "moonraker-obico.cfg")
             val logFile = File(logFolder, "obico.log")
-            cfgFile.writeText(
-                buildString {
-                    append("[server]\n")
-                    append("url = ").append(Prefs.obicoServerUrl).append('\n')
-                    // Left unset when not yet linked: moonraker_obico.app
-                    // reacts to that itself by running its own linking flow
-                    // (PrinterDiscovery — see the class doc below), rather
-                    // than us needing to gate starting it at all.
-                    if (!authToken.isNullOrBlank()) {
-                        append("auth_token = ").append(authToken).append('\n')
-                    }
-                    append('\n')
-                    append("[moonraker]\n")
-                    append("host = 127.0.0.1\n")
-                    append("port = ").append(moonrakerPort).append('\n')
-                    append('\n')
-                    // The real-time WebRTC preview needs a native janus-gateway
-                    // process plus ffmpeg (precompiled Linux/glibc binaries in
-                    // the upstream repo, for desktop/RPi targets) — neither is
-                    // bundled here (see docs/obico.md). This documented,
-                    // supported config flag skips that pipeline entirely;
-                    // Obico still gets periodic JPEG snapshots (JpegPoster),
-                    // independent of this flag, from the same camera server
-                    // used by Fluidd/Mainsail/OctoEverywhere.
-                    append("[webcam]\n")
-                    append("disable_video_streaming = True\n")
-                    append('\n')
-                    append("[logging]\n")
-                    append("path = ").append(logFile.absolutePath).append('\n')
-                    append("level = INFO\n")
-                    append('\n')
-                    // Opt out by default, matching OctoEverywhereService — the
-                    // actual server connection this app makes is unaffected.
-                    append("[misc]\n")
-                    append("sentry_opt = out\n")
-                }
-            )
+            cfgFile.writeText(ObicoConfig.render(Prefs.obicoServerUrl, authToken, moonrakerPort, logFile.absolutePath))
 
             // Mirrors OctoEverywhereService: write the bootstrap fresh into
             // the unpacked bundle dir. app.py's own entrypoint is an
@@ -183,7 +148,7 @@ class ObicoService : BasePythonService() {
             val bsFile = File(obicoDir, "obico_bs.py")
             try {
                 bsFile.writeText(
-                    "import os\nimport sys\nimport runpy\n\ndef main():\n    here = os.path.dirname(os.path.abspath(__file__))\n    if here not in sys.path:\n        sys.path.insert(0, here)\n    runpy.run_module(\"moonraker_obico.app\", run_name=\"__main__\", alter_sys=True)\n",
+                    BootstrapScripts.OBICO,
                     StandardCharsets.UTF_8
                 )
             } catch (e: Throwable) {

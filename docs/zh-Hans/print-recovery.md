@@ -27,50 +27,73 @@
 [print_recovery]
 ```
 
-以下选项均为可选，显示的是默认值：
+以下选项均为可选，显示的是默认值。不需要修改的选项可以直接省略。没有值的行不能写出来（`park_x`、`park_y` 和 `state_file` 只在你真正设置时才添加）。
 
 ```ini
 [print_recovery]
-snapshot_interval: 2      # 保存间隔（秒，0.5 - 300）
-park_enable_x: True       # True：X 回零并在 X 限位处加热喷嘴
-park_enable_y: True       # True：Y 也回零（任一为 False：该轴不移动）
-park_x:                   # X 回零后移动到的位置（默认：X 最小值）
-park_y:                   # Y 回零后移动到的位置（默认：留在回零处）
-park_speed: 100           # 移动速度 mm/s
-lift_z: 10                # X/Y 回零前抬高喷嘴的毫米数
-discard_lift_z: 50        # 点 Discard 后喷嘴抬高的毫米数（0 = 不抬）
-discard_home_x: True      # Discard 后 X 回零
-discard_home_y: True      # Discard 后 Y 回零
-purge: True               # True/False：继续前是否清洗（仅 X 或 Y 已停靠时）
-purge_length: 20          # 清洗耗材长度 mm
-purge_speed: 5            # mm/s
-purge_retract: 2          # 清洗后回抽 mm
-min_extruded: 5           # 首次保存前需挤出的 mm
-language: auto            # 窗口/控制台语言（见下）
-macro_variables: *        # 要保存/恢复的宏变量：* = 所有不以 _ 开头的宏，留空 = 不保存，或列表：PRINT_START, MY_MACRO
-prompt: True              # 是否显示 Fluidd/Mainsail 窗口
-prompt_repeat: 60         # 提醒间隔（秒，0 = 仅一次）
-state_file:               # 快照保存位置（默认：printer.cfg 同目录）
+snapshot_interval: 2
+park_enable_x: True
+park_enable_y: True
+park_speed: 100
+lift_z: 10
+discard_lift_z: 50
+discard_home_x: True
+discard_home_y: True
+purge: True
+purge_length: 20
+purge_speed: 5
+purge_retract: 2
+min_extruded: 5
+macro_variables: *
+prompt: True
+prompt_repeat: 60
 ```
 
-手动恢复时可覆盖：`PRINT_RECOVERY_RESUME PARK_ENABLE_X=1 PARK_ENABLE_Y=0 PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5`（`*_ENABLE_*`、`PURGE` 以及 Discard 的 `HOME_X`/`HOME_Y` 接受 `1`/`0` 或 `True`/`False`；Discard 还接受 `LIFT_Z`）。未指定的项使用 `printer.cfg` 中的值或上述默认值。
+## 逐行说明
 
-### `park_x` 和 `park_y` 的作用
+数字为普通小数（`2`、`0.5`、`-6`）。`True`/`False` 也接受 `1`/`0`、`yes`/`no`、`on`/`off`。
 
-断电后打印机不再知道 X、Y 的位置，因此恢复时先让它们回零。某个轴回零后（`park_enable_x` / `park_enable_y`），喷嘴会移动到 `park_x` / `park_y`，在远离模型的地方加热（并清洗）：
+| 选项 | 作用 | 可接受的值 |
+|---|---|---|
+| `snapshot_interval: 2` | 保存打印位置的间隔（秒）。越小恢复越精确，但写入越多。 | `0.5` 到 `300` 的数字 |
+| `park_enable_x: True` | 恢复时 X 回零，并移动到 X 限位处，在远离模型的地方加热喷嘴。`False`：X **不会**回零或移动，假定仍在原位。 | `True` / `False` |
+| `park_enable_y: True` | Y 同理。两者都为 `False` 时，喷嘴仅抬高 `lift_z` 并在模型上方原地加热，并跳过清洗（否则耗材会落在模型上）。仅在确定没有移动时使用。 | `True` / `False` |
+| `park_x: -6` | X 回零后用于加热和清洗的 X 位置。**省略该行**则使用机器 X 最小值，即 X 限位处（Neptune 3 Pro 为 `-6`，热床左侧）。 | X 行程内的数字 |
+| `park_y: 0` | Y 同理。**省略该行**则停在 Y 回零后的位置（通常是热床前端）。 | Y 行程内的数字 |
+| `park_speed: 100` | 停靠移动速度（mm/s）。 | 大于 `0` 的数字 |
+| `lift_z: 10` | X/Y 回零前抬高喷嘴的毫米数，以避开模型。 | `0` 或更大的数字 |
+| `discard_lift_z: 50` | 点 **Discard** 后喷嘴抬高的毫米数，以远离被放弃的模型。 | `0` 或更大的数字（`0` = 不抬） |
+| `discard_home_x: True` | **Discard** 后 X 回零。 | `True` / `False` |
+| `discard_home_y: True` | **Discard** 后 Y 回零。 | `True` / `False` |
+| `purge: True` | 回到打印前先清洗少量耗材。仅在 X 或 Y 已停靠时执行。 | `True` / `False` |
+| `purge_length: 20` | 清洗耗材长度（mm）。 | `0` 或更大的数字 |
+| `purge_speed: 5` | 清洗速度（mm/s）。 | 大于 `0` 的数字 |
+| `purge_retract: 2` | 清洗后回抽的毫米数，避免拉丝。 | `0` 或更大的数字 |
+| `min_extruded: 5` | 首次保存前需挤出的毫米数，避免为尚未真正开始的打印保存数据。 | `0` 或更大的数字 |
+| `macro_variables: *` | 保存并恢复哪些宏的 `variable_xxx` 值。 | `*`（所有不以 `_` 开头的宏）、`none`（不保存）或列表，如 `PRINT_START, MY_MACRO` |
+| `prompt: True` | 在 Fluidd/Mainsail 中显示"Print interrupted"窗口。`False`：只显示控制台消息，使用下面的命令。 | `True` / `False` |
+| `prompt_repeat: 60` | 有待恢复的打印时，两次提醒之间的秒数。 | `0` 或更大的数字（`0` = 仅一次） |
+| `state_file: ~/recovery.json` | 快照保存位置。**省略该行**则保存在 `printer.cfg` 同目录。 | 文件路径（接受 `~`） |
 
-- `park_x` —— 加热和清洗用的 X 位置。留空表示机器 X 最小值，即 X 限位处（Neptune 3 Pro 为 `-6`，热床左侧）。
-- `park_y` —— Y 同理。留空表示"停在 Y 回零后的位置"（通常是热床前端）。
+### 手动恢复时覆盖设置
 
-只有默认角落不适合滴料时才需要设置。
+`PRINT_RECOVERY_RESUME` 接受相同的设置作为参数，仅对这一次恢复有效：
 
-### 不移动某个轴（`park_enable_x: False` / `park_enable_y: False`）
+```gcode
+PRINT_RECOVERY_RESUME PARK_ENABLE_X=1 PARK_ENABLE_Y=0 PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5
+```
 
-设为 `False` 的轴**不会**回零或移动，假定仍在原位。两者都为 `False` 时，喷嘴仅抬高 `lift_z` 并在模型上方原地加热，并跳过清洗（否则耗材会落在模型上）。仅在确定没有移动时使用；加热时喷嘴可能会滴料。
+| 参数 | 对应选项 | 可接受的值 |
+|---|---|---|
+| `PARK_ENABLE_X` | `park_enable_x` | `1`/`0`、`True`/`False`、`yes`/`no`、`on`/`off` |
+| `PARK_ENABLE_Y` | `park_enable_y` | 同上 |
+| `PARK_X` | `park_x` | 数字 |
+| `PARK_Y` | `park_y` | 数字 |
+| `PURGE` | `purge` | 同上 |
+| `PURGE_LENGTH` | `purge_length` | `0` 或更大的数字 |
+| `LIFT_Z` | `lift_z` | `0` 或更大的数字 |
 
-### 语言
-
-窗口和控制台消息跟随 Fluidd 或 Mainsail 所选语言（英语、葡萄牙语、俄语、简体/繁体中文；其他语言显示英语）。可用 `language: zh`（或 `en`、`pt`、`ru`、`zh-TW`）强制指定。
+`PRINT_RECOVERY_DISCARD` 接受 `LIFT_Z`（`0` 或更大的数字）、`HOME_X` 和 `HOME_Y`（取值同上）。未指定的项使用 `printer.cfg` 中的值或默认值。
 
 ## 宏变量
 

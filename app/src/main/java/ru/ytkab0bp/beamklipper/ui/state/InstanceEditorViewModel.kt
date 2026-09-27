@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ru.ytkab0bp.beamklipper.InstanceIcon
+import ru.ytkab0bp.beamklipper.NewInstance
 import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.KlipperInstance
 import ru.ytkab0bp.beamklipper.R
@@ -34,41 +35,14 @@ class InstanceEditorViewModel(app: Application) : AndroidViewModel(app) {
     private val _saving = MutableStateFlow(false)
     val saving: StateFlow<Boolean> = _saving.asStateFlow()
 
-    private fun computeDefaultName(): String {
+    private fun defaultNameTemplate(): (Int) -> String {
         val ctx = getApplication<Application>()
-        val (dbNames, slotNames) = collectExistingNames()
-        val existing = (dbNames + slotNames).distinct()
-        for (n in 1..1000) {
-            val candidate = ctx.getString(R.string.InstanceDefaultName, n)
-            if (candidate !in existing) {
-                val (dbNames2, slotNames2) = collectExistingNames()
-                val existing2 = (dbNames2 + slotNames2).distinct()
-                if (candidate !in existing2) return candidate
-            }
-        }
-        val fallbackBase = runCatching {
-            stripTrailingNumber(ctx.getString(R.string.InstanceDefaultName, 1))
-        }.getOrDefault("Printer").ifEmpty { "Printer" }
-        for (n in 1..1000) {
-            val candidate = "$fallbackBase $n"
-            val (dbNames2, slotNames2) = collectExistingNames()
-            val existing2 = (dbNames2 + slotNames2).distinct()
-            if (candidate !in existing2) return candidate
-        }
-        return runCatching { ctx.getString(R.string.InstanceDefaultName, 1) }.getOrDefault("Printer 1")
+        return { n -> ctx.getString(R.string.InstanceDefaultName, n) }
     }
 
-    private fun stripTrailingNumber(value: String): String {
-        val s1 = value.trim()
-        val m1 = Regex("""^(.*?)\s*\(\s*\d+\s*\)\s*$""").matchEntire(s1)
-        if (m1 != null) {
-            return m1.groupValues[1].trim()
-        }
-        val m2 = Regex("""^(.*?)\s+\d+\s*$""").matchEntire(s1)
-        if (m2 != null) {
-            return m2.groupValues[1].trim()
-        }
-        return s1
+    private fun computeDefaultName(): String {
+        val (dbNames, slotNames) = collectExistingNames()
+        return InstanceNames.defaultName(defaultNameTemplate(), (dbNames + slotNames).distinct())
     }
 
     private fun collectExistingNames(): Pair<List<String>, List<String>> {
@@ -81,61 +55,20 @@ class InstanceEditorViewModel(app: Application) : AndroidViewModel(app) {
         return dbNames to slotNames
     }
 
-    private fun ensureUniqueName(desired: String, editing: KlipperInstance?): String {
-        if (desired.isEmpty()) return computeDefaultName()
+    // Names other profiles use: the one being edited may keep its own name.
+    private fun takenNames(editing: KlipperInstance?): List<String> {
         val (dbNames, slotNames) = collectExistingNames()
-        val existing = (dbNames + slotNames)
-            .filter { name ->
-                when {
-                    editing == null -> true
-                    editing.id == null -> true
-                    else -> {
-                        val matchDb = runCatching {
-                            KlipperApp.getDatabaseOrNull()?.getInstances()?.firstOrNull { it.name == name }?.id
-                        }.getOrNull()
-                        matchDb != editing.id
-                    }
-                }
-            }
-            .distinct()
-        if (desired !in existing) {
-            val (dbNames2, slotNames2) = collectExistingNames()
-            val existing2 = (dbNames2 + slotNames2)
-                .filter { name ->
-                    when {
-                        editing == null -> true
-                        editing.id == null -> true
-                        else -> {
-                            val matchDb = runCatching {
-                                KlipperApp.getDatabaseOrNull()?.getInstances()?.firstOrNull { it.name == name }?.id
-                            }.getOrNull()
-                            matchDb != editing.id
-                        }
-                    }
-                }
-            if (desired !in existing2) return desired
-        }
-        val base = stripTrailingNumber(desired).ifEmpty { "Printer" }
-        for (n in 2..1000) {
-            val candidate = "$base $n"
-            val (dbNames2, slotNames2) = collectExistingNames()
-            val existing2 = (dbNames2 + slotNames2)
-                .filter { name ->
-                    when {
-                        editing == null -> true
-                        editing.id == null -> true
-                        else -> {
-                            val matchDb = runCatching {
-                                KlipperApp.getDatabaseOrNull()?.getInstances()?.firstOrNull { it.name == name }?.id
-                            }.getOrNull()
-                            matchDb != editing.id
-                        }
-                    }
-                }
-            if (candidate !in existing2) return candidate
-        }
-        return desired
+        val editingId = editing?.id ?: return (dbNames + slotNames).distinct()
+        val dbInstances = runCatching {
+            KlipperApp.getDatabaseOrNull()?.getInstances().orEmpty()
+        }.getOrDefault(emptyList())
+        return (dbNames + slotNames).filter { name ->
+            dbInstances.firstOrNull { it.name == name }?.id != editingId
+        }.distinct()
     }
+
+    private fun ensureUniqueName(desired: String, editing: KlipperInstance?): String =
+        InstanceNames.unique(desired, takenNames(editing)) { computeDefaultName() }
 
     fun loadForCreate() {
         _editingInstance.value = null
@@ -148,7 +81,7 @@ class InstanceEditorViewModel(app: Application) : AndroidViewModel(app) {
                 File(KlipperApp.INSTANCE.filesDir, "klipper/config").listFiles()?.map { it.name }?.sorted()
             }.getOrNull() ?: emptyList()
             _filesList.value = files
-            _configFile.value = files.firstOrNull { it.lowercase().contains("example") } ?: files.firstOrNull()
+            _configFile.value = InstanceNames.defaultConfig(files)
         }
     }
 
@@ -163,7 +96,7 @@ class InstanceEditorViewModel(app: Application) : AndroidViewModel(app) {
                 File(KlipperApp.INSTANCE.filesDir, "klipper/config").listFiles()?.map { it.name }?.sorted()
             }.getOrNull() ?: emptyList()
             _filesList.value = files
-            _configFile.value = files.firstOrNull { it.lowercase().contains("example") } ?: files.firstOrNull()
+            _configFile.value = InstanceNames.defaultConfig(files)
         }
     }
 
@@ -194,12 +127,8 @@ class InstanceEditorViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
 
-        if (runCatching { KlipperApp.DATABASE.getInstances().size }.getOrDefault(0) >= KlipperInstance.SLOTS_COUNT) {
-            onDone()
-            return
-        }
-
-        if (_configFile.value.isNullOrEmpty()) {
+        val existing = runCatching { KlipperApp.DATABASE.getInstances().size }.getOrDefault(0)
+        if (!NewInstance.canCreate(existing, KlipperInstance.SLOTS_COUNT, _configFile.value)) {
             onDone()
             return
         }

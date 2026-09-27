@@ -1,6 +1,19 @@
 import urllib.request
 import logging
 
+# See beam_beeper.py: the app's web server's port depends on the selected
+# front end, so it is read from a file WebService keeps updated instead of
+# being hardcoded.
+WEB_PORT_FILE = "${WEB_PORT_FILE}"
+DEFAULT_WEB_PORT = 4409
+
+def _web_port():
+    try:
+        with open(WEB_PORT_FILE, 'r') as f:
+            return int(f.read().strip())
+    except (IOError, OSError, ValueError):
+        return DEFAULT_WEB_PORT
+
 class BeamCamera:
     def __init__(self, config):
         self.printer = config.get_printer()
@@ -16,7 +29,7 @@ class BeamCamera:
     def cmd_SET_CAMERA_FLASHLIGHT(self, gcmd):
         enabled = gcmd.get('ENABLED')
         try:
-            response = urllib.request.urlopen('http://127.0.0.1:8888/beam/set_camera_flashlight?enabled=' + enabled)
+            response = urllib.request.urlopen('http://127.0.0.1:' + str(_web_port()) + '/beam/set_camera_flashlight?enabled=' + enabled)
             data = response.read()
             response.close()
         except Exception:
@@ -30,7 +43,7 @@ class BeamCamera:
         else:
             focus_distance = 0
         try:
-            response = urllib.request.urlopen('http://127.0.0.1:8888/beam/set_camera_focus?autofocus=' + str(autofocus).lower() + '&focus=' + str(focus_distance))
+            response = urllib.request.urlopen('http://127.0.0.1:' + str(_web_port()) + '/beam/set_camera_focus?autofocus=' + str(autofocus).lower() + '&focus=' + str(focus_distance))
             data = response.read()
             response.close()
         except Exception:

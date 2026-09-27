@@ -24,6 +24,7 @@ object Prefs {
     const val ENGINE_KALICO = "kalico"
     const val FRONTEND_FLUIDD = "fluidd"
     const val FRONTEND_MAINSAIL = "mainsail"
+    const val FRONTEND_VOYAGER = "voyager"
     @Deprecated("Kalico was never a frontend; duplicates Mainsail assets. Migrate to FRONTEND_MAINSAIL.")
     const val FRONTEND_KALICO = "kalico_frontend"
     const val LANGUAGE_SYSTEM = "system"
@@ -70,15 +71,11 @@ object Prefs {
             mPrefs.getInt(key, default)
         } catch (_: ClassCastException) {
             val raw = mPrefs.all[key]
-            when (raw) {
-                is Number -> {
-                    val migrated = raw.toInt()
-                    try { mPrefs.edit().putInt(key, migrated).apply() } catch (_: Throwable) {}
-                    migrated
-                }
-                is String -> raw.toIntOrNull() ?: default
-                else -> default
+            val migrated = PrefValues.intFromAny(raw, default)
+            if (raw is Number) {
+                try { mPrefs.edit().putInt(key, migrated).apply() } catch (_: Throwable) {}
             }
+            migrated
         } catch (_: Throwable) {
             default
         }
@@ -88,13 +85,7 @@ object Prefs {
         return try {
             mPrefs.getBoolean(key, default)
         } catch (_: ClassCastException) {
-            val raw = mPrefs.all[key]
-            when (raw) {
-                is Boolean -> raw
-                is Number -> raw.toInt() != 0
-                is String -> raw.toBooleanStrictOrNull() ?: default
-                else -> default
-            }
+            PrefValues.boolFromAny(mPrefs.all[key], default)
         } catch (_: Throwable) {
             default
         }
@@ -104,26 +95,25 @@ object Prefs {
         return try {
             mPrefs.getFloat(key, default)
         } catch (_: ClassCastException) {
-            val raw = mPrefs.all[key]
-            when (raw) {
-                is Number -> raw.toFloat()
-                is String -> raw.toFloatOrNull() ?: default
-                else -> default
-            }
+            PrefValues.floatFromAny(mPrefs.all[key], default)
         } catch (_: Throwable) {
             default
         }
     }
 
     fun init(ctx: Context) {
-        mPrefs = ctx.getSharedPreferences("${ctx.packageName}_preferences", Context.MODE_PRIVATE)
+        attach(ctx.getSharedPreferences("${ctx.packageName}_preferences", Context.MODE_PRIVATE))
+    }
+
+    internal fun attach(prefs: SharedPreferences) {
+        mPrefs = prefs
     }
 
     var webFrontend: String
         get() {
             val legacyMainsail = mPrefs.contains("mainsail")
             val raw = if (legacyMainsail) {
-                val migrated = if (getSafeBoolean("mainsail", true)) FRONTEND_MAINSAIL else FRONTEND_FLUIDD
+                val migrated = PrefValues.frontendFromLegacyFlag(getSafeBoolean("mainsail", true))
                 try {
                     mPrefs.edit().putString("web_frontend", migrated).remove("mainsail").apply()
                 } catch (_: Throwable) {}
@@ -131,12 +121,11 @@ object Prefs {
             } else {
                 getSafeString("web_frontend", FRONTEND_MAINSAIL)
             }
-            @Suppress("DEPRECATION")
-            if (raw == FRONTEND_KALICO) {
-                try { mPrefs.edit().putString("web_frontend", FRONTEND_MAINSAIL).apply() } catch (_: Throwable) {}
-                return FRONTEND_MAINSAIL
+            val frontend = PrefValues.migrateFrontend(raw)
+            if (frontend != raw) {
+                try { mPrefs.edit().putString("web_frontend", frontend).apply() } catch (_: Throwable) {}
             }
-            return raw
+            return frontend
         }
         set(value) {
             mPrefs.edit().putString("web_frontend", value).remove("mainsail").apply()
@@ -171,7 +160,7 @@ object Prefs {
     // ~1.25MB/s continuously, which saturates a typical uplink and stalls
     // command execution over the same connection, not just the webcam feed.
     // Medium/High are opt-in for users on a good LAN who want more detail.
-    private val CAMERA_RESOLUTION_PRESETS = arrayOf(
+    internal val CAMERA_RESOLUTION_PRESETS = arrayOf(
         640 to 480,
         1280 to 720,
         1920 to 1080
@@ -181,10 +170,9 @@ object Prefs {
     // below: CameraService only reads this at camera-open time, in its own
     // ":camera" process, so a change needs a restart to take effect.
     var cameraResolution: Int
-        get() = getSafeInt("camera_resolution", CAMERA_RESOLUTION_LOW)
-            .coerceIn(0, CAMERA_RESOLUTION_PRESETS.size - 1)
+        get() = PrefValues.resolution(getSafeInt("camera_resolution", CAMERA_RESOLUTION_LOW), CAMERA_RESOLUTION_PRESETS.size)
         set(value) {
-            val normalized = value.coerceIn(0, CAMERA_RESOLUTION_PRESETS.size - 1)
+            val normalized = PrefValues.resolution(value, CAMERA_RESOLUTION_PRESETS.size)
             mPrefs.edit().putInt("camera_resolution", normalized).apply()
             AppState.updateCameraSourceId()
             KlipperApp.EVENT_BUS.fireEvent(CameraSourceChangedEvent())
@@ -217,9 +205,9 @@ object Prefs {
     // anything else is normalized. Same cross-process restart story as
     // cameraId above.
     var cameraRotation: Int
-        get() = ((getSafeInt("camera_rotation", 0) % 360) + 360) % 360
+        get() = PrefValues.rotation(getSafeInt("camera_rotation", 0))
         set(value) {
-            val normalized = ((value % 360) + 360) % 360
+            val normalized = PrefValues.rotation(value)
             mPrefs.edit().putInt("camera_rotation", normalized).apply()
             AppState.updateCameraSourceId()
             KlipperApp.EVENT_BUS.fireEvent(CameraSourceChangedEvent())
@@ -230,9 +218,9 @@ object Prefs {
     // the service clamps this to whatever the opened camera actually
     // supports. Same cross-process restart story as cameraId above.
     var cameraZoom: Float
-        get() = getSafeFloat("camera_zoom", 1f).coerceAtLeast(1f)
+        get() = PrefValues.zoom(getSafeFloat("camera_zoom", 1f))
         set(value) {
-            mPrefs.edit().putFloat("camera_zoom", value.coerceAtLeast(1f)).apply()
+            mPrefs.edit().putFloat("camera_zoom", PrefValues.zoom(value)).apply()
             AppState.updateCameraSourceId()
             KlipperApp.EVENT_BUS.fireEvent(CameraSourceChangedEvent())
         }
@@ -268,7 +256,7 @@ object Prefs {
     var obicoServerUrl: String
         get() = getSafeString("obico_server_url", OBICO_CLOUD_URL)
         set(value) {
-            val normalized = value.trim().trimEnd('/').ifEmpty { OBICO_CLOUD_URL }
+            val normalized = PrefValues.obicoServerUrl(value, OBICO_CLOUD_URL)
             mPrefs.edit()
                 .putString("obico_server_url", normalized)
                 .remove("obico_auth_token")

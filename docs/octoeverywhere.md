@@ -6,11 +6,11 @@
 printer (webcam, status, control) from octoeverywhere.com or its mobile app,
 without opening ports on your router. Kocoa Beam runs the real OctoEverywhere
 Klipper/Moonraker companion, adapted to run on-device instead of the
-systemd service it normally installs as — see
-[whats-new.md](whats-new.md#octoeverywhere-remote-access) for the technical
-summary.
+systemd service it normally installs as.
 
 <p align="center"><img src="images/camera-octoeverywhere-settings.png" alt="Settings screen showing the Camera and Remote access sections" width="336"></p>
+
+<p align="center"><img src="images/octoeverywhere-view.jpg" alt="OctoEverywhere quick view showing the printer webcam live, status and temperatures" width="480"></p>
 
 ## Enabling it
 

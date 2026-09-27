@@ -20,7 +20,6 @@ import ru.ytkab0bp.beamklipper.service.*
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.math.max
 
 class KlipperInstance {
     @JvmField
@@ -100,22 +99,7 @@ class KlipperInstance {
         }
 
         val instIdForSlot = id ?: throw IllegalStateException("KlipperInstance.id is null at start()")
-        slot = run {
-            val existingSlot = slotById[instIdForSlot]
-            if (existingSlot != null) {
-                Log.i(TAG, "start: reusing existing slot=$existingSlot for id=$instIdForSlot (name=$name)")
-                return@run existingSlot
-            }
-            when {
-                slotById.isEmpty() -> 0
-                slotById.size < SLOTS_COUNT -> {
-                    val occupied = slotById.values
-                    (0 until SLOTS_COUNT).firstOrNull { s -> s !in occupied }
-                        ?: throw IllegalStateException("Can't start id=$instIdForSlot: out of slots (slotById=$slotById)")
-                }
-                else -> throw IllegalStateException("Can't start id=$instIdForSlot: out of slots (slotById.size >= $SLOTS_COUNT)")
-            }
-        }
+        slot = SlotAllocator.allocate(instIdForSlot, slotById, SLOTS_COUNT)
         Log.i(TAG, "start: recorded slot=$slot for id=$instIdForSlot (name=$name)")
         slotById[instIdForSlot] = slot
         instanceBySlotId[instIdForSlot] = this
@@ -304,9 +288,10 @@ class KlipperInstance {
             Log.i(TAG, "tryWatchdogRestart suppressed: state=$currentState for id=$id")
             return
         }
-        val wasShort = (System.currentTimeMillis() - lastRunning) < WATCHDOG_MIN_RUN_MS && watchdogCount > 0
-        watchdogCount++
-        val shouldRestart = watchdogCount <= WATCHDOG_MAX_RETRIES && !wasShort
+        val decision = WatchdogPolicy.decide(watchdogCount, lastRunning, System.currentTimeMillis())
+        val wasShort = decision.wasShort
+        watchdogCount = decision.attempt
+        val shouldRestart = decision.shouldRestart
         Log.w(TAG, "tryWatchdogRestart: id=$id which=$whichService count=$watchdogCount max=$WATCHDOG_MAX_RETRIES lastRunDelta=${System.currentTimeMillis() - lastRunning}ms wasShort=$wasShort shouldRestart=$shouldRestart")
         if (wasShort) {
             Log.w(TAG, "watchdog: service kept dying too fast (looped death), giving up to avoid thrashing")
@@ -339,7 +324,7 @@ class KlipperInstance {
         klippyIntent = null
         moonrakerIntent = null
 
-        val delayMs = max(500L + watchdogCount * 1200L, WATCHDOG_RESTART_DELAY_MS)
+        val delayMs = WatchdogPolicy.restartDelayMs(watchdogCount)
         val instId = id
         val capturedSlot = slot
         val capturedKlippyClass = try { Class.forName("ru.ytkab0bp.beamklipper.service.KlippyService_$capturedSlot") } catch (_: Throwable) { null }
@@ -365,7 +350,7 @@ class KlipperInstance {
                             }
                             Log.i("beam_service", "watchdog klippy reconnected for id=$instId")
                             klippyConnected = true
-                            watchdogCount = max(0, watchdogCount - 1)
+                            watchdogCount = WatchdogPolicy.attemptsAfterReconnect(watchdogCount)
                             if (moonrakerConnected) {
                                 notifyStateChanged(State.RUNNING)
                             }
@@ -515,9 +500,7 @@ class KlipperInstance {
 
         private const val WATCHDOG_BASE_ID = 9000
         private const val WATCHDOG_REQ_ID = 9000
-        private const val WATCHDOG_MAX_RETRIES = 3
-        private const val WATCHDOG_MIN_RUN_MS = 8000L
-        private const val WATCHDOG_RESTART_DELAY_MS = 1500L
+        private const val WATCHDOG_MAX_RETRIES = WatchdogPolicy.MAX_RETRIES
 
         private val mainHandler = Handler(Looper.getMainLooper())
         @Deprecated("Use slotById instead (object identity bug). Kept temporarily for slotById migration helper access.")

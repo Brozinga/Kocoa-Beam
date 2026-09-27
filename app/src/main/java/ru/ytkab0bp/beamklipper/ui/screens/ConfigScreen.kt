@@ -78,6 +78,8 @@ import ru.ytkab0bp.beamklipper.ui.theme.Ink
 import ru.ytkab0bp.beamklipper.ui.theme.InkMuted
 import ru.ytkab0bp.beamklipper.ui.theme.Paper
 import ru.ytkab0bp.beamklipper.ui.theme.PaperAlt
+import ru.ytkab0bp.beamklipper.utils.Languages
+import ru.ytkab0bp.beamklipper.utils.ObicoLink
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import java.io.File
 
@@ -777,14 +779,7 @@ private fun CameraSourceDialog(
 
 @Composable
 private fun LanguageDialog(onDismiss: () -> Unit) {
-    val options = listOf(
-        stringResource(R.string.LanguageSystem),
-        stringResource(R.string.LanguageEnglish),
-        stringResource(R.string.LanguagePortuguese),
-        stringResource(R.string.LanguageRussian),
-        stringResource(R.string.LanguageChineseSimplified),
-        stringResource(R.string.LanguageChineseTraditional)
-    )
+    val options = Languages.ALL.map { stringResource(Languages.nameRes(it)) }
     BrutalAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.AppLanguage), style = MaterialTheme.typography.titleLarge, color = Ink) },
@@ -796,14 +791,7 @@ private fun LanguageDialog(onDismiss: () -> Unit) {
                             .fillMaxWidth()
                             .clip(RectangleShape)
                             .clickable {
-                                Prefs.appLanguage = when (index) {
-                                    0 -> Prefs.LANGUAGE_SYSTEM
-                                    1 -> Prefs.LANGUAGE_ENGLISH
-                                    2 -> Prefs.LANGUAGE_PORTUGUESE_BRAZIL
-                                    3 -> Prefs.LANGUAGE_RUSSIAN
-                                    4 -> Prefs.LANGUAGE_CHINESE_SIMPLIFIED
-                                    else -> Prefs.LANGUAGE_CHINESE_TRADITIONAL
-                                }
+                                Prefs.appLanguage = Languages.ALL[index]
                                 Prefs.applyAppLanguage()
                                 onDismiss()
                             }
@@ -933,7 +921,7 @@ private fun ObicoLinkDialog(
     var code by remember { mutableStateOf(TextFieldValue("")) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var discoveryStatus by remember { mutableStateOf<SettingsViewModel.ObicoDiscoveryStatus?>(null) }
+    var discoveryStatus by remember { mutableStateOf<ObicoLink.DiscoveryStatus?>(null) }
     var justLinked by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -1065,12 +1053,12 @@ private fun ObicoLinkDialog(
                         error = null
                         scope.launch {
                             when (val result = viewModel.linkObico(code.text)) {
-                                is SettingsViewModel.ObicoLinkResult.Success -> onDismiss()
-                                is SettingsViewModel.ObicoLinkResult.InvalidCode -> {
+                                is ObicoLink.Result.Success -> onDismiss()
+                                is ObicoLink.Result.InvalidCode -> {
                                     loading = false
                                     error = invalidCodeText
                                 }
-                                is SettingsViewModel.ObicoLinkResult.NetworkError -> {
+                                is ObicoLink.Result.NetworkError -> {
                                     loading = false
                                     error = result.message?.let { "$networkErrorText: $it" } ?: networkErrorText
                                 }

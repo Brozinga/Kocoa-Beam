@@ -106,14 +106,8 @@ object UsbSerialManager {
         }
     }
 
-    fun getUID(device: UsbDevice): String {
-        return when (Prefs.usbDeviceNaming) {
-            Prefs.USB_DEVICE_NAMING_BY_VID_PID ->
-                Integer.toHexString(device.vendorId) + "_" + Integer.toHexString(device.productId)
-            else ->
-                device.deviceName.replace("/", "_")
-        }
-    }
+    fun getUID(device: UsbDevice): String =
+        UsbDeviceId.uid(Prefs.usbDeviceNaming, device.vendorId, device.productId, device.deviceName)
 
     fun connect(drv: UsbSerialDriver) = connect(drv, 0)
 

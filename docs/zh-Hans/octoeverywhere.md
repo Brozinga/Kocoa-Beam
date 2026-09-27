@@ -5,10 +5,11 @@
 [OctoEverywhere](https://octoeverywhere.com) 让你无需在路由器上开放端口，就能
 通过 octoeverywhere.com 网站或手机应用远程访问打印机（摄像头、状态、控制）。
 Kocoa Beam 运行的是真实的 OctoEverywhere Klipper/Moonraker 伴生程序，经过改造
-直接在设备上运行，而不是它通常安装的 systemd 服务——技术细节参见
-[whats-new.md](../whats-new.md) 中的 "OctoEverywhere remote access" 一节。
+直接在设备上运行，而不是它通常安装的 systemd 服务。
 
 <p align="center"><img src="../images/camera-octoeverywhere-settings.png" alt="设置页面显示摄像头与远程访问区块" width="336"></p>
+
+<p align="center"><img src="../images/octoeverywhere-view.jpg" alt="OctoEverywhere 快速视图，显示摄像头实时画面、状态和温度" width="480"></p>
 
 ## 启用步骤
 

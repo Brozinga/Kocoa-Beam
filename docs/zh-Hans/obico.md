@@ -8,6 +8,8 @@ Obico Server。Kocoa Beam 运行的是真实的 `moonraker-obico` 伴生程序�
 [TheSpaghettiDetective/moonraker-obico](https://github.com/TheSpaghettiDetective/moonraker-obico)
 并经过改造），直接在设备上运行，而不是它通常安装的 systemd 服务。
 
+<p align="center"><img src="../images/obico-control.jpg" alt="Obico 控制页面，显示打印机、实时摄像头和温度" width="640"></p>
+
 ## 启用步骤
 
 1. 启动一个打印机配置（必须处于**运行中**状态——Obico 会连接当前正在运行的

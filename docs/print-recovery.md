@@ -42,68 +42,80 @@ Add this to `printer.cfg` (any place outside another section) and restart:
 [print_recovery]
 ```
 
-Everything below is optional; the values shown are the defaults.
+Everything below is optional; the values shown are the defaults. A setting
+you do not need to change can simply be left out. A line with no value must not
+be written at all (`park_x`, `park_y` and `state_file` are only added when you
+really set them).
 
 ```ini
 [print_recovery]
-snapshot_interval: 2      # seconds between saves (0.5 - 300)
-park_enable_x: True       # True: home X and heat the nozzle at the X stop
-park_enable_y: True       # True: also home Y (False for either: not moved)
-park_x:                   # X to move to after homing X (default: X minimum)
-park_y:                   # Y to move to after homing Y (default: stay at home)
-park_speed: 100           # mm/s travel speed
-lift_z: 10                # mm the nozzle is lifted before homing X/Y
-discard_lift_z: 50        # mm the nozzle rises when you press Discard (0 = no)
-discard_home_x: True      # home X after Discard
-discard_home_y: True      # home Y after Discard
-purge: True               # True/False: purge before continuing (only when
-                          # X or Y is parked)
-purge_length: 20          # mm of filament to purge
-purge_speed: 5            # mm/s
-purge_retract: 2          # mm retracted after purging
-min_extruded: 5           # mm extruded before the first save
-language: auto            # window/console language (see below)
-macro_variables: *        # macro variables to save/restore: * = all macros not
-                          # starting with _, empty = none, or a list: PRINT_START, MY_MACRO
-prompt: True              # show the Fluidd/Mainsail window
-prompt_repeat: 60         # seconds between reminders (0 = once)
-state_file:               # where the snapshot is kept (default: next to printer.cfg)
+snapshot_interval: 2
+park_enable_x: True
+park_enable_y: True
+park_speed: 100
+lift_z: 10
+discard_lift_z: 50
+discard_home_x: True
+discard_home_y: True
+purge: True
+purge_length: 20
+purge_speed: 5
+purge_retract: 2
+min_extruded: 5
+macro_variables: *
+prompt: True
+prompt_repeat: 60
 ```
 
-You can also override some values when resuming by hand:
-`PRINT_RECOVERY_RESUME PARK_ENABLE_X=1 PARK_ENABLE_Y=0 PARK_X=-6 PURGE=0
-PURGE_LENGTH=10 LIFT_Z=5` (the `*_ENABLE_*`, `PURGE` and Discard's `HOME_X` /
-`HOME_Y` accept `1`/`0` or `True`/`False`; Discard also takes `LIFT_Z`). Anything you leave out
-uses the value from `printer.cfg`, or the default above.
+## Settings, line by line
 
-### What `park_x` and `park_y` do
+Numbers are plain decimals (`2`, `0.5`, `-6`). `True`/`False` also accept
+`1`/`0`, `yes`/`no` and `on`/`off`.
 
-After a power loss the printer no longer knows where X and Y are, so resuming
-homes them first. When an axis is homed (`park_enable_x` / `park_enable_y`),
-the nozzle is then moved to `park_x` / `park_y` and heats (and purges) there,
-away from the print:
+| Setting | What it does | Accepted values |
+|---|---|---|
+| `snapshot_interval: 2` | Seconds between saves of the print position. Lower = a more exact resume, but more writes. | Number from `0.5` to `300` |
+| `park_enable_x: True` | On resume, home X and move to the X stop to heat the nozzle away from the part. `False`: X is **not** homed or moved and is assumed to be exactly where it was. | `True` / `False` |
+| `park_enable_y: True` | Same for Y. With both set to `False` the nozzle only lifts by `lift_z` and heats in place above the part, and the purge is skipped (it would drop filament on the print). Use it only if you are sure nothing moved. | `True` / `False` |
+| `park_x: -6` | X position used to heat and purge after X is homed. **Leave the line out** to use the machine's X minimum, i.e. the X stop (on the Neptune 3 Pro, `-6`, left of the bed). | Number inside the X range |
+| `park_y: 0` | Same for Y. **Leave the line out** to stay where Y homing left the nozzle (usually the front of the bed). | Number inside the Y range |
+| `park_speed: 100` | Travel speed while parking, in mm/s. | Number greater than `0` |
+| `lift_z: 10` | Millimetres the nozzle is lifted before X/Y are homed, so it clears the part. | Number `0` or more |
+| `discard_lift_z: 50` | Millimetres the nozzle rises when you press **Discard**, to clear the abandoned part. | Number `0` or more (`0` = do not lift) |
+| `discard_home_x: True` | Home X after **Discard**. | `True` / `False` |
+| `discard_home_y: True` | Home Y after **Discard**. | `True` / `False` |
+| `purge: True` | Purge a little filament before going back to the print. Only happens when X or Y is parked. | `True` / `False` |
+| `purge_length: 20` | Millimetres of filament to purge. | Number `0` or more |
+| `purge_speed: 5` | Purge speed in mm/s. | Number greater than `0` |
+| `purge_retract: 2` | Millimetres retracted after purging, to avoid a string of filament. | Number `0` or more |
+| `min_extruded: 5` | Millimetres that must be extruded before the first save, so nothing is saved for a print that has not really started. | Number `0` or more |
+| `macro_variables: *` | Which macros have their `variable_xxx` values saved and restored. | `*` (all macros not starting with `_`), `none` (no macro), or a list such as `PRINT_START, MY_MACRO` |
+| `prompt: True` | Show the "Print interrupted" window in Fluidd/Mainsail. `False`: only the console message and the commands below. | `True` / `False` |
+| `prompt_repeat: 60` | Seconds between reminders while a print is waiting. | Number `0` or more (`0` = show once) |
+| `state_file: ~/recovery.json` | Where the snapshot is kept. **Leave the line out** to keep it next to `printer.cfg`. | A file path (`~` is accepted) |
 
-- `park_x` — the X position used to heat and purge. Empty means the machine's
-  X minimum, i.e. the X stop (on the Neptune 3 Pro, `-6`, left of the bed).
-- `park_y` — the same for Y. Empty means "stay where Y homing left the
-  nozzle" (usually the front of the bed).
+### Overriding values when resuming by hand
 
-Set them only if the default corner is not a good place to drip filament.
+`PRINT_RECOVERY_RESUME` accepts the same settings as parameters, for that one
+resume only:
 
-### Not moving an axis (`park_enable_x: False` / `park_enable_y: False`)
+```gcode
+PRINT_RECOVERY_RESUME PARK_ENABLE_X=1 PARK_ENABLE_Y=0 PARK_X=-6 PURGE=0 PURGE_LENGTH=10 LIFT_Z=5
+```
 
-An axis set to `False` is **not** homed or moved: it is assumed to be exactly
-where it was. With both set to `False` the nozzle just lifts by `lift_z` and
-heats in place above the part, and the purge is skipped (it would drop
-filament on the print). Use it only if you are sure nothing moved; the nozzle
-may drip a little while it heats.
+| Parameter | Same as | Accepted values |
+|---|---|---|
+| `PARK_ENABLE_X` | `park_enable_x` | `1`/`0`, `True`/`False`, `yes`/`no`, `on`/`off` |
+| `PARK_ENABLE_Y` | `park_enable_y` | same as above |
+| `PARK_X` | `park_x` | number |
+| `PARK_Y` | `park_y` | number |
+| `PURGE` | `purge` | same as above |
+| `PURGE_LENGTH` | `purge_length` | number `0` or more |
+| `LIFT_Z` | `lift_z` | number `0` or more |
 
-### Language
-
-The window and console messages follow the language chosen in Fluidd or
-Mainsail (English, Portuguese, Russian, Chinese simplified/traditional; any
-other language shows English). Set `language: pt` (or `en`, `ru`, `zh`,
-`zh-TW`) to force one.
+`PRINT_RECOVERY_DISCARD` accepts `LIFT_Z` (number `0` or more), `HOME_X` and
+`HOME_Y` (same on/off values as above). Anything you leave out uses the value
+from `printer.cfg`, or the default.
 
 ## Macro variables
 

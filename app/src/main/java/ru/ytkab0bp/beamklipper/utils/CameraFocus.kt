@@ -12,9 +12,6 @@ import android.hardware.camera2.params.MeteringRectangle
 // point checks the characteristics of the camera that will really be opened.
 // Everything used here exists since API 21, so no version guards are needed.
 object CameraFocus {
-    // Side of the metering square, as a fraction of the active array's short side.
-    private const val REGION_FRACTION = 0.12f
-
     fun isSupported(chars: CameraCharacteristics): Boolean {
         val regions = chars.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF) ?: 0
         val modes = chars.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES) ?: return false
@@ -28,15 +25,11 @@ object CameraFocus {
         val manager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         val ids = manager.cameraIdList
         val pinned = Prefs.cameraId
-        val id = when {
-            pinned != null && ids.contains(pinned) -> pinned
-            pinned == null -> ids.firstOrNull {
-                try {
-                    manager.getCameraCharacteristics(it).get(CameraCharacteristics.LENS_FACING) ==
-                        CameraCharacteristics.LENS_FACING_EXTERNAL
-                } catch (_: Throwable) { false }
-            } ?: ids.firstOrNull()
-            else -> ids.firstOrNull()
+        val id = CameraRules.resolveId(ids.toList(), pinned) {
+            try {
+                manager.getCameraCharacteristics(it).get(CameraCharacteristics.LENS_FACING) ==
+                    CameraCharacteristics.LENS_FACING_EXTERNAL
+            } catch (_: Throwable) { false }
         }
         id != null && isSupported(manager.getCameraCharacteristics(id))
     } catch (_: Throwable) {
@@ -48,22 +41,7 @@ object CameraFocus {
     // active-array coordinates.
     fun region(chars: CameraCharacteristics, zoom: Float, rotation: Int, nx: Float, ny: Float): MeteringRectangle? {
         val active: Rect = chars.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE) ?: return null
-        // Undo the clockwise rotation applied to the served frame.
-        val (sx, sy) = when (rotation) {
-            90 -> ny to 1f - nx
-            180 -> 1f - nx to 1f - ny
-            270 -> 1f - ny to nx
-            else -> nx to ny
-        }
-        // The visible area is the centred crop that zoom leaves.
-        val z = zoom.coerceAtLeast(1f)
-        val viewW = active.width() / z
-        val viewH = active.height() / z
-        val cx = active.left + (active.width() - viewW) / 2f + sx.coerceIn(0f, 1f) * viewW
-        val cy = active.top + (active.height() - viewH) / 2f + sy.coerceIn(0f, 1f) * viewH
-        val side = (minOf(active.width(), active.height()) * REGION_FRACTION).toInt().coerceAtLeast(8)
-        val left = (cx - side / 2f).toInt().coerceIn(active.left, active.right - side)
-        val top = (cy - side / 2f).toInt().coerceIn(active.top, active.bottom - side)
-        return MeteringRectangle(left, top, side, side, MeteringRectangle.METERING_WEIGHT_MAX)
+        val box = FocusRegion.compute(active.left, active.top, active.right, active.bottom, zoom, rotation, nx, ny)
+        return MeteringRectangle(box.left, box.top, box.side, box.side, MeteringRectangle.METERING_WEIGHT_MAX)
     }
 }

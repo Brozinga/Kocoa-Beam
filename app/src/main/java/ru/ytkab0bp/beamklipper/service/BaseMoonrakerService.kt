@@ -20,12 +20,10 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.regex.Pattern
 
 open class BaseMoonrakerService(private val num: Int) : BasePythonService() {
     companion object {
         const val BASE_ID = 200000
-        @JvmField val MOONRAKER_PORT_PATTERN = Pattern.compile("port: (\\d+)")
 
         @JvmStatic
         @Throws(IOException::class)
@@ -152,24 +150,16 @@ open class BaseMoonrakerService(private val num: Int) : BasePythonService() {
                         val f = File(otherInst.publicDirectory, "config/moonraker.conf")
                         if (f.exists()) {
                             try {
-                                val m = MOONRAKER_PORT_PATTERN.matcher(readString(f))
-                                if (m.find()) {
-                                    used.add(m.group(1).toInt())
-                                }
+                                MoonrakerConfig.portOf(readString(f))?.let { used.add(it) }
                             } catch (_: Throwable) {}
                         }
                     }
-                    var freePort = 7125
-                    while (used.contains(freePort)) {
-                        freePort++
-                    }
+                    val freePort = MoonrakerConfig.nextFreePort(used)
                     FileOutputStream(moonrakerCfg).use { fos ->
-                        fos.write(BundleInstaller.readString(KlipperApp.INSTANCE.assets, "moonraker/default.conf")
-                            .replace("\${KLIPPY_UDS}", socket.absolutePath)
-                            .replace("\${MOONRAKER_PORT}", freePort.toString())
-                            .replace("\${TIMELAPSE_FRAME_PATH}", tempFramesDir.absolutePath)
-                            .replace("\${TIMELAPSE_OUTPUT}", timelapseOutputDir.absolutePath)
-                            .toByteArray(StandardCharsets.UTF_8))
+                        fos.write(MoonrakerConfig.render(
+                            BundleInstaller.readString(KlipperApp.INSTANCE.assets, "moonraker/default.conf"),
+                            socket.absolutePath, freePort, tempFramesDir.absolutePath, timelapseOutputDir.absolutePath
+                        ).toByteArray(StandardCharsets.UTF_8))
                     }
                 }
             }
@@ -185,7 +175,7 @@ open class BaseMoonrakerService(private val num: Int) : BasePythonService() {
             if (!mrDir.isDirectory) mrDir.mkdirs()
             try {
                 mrBs.writeText(
-                    "import os\nimport importlib.util\nimport sys\n\ndef main():\n    here = os.path.dirname(os.path.abspath(__file__))\n    sys.path.insert(0, os.path.join(here, \"beam_ext\"))\n    sub = os.path.join(here, \"moonraker\")\n    sys.path.insert(0, sub)\n    init_py = os.path.join(sub, \"__init__.py\")\n    if os.path.isfile(init_py):\n        s1 = importlib.util.spec_from_file_location(\"moonraker\", init_py, submodule_search_locations=[sub])\n        m1 = importlib.util.module_from_spec(s1)\n        sys.modules[\"moonraker\"] = m1\n        s1.loader.exec_module(m1)\n    entry = os.path.join(sub, \"server.py\")\n    spec = importlib.util.spec_from_file_location(\"moonraker.server\", entry)\n    m = importlib.util.module_from_spec(spec)\n    sys.modules[\"moonraker.server\"] = m\n    if \"moonraker\" in sys.modules:\n        setattr(sys.modules[\"moonraker\"], \"server\", m)\n    spec.loader.exec_module(m)\n    m.main()\n",
+                    BootstrapScripts.MOONRAKER,
                     StandardCharsets.UTF_8
                 )
             } catch (e: Throwable) {
@@ -193,9 +183,8 @@ open class BaseMoonrakerService(private val num: Int) : BasePythonService() {
             }
 
             val port = try {
-                val m = MOONRAKER_PORT_PATTERN.matcher(readString(moonrakerCfg))
-                if (m.find()) m.group(1).toInt() else 7125
-            } catch (_: Throwable) { 7125 }
+                MoonrakerConfig.portOf(readString(moonrakerCfg)) ?: MoonrakerConfig.DEFAULT_PORT
+            } catch (_: Throwable) { MoonrakerConfig.DEFAULT_PORT }
             val ok = runCatching { runPython(mrDir, "moonraker_bs", "moonraker.py", "-u", moonSocket.absolutePath, "-l", logs.absolutePath, "-d", inst.publicDirectory.absolutePath, "-c", moonrakerCfg.absolutePath) }.isSuccess
             if (ok) {
                 val probeDeadline = System.currentTimeMillis() + 45_000L

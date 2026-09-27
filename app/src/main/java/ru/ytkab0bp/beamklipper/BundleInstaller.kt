@@ -2,8 +2,8 @@ package ru.ytkab0bp.beamklipper
 
 import android.content.Context
 import org.json.JSONObject
+import ru.ytkab0bp.beamklipper.service.WebPortFile
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 
 object BundleInstaller {
@@ -49,31 +49,31 @@ object BundleInstaller {
             val nativeDir = File(info.applicationInfo!!.nativeLibraryDir)
 
             patchBundledFile(root, assets, "klipper", "klippy/chelper/__init__.py") {
-                it.replace("\${DEST_LIB}", File(nativeDir, "libklippy_chelper.so").absolutePath)
+                it.replace(BundlePatches.DEST_LIB, File(nativeDir, "libklippy_chelper.so").absolutePath)
             }
             patchBundledFile(root, assets, "kalico", "klippy/chelper/__init__.py") {
-                it.replace("\${DEST_LIB}", File(nativeDir, "libkalico_chelper.so").absolutePath)
+                it.replace(BundlePatches.DEST_LIB, File(nativeDir, "libkalico_chelper.so").absolutePath)
             }
 
             var str = readString(assets, "moonraker/moonraker/utils/sysfs_devs.py")
-            str = str.replace("TTY_PATH = \"/sys/class/tty\"",
-                "TTY_PATH = \"" + File(KlipperApp.INSTANCE.filesDir, "serial").absolutePath + "\"")
-            writeIfChanged(File(root, "moonraker/moonraker/utils/sysfs_devs.py"), str.toByteArray(StandardCharsets.UTF_8))
+            str = str.replace(BundlePatches.SYSFS_TTY_ORIGINAL,
+                BundlePatches.sysfsTty(File(KlipperApp.INSTANCE.filesDir, "serial").absolutePath))
+            BundleFiles.writeIfChanged(File(root, "moonraker/moonraker/utils/sysfs_devs.py"), str.toByteArray(StandardCharsets.UTF_8))
 
             val tempPath = File(KlipperApp.INSTANCE.cacheDir, "resonances").absolutePath
             patchBundledFile(root, assets, "klipper", "klippy/extras/resonance_tester.py") {
-                it.replace("\${TEMP_PATH}", tempPath)
+                it.replace(BundlePatches.TEMP_PATH, tempPath)
             }
             patchBundledFile(root, assets, "kalico", "klippy/extras/resonance_tester.py") {
-                it.replace("\${TEMP_PATH}", tempPath)
+                it.replace(BundlePatches.TEMP_PATH, tempPath)
             }
 
             val ttyPath = "'" + File(KlipperApp.INSTANCE.filesDir, "serial").absolutePath + "'"
             patchBundledFile(root, assets, "klipper", "klippy/mcu.py") {
-                it.replace("\${TTY_PATH}", ttyPath)
+                it.replace(BundlePatches.TTY_PATH, ttyPath)
             }
             patchBundledFile(root, assets, "kalico", "klippy/mcu.py") {
-                it.replace("\${TTY_PATH}", ttyPath)
+                it.replace(BundlePatches.TTY_PATH, ttyPath)
             }
 
             // moonraker_obico.janus_config_builder calls board_id() at MODULE
@@ -88,26 +88,25 @@ object BundleInstaller {
             // function above already wraps the identical read in a bare
             // except; this mirrors that.
             patchBundledFile(root, assets, "obico", "moonraker_obico/utils.py") {
-                it.replace(
-                    "def board_id():\n    model_file = \"/sys/firmware/devicetree/base/model\"\n    if os.path.isfile(model_file):\n        with open(model_file, 'r') as file:\n            data = file.read()\n            if \"raspberry\" in data.lower():\n                return \"rpi\"\n            elif \"makerbase\" in data.lower() or \"roc-rk3328-cc\" in data:\n                return \"mks\"\n    return \"NA\"",
-                    "def board_id():\n    model_file = \"/sys/firmware/devicetree/base/model\"\n    try:\n        if os.path.isfile(model_file):\n            with open(model_file, 'r') as file:\n                data = file.read()\n                if \"raspberry\" in data.lower():\n                    return \"rpi\"\n                elif \"makerbase\" in data.lower() or \"roc-rk3328-cc\" in data:\n                    return \"mks\"\n    except OSError:\n        pass\n    return \"NA\""
-                )
+                BundlePatches.patchObicoBoardId(it)
+            }
+            patchBundledFile(root, assets, "obico", "moonraker_obico/printer_discovery.py") {
+                BundlePatches.patchObicoLinkStatus(it)
             }
 
-            // moonraker_obico.printer_discovery only ever surfaces the
-            // one-time passcode it generates (the code you'd manually enter
-            // in the Obico app/website when auto-detection on the LAN
-            // doesn't apply) through Klipper gcode_macro variables — meant
-            // for a printer.cfg macro + KlipperScreen panel we don't require
-            // anyone to set up. This adds a plain JSON status file, written
-            // next to moonraker-obico.cfg (a path ObicoService/SettingsViewModel
-            // already know), so the app can show that code directly in
-            // Settings → Obico → Link printer instead.
-            patchBundledFile(root, assets, "obico", "moonraker_obico/printer_discovery.py") {
-                it.replace(
-                    "    def set_obico_link_status(self, is_linked, one_time_passcode, one_time_passlink):\n        self.moonrakerconn.set_macro_variables('OBICO_LINK_STATUS',",
-                    "    def set_obico_link_status(self, is_linked, one_time_passcode, one_time_passlink):\n        try:\n            import json as _json\n            _status_path = os.path.join(os.path.dirname(os.path.abspath(self.config._config_path)), 'obico_link_status.json')\n            with open(_status_path, 'w') as _f:\n                _json.dump({'is_linked': is_linked, 'one_time_passcode': one_time_passcode, 'one_time_passlink': one_time_passlink}, _f)\n        except Exception:\n            pass\n        self.moonrakerconn.set_macro_variables('OBICO_LINK_STATUS',"
-                )
+            // PLAY_TONE / SET_CAMERA_FLASHLIGHT / SET_CAMERA_FOCUS call the
+            // app's own web server, whose port depends on the selected front
+            // end (see WebPortFile) rather than being fixed. The two extras
+            // live under klippy/extras/ (not beam_ext/) so Klipper's config
+            // loader — importlib.import_module('extras.' + name) — can
+            // actually resolve a [beam_beeper]/[beam_camera] section to them.
+            val webPortFile = WebPortFile.path(KlipperApp.INSTANCE.filesDir).absolutePath
+            for (bundleKey in arrayOf("klipper", "kalico")) {
+                for (extra in arrayOf("klippy/extras/beam_beeper.py", "klippy/extras/beam_camera.py")) {
+                    patchBundledFile(root, assets, bundleKey, extra) {
+                        it.replace(BundlePatches.WEB_PORT_FILE, webPortFile)
+                    }
+                }
             }
             if (needsUnpack) marker.writeText(ver)
         } catch (e: Exception) {
@@ -115,39 +114,10 @@ object BundleInstaller {
         }
     }
 
-    // Other processes may be importing these files right now, so never leave
-    // one truncated or half-written: skip identical content, otherwise write a
-    // temp file and rename it over the target (atomic on the same directory).
-    private fun writeIfChanged(target: File, bytes: ByteArray) {
-        try {
-            if (target.exists() && target.readBytes().contentEquals(bytes)) return
-        } catch (_: Exception) {}
-        val tmp = File(target.parentFile, target.name + ".tmp")
-        FileOutputStream(tmp).use { it.write(bytes) }
-        if (!tmp.renameTo(target)) {
-            tmp.delete()
-            FileOutputStream(target).use { it.write(bytes) }
-        }
-    }
-
     private fun unpack(assets: android.content.res.AssetManager, index: JSONObject, root: File, key: String) {
-        val dir = File(root, key)
-        dir.deleteRecursively()
-
         val arr = index.optJSONArray(key)
-        if (arr == null) {
-            return
-        }
-        for (i in 0 until arr.length()) {
-            val file = arr.optString(i)
-            val into = File(dir, file)
-            into.parentFile?.mkdirs()
-            assets.open("$key/$file").use { inp ->
-                FileOutputStream(into).use { fos ->
-                    inp.copyTo(fos)
-                }
-            }
-        }
+        val files = arr?.let { a -> (0 until a.length()).map { a.optString(it) } }
+        BundleFiles.unpack({ assets.open(it) }, files, root, key)
     }
 
     private fun patchBundledFile(
@@ -162,7 +132,7 @@ object BundleInstaller {
             return
         }
         val updated = transform(readString(assets, "$bundleKey/$relativePath"))
-        writeIfChanged(target, updated.toByteArray(StandardCharsets.UTF_8))
+        BundleFiles.writeIfChanged(target, updated.toByteArray(StandardCharsets.UTF_8))
     }
 
     @JvmStatic
