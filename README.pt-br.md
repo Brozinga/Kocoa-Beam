@@ -156,11 +156,9 @@ O Kocoa Beam fornece três variantes de APK:
 
 **No navegador** — as interfaces web são servidas pelo próprio aparelho, com a impressora conectada e a webcam ao vivo:
 
-<p align="center">
-  <img src="docs/images/fluidd-dashboard-webcam.png" alt="Painel do Fluidd com webcam ao vivo" width="800">
-  <img src="docs/images/mainsail-dashboard-webcam.png" alt="Painel do Mainsail com webcam ao vivo" width="800">
-</p>
-<p align="center"><sub>Fluidd (esquerda) e Mainsail (direita)</sub></p>
+<p align="center"><b>Fluidd</b><br><img src="docs/images/fluidd-dashboard-webcam.png" alt="Painel do Fluidd com webcam ao vivo" width="800"></p>
+<p align="center"><b>Mainsail</b><br><img src="docs/images/mainsail-dashboard-webcam.png" alt="Painel do Mainsail com webcam ao vivo" width="800"></p>
+<p align="center"><b>Voyager UI</b><br><img src="docs/images/voyager-dashboard-webcam.jpg" alt="Painel do Voyager UI com webcam ao vivo" width="800"></p>
 
 **Recuperação de impressão** — após uma queda de energia, Fluidd e Mainsail oferecem retomar a impressão ([guia](docs/pt-br/print-recovery.md)):
 

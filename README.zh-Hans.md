@@ -155,11 +155,9 @@ Kocoa Beam 提供三个 APK 版本：
 
 **浏览器中** —— 网页界面由设备本身提供，此时打印机已连接、摄像头画面为实时：
 
-<p align="center">
-  <img src="docs/images/fluidd-dashboard-webcam.png" alt="带实时摄像头的 Fluidd 仪表盘" width="800">
-  <img src="docs/images/mainsail-dashboard-webcam.png" alt="带实时摄像头的 Mainsail 仪表盘" width="800">
-</p>
-<p align="center"><sub>Fluidd（左）与 Mainsail（右）</sub></p>
+<p align="center"><b>Fluidd</b><br><img src="docs/images/fluidd-dashboard-webcam.png" alt="带实时摄像头的 Fluidd 仪表盘" width="800"></p>
+<p align="center"><b>Mainsail</b><br><img src="docs/images/mainsail-dashboard-webcam.png" alt="带实时摄像头的 Mainsail 仪表盘" width="800"></p>
+<p align="center"><b>Voyager UI</b><br><img src="docs/images/voyager-dashboard-webcam.jpg" alt="带实时摄像头的 Voyager UI 仪表盘" width="800"></p>
 
 **断电续打** —— 断电后，Fluidd 和 Mainsail 会提示是否继续打印（[指南](docs/zh-Hans/print-recovery.md)）：
 

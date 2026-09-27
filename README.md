@@ -159,11 +159,9 @@ first time (APK, first printer, MCU firmware, opening the web interface).
 
 **In the browser** — the web interfaces are served by the device itself, with the printer connected and the webcam live:
 
-<p align="center">
-  <img src="docs/images/fluidd-dashboard-webcam.png" alt="Fluidd dashboard with live webcam" width="800">
-  <img src="docs/images/mainsail-dashboard-webcam.png" alt="Mainsail dashboard with live webcam" width="800">
-</p>
-<p align="center"><sub>Fluidd (left) and Mainsail (right)</sub></p>
+<p align="center"><b>Fluidd</b><br><img src="docs/images/fluidd-dashboard-webcam.png" alt="Fluidd dashboard with live webcam" width="800"></p>
+<p align="center"><b>Mainsail</b><br><img src="docs/images/mainsail-dashboard-webcam.png" alt="Mainsail dashboard with live webcam" width="800"></p>
+<p align="center"><b>Voyager UI</b><br><img src="docs/images/voyager-dashboard-webcam.jpg" alt="Voyager UI dashboard with live webcam" width="800"></p>
 
 **Print recovery** — after a power loss, Fluidd and Mainsail offer to resume the print ([guide](docs/print-recovery.md)):
 
