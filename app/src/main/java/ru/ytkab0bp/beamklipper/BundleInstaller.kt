@@ -94,6 +94,22 @@ object BundleInstaller {
                 BundlePatches.patchObicoLinkStatus(it)
             }
 
+            // Both moonraker_conn.py patches below: find_all_thermal_presets()
+            // crashes on Beam's Moonraker, which returns the mainsail
+            // "presets" database entry as an empty list instead of a dict
+            // when no preset exists yet — an unhandled AttributeError that
+            // kills the whole obico process before it reaches its persistent
+            // server connection. Separately, upstream's _setup_include_cfgs()
+            // shells out to a scripts/*.sh helper we don't vendor as an
+            // executable, reimplemented in pure Python instead. (See
+            // BundlePatches.patchObicoThermalPresets/patchObicoIncludeCfgs
+            // for the full story on each; applied together since
+            // patchBundledFile re-reads the pristine asset every call, so
+            // separate calls on the same file would clobber each other.)
+            patchBundledFile(root, assets, "obico", "moonraker_obico/moonraker_conn.py") {
+                BundlePatches.patchObicoIncludeCfgs(BundlePatches.patchObicoThermalPresets(it))
+            }
+
             // PLAY_TONE / SET_CAMERA_FLASHLIGHT / SET_CAMERA_FOCUS call the
             // app's own web server, whose port depends on the selected front
             // end (see WebPortFile) rather than being fixed. The two extras

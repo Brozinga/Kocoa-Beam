@@ -37,6 +37,100 @@ object BundlePatches {
     fun patchObicoBoardId(source: String): String = source.replace(OBICO_BOARD_ID_ORIGINAL, OBICO_BOARD_ID_PATCHED)
 
     fun patchObicoLinkStatus(source: String): String = source.replace(OBICO_LINK_STATUS_ORIGINAL, OBICO_LINK_STATUS_PATCHED)
+
+    // find_all_thermal_presets() assumes Moonraker's mainsail-namespace
+    // "presets" database entry is always a dict (upstream's Mainsail always
+    // writes it that way once at least one preset exists). Beam's vendored
+    // Moonraker returns it as an empty LIST when no preset has ever been
+    // saved, and list has no .values() — this is an unhandled AttributeError
+    // raised directly from app.py's start() (not inside the per-preset
+    // try/except a few lines down), which crashes the whole obico process
+    // before it ever opens its persistent connection to the Obico server. The
+    // printer still "links" (that HTTP round trip already happened earlier in
+    // start()), so Obico shows the printer as registered but it never goes
+    // Online, and Android just restarts the crashed service forever.
+    const val OBICO_THERMAL_PRESETS_ORIGINAL =
+        "        for preset in data.get('value', {}).get('presets', {}).values():"
+    const val OBICO_THERMAL_PRESETS_PATCHED =
+        "        presets_raw = data.get('value', {}).get('presets', {})\n" +
+        "        for preset in (presets_raw.values() if isinstance(presets_raw, dict) else presets_raw):"
+
+    fun patchObicoThermalPresets(source: String): String = source.replace(OBICO_THERMAL_PRESETS_ORIGINAL, OBICO_THERMAL_PRESETS_PATCHED)
+
+    // Upstream's _setup_include_cfgs() shells out to scripts/ensure_include_cfgs.sh
+    // (see https://github.com/TheSpaghettiDetective/moonraker-obico/blob/master/scripts/ensure_include_cfgs.sh),
+    // which we don't vendor as an executable: Android's asset unpack
+    // (BundleFiles.unpack) writes plain files with no +x bit, and even with
+    // it set, running an arbitrary on-device shell script from app-private
+    // storage is exactly the kind of thing worth avoiding rather than
+    // depending on. It's also always run in a background thread
+    // (_setup_include_cfgs is only ever called via run_in_thread), so this
+    // crash doesn't take the process down — it just silently means
+    // printer.cfg never gets `[include moonraker_obico_macros.cfg]`, so
+    // OBICO_LINK_STATUS/_OBICO_RELINK/the first-layer-scan macro are never
+    // available and every _setup_include_cfgs invocation logs a full
+    // FileNotFoundError traceback. Reimplemented the same two-step behavior
+    // (symlink moonraker_obico_macros.cfg into the Klipper config dir, then
+    // insert the include line into printer.cfg — before the first
+    // "-- SAVE_CONFIG --" marker if present, else appended) directly in
+    // Python instead of subprocess+shell.
+    const val OBICO_INCLUDE_CFGS_ORIGINAL =
+        "        ensure_include_cfgs_sh = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts', 'ensure_include_cfgs.sh')\n" +
+        "        FNULL = open(os.devnull, 'w')\n" +
+        "        cmd = f'{ensure_include_cfgs_sh} {printer_cfg}'\n" +
+        "        _logger.debug('Popen: {}'.format(cmd))\n" +
+        "        proc = subprocess.Popen(cmd.split(' '), stdout=FNULL, stderr=FNULL)\n" +
+        "        proc_exit_code = proc.wait()\n" +
+        "        if proc_exit_code != 0:\n" +
+        "            _logger.warning(f'{cmd} exited with {proc_exit_code}')"
+    const val OBICO_INCLUDE_CFGS_PATCHED =
+        "        macro_cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'include_cfgs', 'moonraker_obico_macros.cfg')\n" +
+        "        if not os.path.isfile(macro_cfg):\n" +
+        "            _logger.warning('Aborted ensuring include_cfgs because {} is missing'.format(macro_cfg))\n" +
+        "            return\n" +
+        "\n" +
+        "        klipper_conf_dir = os.path.dirname(printer_cfg)\n" +
+        "        linked_macro_cfg = os.path.join(klipper_conf_dir, 'moonraker_obico_macros.cfg')\n" +
+        "        if not os.path.isfile(linked_macro_cfg):\n" +
+        "            try:\n" +
+        "                if os.path.lexists(linked_macro_cfg):\n" +
+        "                    os.remove(linked_macro_cfg)\n" +
+        "                os.symlink(macro_cfg, linked_macro_cfg)\n" +
+        "            except OSError as e:\n" +
+        "                _logger.warning('Failed to symlink {}: {}'.format(linked_macro_cfg, e))\n" +
+        "                return\n" +
+        "\n" +
+        "        try:\n" +
+        "            with open(printer_cfg, 'r') as f:\n" +
+        "                content = f.read()\n" +
+        "        except OSError as e:\n" +
+        "            _logger.warning('Failed to read {}: {}'.format(printer_cfg, e))\n" +
+        "            return\n" +
+        "\n" +
+        "        if 'include moonraker_obico_macros.cfg' not in content:\n" +
+        "            include_line = '[include moonraker_obico_macros.cfg]'\n" +
+        "            marker = '-- SAVE_CONFIG --'\n" +
+        "            if marker in content:\n" +
+        "                lines = content.split('\\n')\n" +
+        "                out = []\n" +
+        "                inserted = False\n" +
+        "                for line in lines:\n" +
+        "                    if not inserted and marker in line:\n" +
+        "                        out.append(include_line)\n" +
+        "                        inserted = True\n" +
+        "                    out.append(line)\n" +
+        "                content = '\\n'.join(out)\n" +
+        "            else:\n" +
+        "                if not content.endswith('\\n'):\n" +
+        "                    content += '\\n'\n" +
+        "                content += include_line + '\\n'\n" +
+        "            try:\n" +
+        "                with open(printer_cfg, 'w') as f:\n" +
+        "                    f.write(content)\n" +
+        "            except OSError as e:\n" +
+        "                _logger.warning('Failed to write {}: {}'.format(printer_cfg, e))"
+
+    fun patchObicoIncludeCfgs(source: String): String = source.replace(OBICO_INCLUDE_CFGS_ORIGINAL, OBICO_INCLUDE_CFGS_PATCHED)
 }
 
 object BundleFiles {
