@@ -14,6 +14,8 @@ local.properties
 /app/src/main/assets/mainsail_version
 /app/src/main/assets/fluidd_version
 /app/src/main/assets/voyager_version
+/app/src/main/assets/klipper_commit
+/app/src/main/assets/moonraker_commit
 /app/src/main/assets/klipper/klippy/
 /app/src/main/assets/klipper/config/
 /app/src/main/assets/klipper/docs/

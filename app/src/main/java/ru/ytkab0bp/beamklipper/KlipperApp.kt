@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ru.ytkab0bp.beamklipper.db.BeamDB
 import ru.ytkab0bp.beamklipper.serial.UsbSerialManager
+import ru.ytkab0bp.beamklipper.update.FrontendUpdateChecker
 import ru.ytkab0bp.beamklipper.utils.CrashReport
 import ru.ytkab0bp.beamklipper.utils.FileLocks
 import ru.ytkab0bp.beamklipper.utils.Prefs
@@ -64,6 +65,12 @@ class KlipperApp : MultiDexApplication() {
         }
 
         if (isMainProcess) {
+            appScope.launch(Dispatchers.IO) {
+                // Self-heals a process kill mid-frontend-update from a
+                // previous run (see FrontendOverlay.cleanupOrphans) before
+                // WebService or Settings ever look at the override tree.
+                FrontendUpdateChecker.cleanupOrphansOnStartup()
+            }
             appScope.launch {
                 Log.i("beam_app", "Loading instances from DB (bundle install deferred until START press)")
                 KlipperInstance.resetSlotsForFreshStart()

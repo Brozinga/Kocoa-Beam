@@ -44,6 +44,7 @@ import ru.ytkab0bp.beamklipper.R
 import ru.ytkab0bp.beamklipper.events.WebFrontendChangedEvent
 import ru.ytkab0bp.beamklipper.serial.KlipperProbeTable
 import ru.ytkab0bp.beamklipper.serial.UsbSerialManager
+import ru.ytkab0bp.beamklipper.update.FrontendOverlay
 import ru.ytkab0bp.beamklipper.service.web.EncoderSize
 import ru.ytkab0bp.beamklipper.service.web.FfmpegCommand
 import ru.ytkab0bp.beamklipper.service.web.FilterOp
@@ -425,7 +426,18 @@ class WebService : Service() {
                 val mimeType = WebRouting.mimeTypeFor(resolvedPath)
                 val prefix = Prefs.webFrontend
                 val assetPath = WebRouting.assetPath(prefix, resolvedPath)
-                val input = ctx.assets.open(assetPath)
+                // An in-app-updated frontend (Settings -> Update) lives under
+                // filesDir/web_overrides/<frontend>/, swapped in atomically by
+                // FrontendOverlay.swapIn. Once that directory exists for the
+                // active frontend, every one of its files must come from
+                // there — never mixed per-file with the APK's own assets, or
+                // a fresh index.html could pair with a stale hashed .js chunk.
+                val overrideRoot = File(ctx.filesDir, FrontendOverlay.OVERRIDE_DIR_NAME)
+                val input = if (File(overrideRoot, prefix).isDirectory) {
+                    File(overrideRoot, assetPath).inputStream()
+                } else {
+                    ctx.assets.open(assetPath)
+                }
                 val response = Response.newChunkedResponse(Status.OK, mimeType, input)
                 response.addHeader("Date", dateFormat.format(Date()))
                 response.addHeader("Last-Modified", lastModifiedString)

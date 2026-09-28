@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -73,6 +74,8 @@ import ru.ytkab0bp.beamklipper.ui.components.BrutalTextButton
 import ru.ytkab0bp.beamklipper.ui.components.BrutalTile
 import ru.ytkab0bp.beamklipper.ui.components.brutalScrollbar
 import ru.ytkab0bp.beamklipper.ui.state.SettingsViewModel
+import ru.ytkab0bp.beamklipper.update.FrontendUpdateStep
+import ru.ytkab0bp.beamklipper.update.VersionCompare
 import ru.ytkab0bp.beamklipper.ui.theme.Accent
 import ru.ytkab0bp.beamklipper.ui.theme.Ink
 import ru.ytkab0bp.beamklipper.ui.theme.InkMuted
@@ -101,6 +104,11 @@ fun ConfigScreen(
     val obicoServerUrl by viewModel.obicoServerUrl.collectAsStateWithLifecycle()
     val obicoLinked by viewModel.obicoLinked.collectAsStateWithLifecycle()
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
+    val klipperVersion by viewModel.klipperVersion.collectAsStateWithLifecycle()
+    val moonrakerVersion by viewModel.moonrakerVersion.collectAsStateWithLifecycle()
+    val fluiddVersion by viewModel.fluiddVersion.collectAsStateWithLifecycle()
+    val mainsailVersion by viewModel.mainsailVersion.collectAsStateWithLifecycle()
+    val voyagerVersion by viewModel.voyagerVersion.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var showListUsb by remember { mutableStateOf(false) }
@@ -111,6 +119,16 @@ fun ConfigScreen(
     var showOctoEverywhereNotReady by remember { mutableStateOf(false) }
     var showObicoServer by remember { mutableStateOf(false) }
     var showObicoLink by remember { mutableStateOf(false) }
+    // Which frontend's confirm/progress dialog is up, plus the release tag
+    // it would update to (carried from confirm into the progress dialog).
+    var confirmUpdateFrontend by remember { mutableStateOf<String?>(null) }
+    var progressUpdate by remember { mutableStateOf<Pair<String, String>?>(null) }
+
+    // Settings-open is the only trigger for a version check — no background
+    // timer (see FrontendUpdateChecker).
+    LaunchedEffect(Unit) {
+        viewModel.refreshVersionChecks()
+    }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -182,6 +200,39 @@ fun ConfigScreen(
                 }
             }
         }
+
+        Spacer(Modifier.height(28.dp))
+        BrutalSectionHeader(stringResource(R.string.SoftwareVersions))
+        BrutalInfoRow(
+            title = stringResource(R.string.Klipper),
+            value = versionStatusText(klipperVersion.bundled, klipperVersion.latest)
+        )
+        Spacer(Modifier.height(8.dp))
+        BrutalInfoRow(
+            title = stringResource(R.string.Moonraker),
+            value = versionStatusText(moonrakerVersion.bundled, moonrakerVersion.latest)
+        )
+        Spacer(Modifier.height(8.dp))
+        BrutalUpdatableRow(
+            title = stringResource(R.string.Fluidd),
+            value = frontendVersionText(fluiddVersion.active, fluiddVersion.latest),
+            showUpdateButton = VersionCompare.tagDiffers(fluiddVersion.active, fluiddVersion.latest),
+            onUpdateClick = { confirmUpdateFrontend = Prefs.FRONTEND_FLUIDD }
+        )
+        Spacer(Modifier.height(8.dp))
+        BrutalUpdatableRow(
+            title = stringResource(R.string.Mainsail),
+            value = frontendVersionText(mainsailVersion.active, mainsailVersion.latest),
+            showUpdateButton = VersionCompare.tagDiffers(mainsailVersion.active, mainsailVersion.latest),
+            onUpdateClick = { confirmUpdateFrontend = Prefs.FRONTEND_MAINSAIL }
+        )
+        Spacer(Modifier.height(8.dp))
+        BrutalUpdatableRow(
+            title = stringResource(R.string.Voyager),
+            value = frontendVersionText(voyagerVersion.active, voyagerVersion.latest),
+            showUpdateButton = VersionCompare.tagDiffers(voyagerVersion.active, voyagerVersion.latest),
+            onUpdateClick = { confirmUpdateFrontend = Prefs.FRONTEND_VOYAGER }
+        )
 
         Spacer(Modifier.height(28.dp))
         BrutalSectionHeader(stringResource(R.string.USB))
@@ -569,6 +620,37 @@ fun ConfigScreen(
             onDismiss = { showObicoLink = false }
         )
     }
+    confirmUpdateFrontend?.let { frontend ->
+        val status = when (frontend) {
+            Prefs.FRONTEND_FLUIDD -> fluiddVersion
+            Prefs.FRONTEND_MAINSAIL -> mainsailVersion
+            else -> voyagerVersion
+        }
+        val latest = status.latest
+        if (latest != null) {
+            FrontendUpdateConfirmDialog(
+                viewModel = viewModel,
+                title = viewModel.frontendTitle(frontend),
+                fromVersion = status.active,
+                toVersion = latest,
+                onConfirm = {
+                    confirmUpdateFrontend = null
+                    progressUpdate = frontend to latest
+                },
+                onDismiss = { confirmUpdateFrontend = null }
+            )
+        } else {
+            confirmUpdateFrontend = null
+        }
+    }
+    progressUpdate?.let { (frontend, targetTag) ->
+        FrontendUpdateProgressDialog(
+            viewModel = viewModel,
+            frontend = frontend,
+            targetTag = targetTag,
+            onDone = { progressUpdate = null }
+        )
+    }
 }
 
 @Composable
@@ -644,6 +726,179 @@ private fun BrutalValueRow(
             )
         }
     }
+}
+
+// Klipper/Moonraker: display-only, never an update affordance (see
+// docs/klipper-vendor-update-procedure — native chelper + fragile source
+// patches make an in-app update unsafe). No chevron, no onClick, unlike
+// BrutalValueRow, so it doesn't look tappable.
+@Composable
+private fun BrutalInfoRow(title: String, value: String) {
+    BrutalTile(modifier = Modifier.fillMaxWidth(), background = Paper) {
+        Column {
+            Text(text = title, style = MaterialTheme.typography.bodyLarge, color = Ink)
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodySmall,
+                color = InkMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+// Fluidd/Mainsail/Voyager-UI: the row itself isn't clickable (unlike
+// BrutalValueRow) since its one action is the nested Update button — two
+// clickables on the same tile would conflict.
+@Composable
+private fun BrutalUpdatableRow(
+    title: String,
+    value: String,
+    showUpdateButton: Boolean,
+    onUpdateClick: () -> Unit
+) {
+    BrutalTile(modifier = Modifier.fillMaxWidth(), background = Paper) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = title, style = MaterialTheme.typography.bodyLarge, color = Ink)
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            if (showUpdateButton) {
+                Spacer(Modifier.width(12.dp))
+                BrutalButton(text = stringResource(R.string.FrontendUpdateAction), onClick = onUpdateClick)
+            }
+        }
+    }
+}
+
+@Composable
+private fun versionStatusText(bundled: String?, latest: String?): String {
+    if (bundled == null) return stringResource(R.string.FrontendVersionUnknown)
+    return if (VersionCompare.commitDiffers(bundled, latest)) {
+        stringResource(R.string.FrontendVersionAvailable, bundled, latest?.take(8) ?: "?")
+    } else {
+        stringResource(R.string.FrontendVersionUpToDate, bundled)
+    }
+}
+
+@Composable
+private fun frontendVersionText(active: String, latest: String?): String {
+    return if (VersionCompare.tagDiffers(active, latest)) {
+        stringResource(R.string.FrontendVersionAvailable, active, latest!!)
+    } else {
+        stringResource(R.string.FrontendVersionUpToDate, active)
+    }
+}
+
+@Composable
+private fun FrontendUpdateConfirmDialog(
+    viewModel: SettingsViewModel,
+    title: String,
+    fromVersion: String,
+    toVersion: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    // isPrintActive() does a network round trip (best-effort, short timeout)
+    // — computed off the main thread once per dialog open, never blocking
+    // composition.
+    var printActive by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        printActive = withContext(Dispatchers.IO) { viewModel.isPrintActive() }
+    }
+    BrutalAlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.FrontendUpdateConfirmTitle, title), style = MaterialTheme.typography.titleLarge, color = Ink) },
+        text = {
+            Column {
+                Text(stringResource(R.string.FrontendUpdateConfirmMessage, fromVersion, toVersion), color = Ink)
+                if (printActive) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        stringResource(R.string.FrontendUpdatePrintWarning),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Accent
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            BrutalButton(text = stringResource(R.string.FrontendUpdateAction), onClick = onConfirm)
+        },
+        dismissButton = {
+            BrutalButton(text = stringResource(android.R.string.cancel), onClick = onDismiss)
+        }
+    )
+}
+
+@Composable
+private fun FrontendUpdateProgressDialog(
+    viewModel: SettingsViewModel,
+    frontend: String,
+    targetTag: String,
+    onDone: () -> Unit
+) {
+    var step by remember { mutableStateOf<FrontendUpdateStep>(FrontendUpdateStep.Downloading(0)) }
+
+    LaunchedEffect(frontend, targetTag) {
+        viewModel.updateFrontend(frontend, targetTag) { step = it }
+        if (step is FrontendUpdateStep.Done) {
+            delay(1200)
+            onDone()
+        }
+    }
+
+    val isTerminal = step is FrontendUpdateStep.Done || step is FrontendUpdateStep.Error
+    BrutalAlertDialog(
+        onDismissRequest = { if (isTerminal) onDone() },
+        title = { Text(stringResource(R.string.FrontendUpdateAction), style = MaterialTheme.typography.titleLarge, color = Ink) },
+        text = {
+            Column {
+                when (val s = step) {
+                    is FrontendUpdateStep.Downloading -> {
+                        Text(stringResource(R.string.FrontendUpdateDownloading, s.percent), color = Ink)
+                        Spacer(Modifier.height(12.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(12.dp)
+                                .background(Paper, RectangleShape)
+                                .border(2.dp, Ink, RectangleShape)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(fraction = (s.percent / 100f).coerceIn(0f, 1f))
+                                    .background(Accent, RectangleShape)
+                            )
+                        }
+                    }
+                    FrontendUpdateStep.Extracting -> Text(stringResource(R.string.FrontendUpdateExtracting), color = Ink)
+                    FrontendUpdateStep.Replacing -> Text(stringResource(R.string.FrontendUpdateReplacing), color = Ink)
+                    FrontendUpdateStep.Done -> Text(stringResource(R.string.FrontendUpdateDone), color = Ink)
+                    is FrontendUpdateStep.Error -> Text(
+                        s.message?.let { stringResource(R.string.FrontendUpdateError, it) } ?: stringResource(R.string.FrontendUpdateErrorGeneric),
+                        color = Accent
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            if (isTerminal) {
+                BrutalButton(text = stringResource(android.R.string.ok), onClick = onDone)
+            }
+        }
+    )
 }
 
 @Composable

@@ -74,6 +74,46 @@ class BundlePatchesTest {
     }
 
     @Test
+    fun `the obico thermal presets loop is still what the patch expects`() {
+        assertTrue(source("obico/moonraker_obico/moonraker_conn.py").contains(BundlePatches.OBICO_THERMAL_PRESETS_ORIGINAL))
+    }
+
+    @Test
+    fun `the thermal presets patch tolerates a list as well as a dict`() {
+        val patched = BundlePatches.patchObicoThermalPresets(source("obico/moonraker_obico/moonraker_conn.py"))
+        assertFalse(patched.contains(BundlePatches.OBICO_THERMAL_PRESETS_ORIGINAL))
+        assertTrue(patched.contains("isinstance(presets_raw, dict)"))
+    }
+
+    @Test
+    fun `the obico include_cfgs setup is still what the patch expects`() {
+        assertTrue(source("obico/moonraker_obico/moonraker_conn.py").contains(BundlePatches.OBICO_INCLUDE_CFGS_ORIGINAL))
+    }
+
+    @Test
+    fun `the include_cfgs patch drops the subprocess call and writes the include line itself`() {
+        val patched = BundlePatches.patchObicoIncludeCfgs(source("obico/moonraker_obico/moonraker_conn.py"))
+        assertFalse(patched.contains(BundlePatches.OBICO_INCLUDE_CFGS_ORIGINAL))
+        assertFalse(patched.contains("ensure_include_cfgs.sh"))
+        assertTrue(patched.contains("os.symlink(macro_cfg, linked_macro_cfg)"))
+        assertTrue(patched.contains("[include moonraker_obico_macros.cfg]"))
+    }
+
+    @Test
+    fun `both moonraker_conn patches can be applied together`() {
+        val patched = BundlePatches.patchObicoIncludeCfgs(BundlePatches.patchObicoThermalPresets(source("obico/moonraker_obico/moonraker_conn.py")))
+        assertTrue(patched.contains("isinstance(presets_raw, dict)"))
+        assertTrue(patched.contains("os.symlink(macro_cfg, linked_macro_cfg)"))
+    }
+
+    @Test
+    fun `the vendored obico macros file the include_cfgs patch links to actually exists`() {
+        val macros = File("src/main/obico/include_cfgs/moonraker_obico_macros.cfg")
+        assertTrue(macros.exists())
+        assertTrue(macros.readText().contains("[gcode_macro OBICO_LINK_STATUS]"))
+    }
+
+    @Test
     fun `beam_beeper and beam_camera still carry the web port file placeholder`() {
         // klipper_beam_ext is the single canonical source; the build copies it
         // verbatim into klippy/extras/ for both klipper and kalico so Klipper's
@@ -93,6 +133,10 @@ class BundlePatchesTest {
         assertEquals(once, BundlePatches.patchObicoLinkStatus(once))
         val board = BundlePatches.patchObicoBoardId(source("obico/moonraker_obico/utils.py"))
         assertEquals(board, BundlePatches.patchObicoBoardId(board))
+        val presets = BundlePatches.patchObicoThermalPresets(source("obico/moonraker_obico/moonraker_conn.py"))
+        assertEquals(presets, BundlePatches.patchObicoThermalPresets(presets))
+        val includeCfgs = BundlePatches.patchObicoIncludeCfgs(source("obico/moonraker_obico/moonraker_conn.py"))
+        assertEquals(includeCfgs, BundlePatches.patchObicoIncludeCfgs(includeCfgs))
     }
 
     @Test
@@ -104,7 +148,8 @@ class BundlePatchesTest {
         try {
             listOf(
                 "utils.py" to BundlePatches.patchObicoBoardId(source("obico/moonraker_obico/utils.py")),
-                "printer_discovery.py" to BundlePatches.patchObicoLinkStatus(source("obico/moonraker_obico/printer_discovery.py"))
+                "printer_discovery.py" to BundlePatches.patchObicoLinkStatus(source("obico/moonraker_obico/printer_discovery.py")),
+                "moonraker_conn.py" to BundlePatches.patchObicoIncludeCfgs(BundlePatches.patchObicoThermalPresets(source("obico/moonraker_obico/moonraker_conn.py")))
             ).forEach { (name, src) ->
                 val f = File(dir, name).apply { writeText(src) }
                 val p = ProcessBuilder(python, "-m", "py_compile", f.path).redirectErrorStream(true).start()

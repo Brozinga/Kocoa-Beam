@@ -100,6 +100,7 @@
     <string name="Autostart">Автозапуск</string>
     <string name="Kalico" translatable="false">Kalico</string>
     <string name="Klipper" translatable="false">Klipper</string>
+    <string name="Moonraker" translatable="false">Moonraker</string>
     <string name="General">Основное</string>
     <string name="WebFrontend">Веб-интерфейс</string>
     <string name="FirmwareEngine">Движок прошивки</string>
@@ -162,4 +163,19 @@
     <string name="LogsSaveFailed">Не удалось сохранить</string>
     <string name="LogsShare">Поделиться</string>
     <string name="LogsShareTitle">Поделиться журналами</string>
+
+    <string name="SoftwareVersions">Версии ПО</string>
+    <string name="FrontendUpdateAction">Обновить</string>
+    <string name="FrontendVersionUnknown">Неизвестно</string>
+    <string name="FrontendVersionUpToDate">Актуально (%1$s)</string>
+    <string name="FrontendVersionAvailable">%1$s → доступна %2$s</string>
+    <string name="FrontendUpdateConfirmTitle">Обновить %1$s?</string>
+    <string name="FrontendUpdateConfirmMessage">Обновить с %1$s до %2$s?</string>
+    <string name="FrontendUpdatePrintWarning">Сейчас идёт печать. Обновление безопасно, но уже открытая страница может ненадолго перезагрузиться.</string>
+    <string name="FrontendUpdateDownloading">Загрузка… %1$d%%</string>
+    <string name="FrontendUpdateExtracting">Распаковка…</string>
+    <string name="FrontendUpdateReplacing">Замена файлов…</string>
+    <string name="FrontendUpdateDone">Обновление завершено</string>
+    <string name="FrontendUpdateError">Ошибка обновления: %1$s</string>
+    <string name="FrontendUpdateErrorGeneric">Ошибка обновления</string>
 </resources>

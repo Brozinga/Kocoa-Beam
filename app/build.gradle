@@ -47,8 +47,8 @@ android {
         multiDexEnabled true
         multiDexKeepFile file('multidex-keep.txt')
         multiDexKeepProguard file('multidex-keep.pro')
-        versionCode 13
-        versionName "0.0.7r1"
+        versionCode 14
+        versionName "0.0.8r1"
 
         buildConfigField "int", "SLOTS_COUNT", "4"
 
@@ -634,6 +634,18 @@ tasks.register('bundleKlipper') {
             if (!versionFile.exists()) versionFile.createNewFile()
             versionFile.text = version
         }
+
+        // Flat, runtime-readable markers of the exact upstream commit each
+        // rolling-repo vendor tree (no real releases) was last synced to —
+        // read by FrontendUpdateChecker for the Settings "current vs.
+        // latest" display. Copied unconditionally (not gated by the version
+        // check above) since getGitCommitHash() on these dirs resolves to
+        // this repo's own HEAD, not a real per-tree staleness signal, and a
+        // single-line text copy is too cheap to bother caching.
+        var klipperCommitFile = file('src/main/klipper/klipper_commit')
+        new File(assets, 'klipper_commit').text = klipperCommitFile.exists() ? klipperCommitFile.text.trim() : 'unknown'
+        var moonrakerCommitFile = file('src/main/moonraker/moonraker_commit')
+        new File(assets, 'moonraker_commit').text = moonrakerCommitFile.exists() ? moonrakerCommitFile.text.trim() : 'unknown'
     }
 }
 tasks.getByName('preBuild').dependsOn('bundleKlipper')

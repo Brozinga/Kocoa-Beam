@@ -23,6 +23,9 @@ import ru.ytkab0bp.beamklipper.events.InstanceUpdatedEvent
 import ru.ytkab0bp.beamklipper.events.ObicoConfigChangedEvent
 import ru.ytkab0bp.beamklipper.events.WebFrontendChangedEvent
 import ru.ytkab0bp.beamklipper.events.WebStateChangedEvent
+import ru.ytkab0bp.beamklipper.update.FrontendUpdateChecker
+import ru.ytkab0bp.beamklipper.update.FrontendVersionStatus
+import ru.ytkab0bp.beamklipper.update.VersionStatus
 import ru.ytkab0bp.beamklipper.utils.Prefs
 import ru.ytkab0bp.eventbus.EventHandler
 
@@ -90,6 +93,16 @@ object AppState {
 
     private val _appLanguage = MutableStateFlow(Prefs.appLanguage)
     val appLanguage: StateFlow<String> = _appLanguage.distinct()
+
+    // FrontendUpdateChecker is already the single source of truth for these
+    // (no Prefs/EventBus round-trip involved, unlike everything else above),
+    // so its flows are re-exported directly rather than duplicated through
+    // another MutableStateFlow layer.
+    val klipperVersion: StateFlow<VersionStatus> = FrontendUpdateChecker.klipperStatus
+    val moonrakerVersion: StateFlow<VersionStatus> = FrontendUpdateChecker.moonrakerStatus
+    val fluiddVersion: StateFlow<FrontendVersionStatus> = FrontendUpdateChecker.fluiddStatus
+    val mainsailVersion: StateFlow<FrontendVersionStatus> = FrontendUpdateChecker.mainsailStatus
+    val voyagerVersion: StateFlow<FrontendVersionStatus> = FrontendUpdateChecker.voyagerStatus
 
     private var started = false
 
