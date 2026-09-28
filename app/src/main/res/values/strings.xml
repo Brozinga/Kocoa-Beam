@@ -110,6 +110,7 @@
     <string name="Voyager" translatable="false">Voyager UI</string>
     <string name="Kalico" translatable="false">Kalico</string>
     <string name="Klipper" translatable="false">Klipper</string>
+    <string name="Moonraker" translatable="false">Moonraker</string>
     <string name="IPInfo" translatable="false">http://%s:%d/</string>
     <string name="General">General</string>
     <string name="WebFrontend">Web frontend</string>
@@ -173,4 +174,19 @@
     <string name="LogsSaveFailed">Failed to save</string>
     <string name="LogsShare">Share</string>
     <string name="LogsShareTitle">Share logs</string>
+
+    <string name="SoftwareVersions">Software versions</string>
+    <string name="FrontendUpdateAction">Update</string>
+    <string name="FrontendVersionUnknown">Unknown</string>
+    <string name="FrontendVersionUpToDate">Up to date (%1$s)</string>
+    <string name="FrontendVersionAvailable">%1$s → %2$s available</string>
+    <string name="FrontendUpdateConfirmTitle">Update %1$s?</string>
+    <string name="FrontendUpdateConfirmMessage">Update from %1$s to %2$s?</string>
+    <string name="FrontendUpdatePrintWarning">A print is currently active. This is safe, but an already-open page may briefly reload.</string>
+    <string name="FrontendUpdateDownloading">Downloading… %1$d%%</string>
+    <string name="FrontendUpdateExtracting">Extracting…</string>
+    <string name="FrontendUpdateReplacing">Replacing files…</string>
+    <string name="FrontendUpdateDone">Update complete</string>
+    <string name="FrontendUpdateError">Update failed: %1$s</string>
+    <string name="FrontendUpdateErrorGeneric">Update failed</string>
 </resources>

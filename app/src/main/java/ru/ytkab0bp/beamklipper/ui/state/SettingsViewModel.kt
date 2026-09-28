@@ -19,6 +19,11 @@ import ru.ytkab0bp.beamklipper.utils.Languages
 import ru.ytkab0bp.beamklipper.utils.UsbNaming
 import ru.ytkab0bp.beamklipper.utils.CameraZoom
 import ru.ytkab0bp.beamklipper.utils.Frontends
+import ru.ytkab0bp.beamklipper.update.FrontendUpdateChecker
+import ru.ytkab0bp.beamklipper.update.FrontendUpdateResult
+import ru.ytkab0bp.beamklipper.update.FrontendUpdateStep
+import ru.ytkab0bp.beamklipper.update.FrontendVersionStatus
+import ru.ytkab0bp.beamklipper.update.VersionStatus
 import ru.ytkab0bp.beamklipper.utils.ObicoLink
 import ru.ytkab0bp.beamklipper.utils.OctoEverywhereLink
 import ru.ytkab0bp.beamklipper.utils.PrefValues
@@ -59,6 +64,20 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     val obicoServerUrl: StateFlow<String> = AppState.obicoServerUrl
     val obicoLinked: StateFlow<Boolean> = AppState.obicoLinked
     val appLanguage: StateFlow<String> = AppState.appLanguage
+    val klipperVersion: StateFlow<VersionStatus> = AppState.klipperVersion
+    val moonrakerVersion: StateFlow<VersionStatus> = AppState.moonrakerVersion
+    val fluiddVersion: StateFlow<FrontendVersionStatus> = AppState.fluiddVersion
+    val mainsailVersion: StateFlow<FrontendVersionStatus> = AppState.mainsailVersion
+    val voyagerVersion: StateFlow<FrontendVersionStatus> = AppState.voyagerVersion
+
+    // Settings-open is the only trigger for a version check — no background
+    // timer (see ConfigScreen's LaunchedEffect(Unit)).
+    fun refreshVersionChecks() = FrontendUpdateChecker.checkAllNow()
+
+    fun isPrintActive(): Boolean = FrontendUpdateChecker.isPrintActive()
+
+    suspend fun updateFrontend(frontend: String, targetTag: String, onProgress: (FrontendUpdateStep) -> Unit): FrontendUpdateResult =
+        FrontendUpdateChecker.updateFrontend(frontend, targetTag, onProgress)
 
     fun cycleEngine() {
         setEngine(Engines.next(Prefs.engine))

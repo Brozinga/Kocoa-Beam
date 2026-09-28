@@ -160,4 +160,19 @@
     <string name="LogsSaveFailed">保存失败</string>
     <string name="LogsShare">分享</string>
     <string name="LogsShareTitle">分享日志</string>
+
+    <string name="SoftwareVersions">软件版本</string>
+    <string name="FrontendUpdateAction">更新</string>
+    <string name="FrontendVersionUnknown">未知</string>
+    <string name="FrontendVersionUpToDate">已是最新 (%1$s)</string>
+    <string name="FrontendVersionAvailable">%1$s → 可更新到 %2$s</string>
+    <string name="FrontendUpdateConfirmTitle">更新 %1$s？</string>
+    <string name="FrontendUpdateConfirmMessage">将 %1$s 更新到 %2$s？</string>
+    <string name="FrontendUpdatePrintWarning">当前有打印任务正在进行。更新是安全的，但已打开的页面可能会短暂重新加载。</string>
+    <string name="FrontendUpdateDownloading">下载中… %1$d%%</string>
+    <string name="FrontendUpdateExtracting">正在解压…</string>
+    <string name="FrontendUpdateReplacing">正在替换文件…</string>
+    <string name="FrontendUpdateDone">更新完成</string>
+    <string name="FrontendUpdateError">更新失败：%1$s</string>
+    <string name="FrontendUpdateErrorGeneric">更新失败</string>
 </resources>

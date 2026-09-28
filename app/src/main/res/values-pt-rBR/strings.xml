@@ -100,6 +100,7 @@
     <string name="Autostart">Iniciar automaticamente</string>
     <string name="Kalico" translatable="false">Kalico</string>
     <string name="Klipper" translatable="false">Klipper</string>
+    <string name="Moonraker" translatable="false">Moonraker</string>
     <string name="General">Geral</string>
     <string name="WebFrontend">Front end web</string>
     <string name="FirmwareEngine">Motor de firmware</string>
@@ -162,4 +163,19 @@
     <string name="LogsSaveFailed">Falha ao salvar</string>
     <string name="LogsShare">Compartilhar</string>
     <string name="LogsShareTitle">Compartilhar logs</string>
+
+    <string name="SoftwareVersions">Versões dos softwares</string>
+    <string name="FrontendUpdateAction">Atualizar</string>
+    <string name="FrontendVersionUnknown">Desconhecida</string>
+    <string name="FrontendVersionUpToDate">Atualizado (%1$s)</string>
+    <string name="FrontendVersionAvailable">%1$s → %2$s disponível</string>
+    <string name="FrontendUpdateConfirmTitle">Atualizar %1$s?</string>
+    <string name="FrontendUpdateConfirmMessage">Atualizar de %1$s para %2$s?</string>
+    <string name="FrontendUpdatePrintWarning">Há uma impressão em andamento. A atualização é segura, mas uma página já aberta pode recarregar rapidamente.</string>
+    <string name="FrontendUpdateDownloading">Baixando… %1$d%%</string>
+    <string name="FrontendUpdateExtracting">Descompactando…</string>
+    <string name="FrontendUpdateReplacing">Substituindo arquivos…</string>
+    <string name="FrontendUpdateDone">Atualização concluída</string>
+    <string name="FrontendUpdateError">Falha na atualização: %1$s</string>
+    <string name="FrontendUpdateErrorGeneric">Falha na atualização</string>
 </resources>
