@@ -19,9 +19,8 @@ object FrontendRepos {
         return "https://github.com/${repo.owner}/${repo.repo}/releases/download/$tag/${repo.zipAssetName}"
     }
 
-    // Klipper and Moonraker are rolling repos with no real releases (see
-    // docs/klipper-vendor-update-procedure) — "latest" means default branch
-    // HEAD, checked via the commits API instead of releases/latest.
+    // Klipper and Moonraker have no GitHub releases, only version tags —
+    // "latest" is the highest vX.Y.Z tag, checked via the tags API.
     const val KLIPPER_OWNER = "Klipper3d"
     const val KLIPPER_REPO = "klipper"
     const val MOONRAKER_OWNER = "Arksine"

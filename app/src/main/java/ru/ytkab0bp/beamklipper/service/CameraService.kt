@@ -503,6 +503,12 @@ class CameraService : Service() {
     private inner class CaptureStateCallback : CameraDevice.StateCallback() {
         private val bufferStack = java.util.Stack<ByteArray>()
         private var bufferSize = 0
+        // At most one frame is encoded at a time. Encoding a full-size YUV frame
+        // is slower than the sensor delivers them, so queueing every image on
+        // IO_POOL left all of the reader's buffers held by pending tasks and the
+        // next acquireLatestImage() threw "maxImages (4) has already been
+        // acquired", killing the :camera process. Extra frames are just dropped.
+        private val encoding = java.util.concurrent.atomic.AtomicBoolean(false)
 
         override fun onOpened(camera: CameraDevice) {
             // openCamera() is async: a rapid hot-plug (webcam attached then
@@ -535,12 +541,19 @@ class CameraService : Service() {
                 val reader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 4)
                 imageReader = reader
                 reader.setOnImageAvailableListener({ r ->
-                    val img = r.acquireLatestImage() ?: return@setOnImageAvailableListener
-                    if (handlerThreads.isEmpty()) {
+                    val img = try {
+                        r.acquireLatestImage()
+                    } catch (e: IllegalStateException) {
+                        Log.w(TAG, "Image buffers exhausted, dropping frame", e)
+                        null
+                    } ?: return@setOnImageAvailableListener
+                    if (handlerThreads.isEmpty() || !encoding.compareAndSet(false, true)) {
                         img.close()
                         return@setOnImageAvailableListener
                     }
-                    IO_POOL.submit {
+                    try {
+                        IO_POOL.submit {
+                          try {
                         val yBuffer = img.planes[0].buffer
                         val uBuffer = img.planes[1].buffer
                         val vBuffer = img.planes[2].buffer
@@ -581,8 +594,16 @@ class CameraService : Service() {
                             if (deg == 0) conv.toByteArray() else rotateJpeg(conv.toByteArray(), deg)
                         }
                         deliverFrame(converted, converted.size) {}
-
+                          } catch (e: Exception) {
+                              Log.e(TAG, "Frame encode failed", e)
+                          } finally {
+                              img.close()
+                              encoding.set(false)
+                          }
+                        }
+                    } catch (e: java.util.concurrent.RejectedExecutionException) {
                         img.close()
+                        encoding.set(false)
                     }
                 }, cameraHandler)
                 targets.add(reader.surface)

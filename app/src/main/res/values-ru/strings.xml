@@ -163,6 +163,11 @@
     <string name="LogsSaveFailed">Не удалось сохранить</string>
     <string name="LogsShare">Поделиться</string>
     <string name="LogsShareTitle">Поделиться журналами</string>
+    <string name="LogsClear">Очистить</string>
+    <string name="LogsClearTitle">Очистить журналы?</string>
+    <string name="LogsClearMessage">Текущие журналы будут удалены, чтобы новые ошибки были заметны. Это нельзя отменить.</string>
+    <string name="LogsCleared">Журналы очищены</string>
+    <string name="LogsClearFailed">Не удалось очистить некоторые журналы</string>
 
     <string name="SoftwareVersions">Версии ПО</string>
     <string name="FrontendUpdateAction">Обновить</string>

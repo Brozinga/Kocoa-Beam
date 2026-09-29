@@ -160,6 +160,11 @@
     <string name="LogsSaveFailed">保存失败</string>
     <string name="LogsShare">分享</string>
     <string name="LogsShareTitle">分享日志</string>
+    <string name="LogsClear">清除</string>
+    <string name="LogsClearTitle">清除日志？</string>
+    <string name="LogsClearMessage">这将删除当前日志，方便识别新出现的错误。此操作无法撤销。</string>
+    <string name="LogsCleared">日志已清除</string>
+    <string name="LogsClearFailed">部分日志无法清除</string>
 
     <string name="SoftwareVersions">软件版本</string>
     <string name="FrontendUpdateAction">更新</string>

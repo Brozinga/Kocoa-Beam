@@ -21,6 +21,12 @@ class GitHubReleasesTest {
     }
 
     @Test
+    fun `parseLatestVersionTag picks the highest tag from a tags response`() {
+        val json = """[{"name":"v0.12.0"},{"name":"v0.13.0"},{"name":"v0.9.1"}]"""
+        assertEquals("v0.13.0", GitHubReleases.parseLatestVersionTag(json))
+    }
+
+    @Test
     fun `parseReleaseTag is null when the field is missing`() {
         assertNull(GitHubReleases.parseReleaseTag("""{"message":"Not Found"}"""))
     }

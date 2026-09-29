@@ -83,6 +83,10 @@ fun LogsScreen(modifier: Modifier = Modifier) {
     val saveFailedText = stringResource(R.string.LogsSaveFailed)
     val shareText = stringResource(R.string.LogsShare)
     val shareTitleText = stringResource(R.string.LogsShareTitle)
+    val clearText = stringResource(R.string.LogsClear)
+    val clearedText = stringResource(R.string.LogsCleared)
+    val clearFailedText = stringResource(R.string.LogsClearFailed)
+    var confirmClear by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedId, reloadTick) {
         loading = true
@@ -249,6 +253,38 @@ fun LogsScreen(modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f)
             )
         }
+        Spacer(Modifier.height(8.dp))
+        BrutalButton(
+            text = clearText,
+            onClick = { confirmClear = true },
+            modifier = Modifier.fillMaxWidth(),
+            background = Paper,
+            contentColor = Ink
+        )
+    }
+
+    if (confirmClear) {
+        BrutalAlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text(stringResource(R.string.LogsClearTitle), style = MaterialTheme.typography.titleLarge, color = Ink) },
+            text = { Text(stringResource(R.string.LogsClearMessage), color = Ink) },
+            confirmButton = {
+                BrutalButton(
+                    text = clearText,
+                    onClick = {
+                        confirmClear = false
+                        scope.launch {
+                            val ok = withContext(Dispatchers.IO) { BeamLogs.clear(context) }
+                            Toast.makeText(context, if (ok) clearedText else clearFailedText, Toast.LENGTH_SHORT).show()
+                            reloadTick++
+                        }
+                    }
+                )
+            },
+            dismissButton = {
+                BrutalButton(text = stringResource(android.R.string.cancel), onClick = { confirmClear = false })
+            }
+        )
     }
 }
 
