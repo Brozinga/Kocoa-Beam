@@ -1,5 +1,13 @@
 # Kocoa Beam - Klipper for Android
 
+<h1 align="center">⚠️ PROJECT DISCONTINUED ⚠️</h1>
+
+<h2 align="center">This project is no longer maintained. No further updates will be published here.</h2>
+
+<h2 align="center">All new development continues at<br><a href="https://github.com/Brozinga/KlipPocket">👉 KlipPocket</a><br>https://github.com/Brozinga/KlipPocket</h2>
+
+---
+
 <p align="center">
   <a href="https://github.com/Brozinga/Kocoa-Beam/releases/latest"><img src="https://img.shields.io/github/v/release/Brozinga/Kocoa-Beam?label=latest%20release&color=E0A030" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/platform-Android%205.0%2B-3DDC84?logo=android&logoColor=white" alt="Android 5.0+">
