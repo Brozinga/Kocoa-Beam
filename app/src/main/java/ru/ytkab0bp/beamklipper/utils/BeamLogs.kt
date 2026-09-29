@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Process
 import android.provider.MediaStore
 import android.util.Log
+import ru.ytkab0bp.beamklipper.KlipperApp
 import ru.ytkab0bp.beamklipper.KlipperInstance
 import ru.ytkab0bp.beamklipper.LogSources
 import java.io.File
@@ -111,7 +112,53 @@ object BeamLogs {
         }
     }
 
+    /**
+     * Wipes what the Logs screen shows, so a later error is known to be new.
+     * Instance log files are truncated in place (Klipper/Moonraker keep them
+     * open), the last-crash report is deleted, and since an app can't empty
+     * the system logcat buffer, the time of the clear is remembered and older
+     * logcat lines are hidden. Returns false if any file couldn't be cleared.
+     */
+    fun clear(ctx: Context): Boolean {
+        var ok = true
+        try {
+            File(ctx.filesDir, CLEARED_AT_FILE)
+                .writeText(SimpleDateFormat(LOGCAT_TIME_FORMAT, Locale.US).format(Date()))
+        } catch (t: Throwable) {
+            Log.w("BeamLogs", "couldn't record clear time", t)
+            ok = false
+        }
+        runCatching { ProcessBuilder("logcat", "-c").start().waitFor() }
+
+        val crash = crashFile(ctx)
+        if (crash.exists() && !crash.delete()) ok = false
+
+        for (inst in KlipperInstance.getInstances()) {
+            val files = File(inst.publicDirectory, "logs").listFiles() ?: continue
+            for (f in files) {
+                if (!f.isFile) continue
+                try {
+                    java.io.RandomAccessFile(f, "rw").use { it.setLength(0) }
+                } catch (t: Throwable) {
+                    Log.w("BeamLogs", "couldn't clear ${f.name}", t)
+                    ok = false
+                }
+            }
+        }
+        return ok
+    }
+
     // --- internals -----------------------------------------------------------
+
+    private const val CLEARED_AT_FILE = "logs_cleared_at"
+    // `logcat -v time` line prefix, e.g. "09-28 21:10:29.467".
+    private const val LOGCAT_TIME_FORMAT = "MM-dd HH:mm:ss.SSS"
+
+    private fun clearedAt(): String? = try {
+        File(KlipperApp.INSTANCE.filesDir, CLEARED_AT_FILE).takeIf { it.exists() }?.readText()?.trim()
+    } catch (_: Throwable) {
+        null
+    }
 
     private fun readInstanceLog(f: File): String {
         return LogText.describeInstanceLog(f.name, f.exists(), if (f.exists()) readTextOrEmpty(f) else "")
@@ -128,15 +175,27 @@ object BeamLogs {
             val p = ProcessBuilder(*cmd).redirectErrorStream(true).start()
             val out = p.inputStream.bufferedReader().use { it.readText() }
             p.waitFor()
-            val filtered = if (Build.VERSION.SDK_INT >= 24) out else out.lines()
+            val pidFiltered = if (Build.VERSION.SDK_INT >= 24) out else out.lines()
                 .filter { it.contains(" $pid ") || it.contains("beam_") || it.contains("WebService")
                         || it.contains("moonraker_") || it.contains("KlipperInstance") }
                 .joinToString("\n")
+            val filtered = afterCleared(pidFiltered)
             if (filtered.isBlank()) "(logcat vazio — o buffer do sistema pode ter sido limpo)" else tail(filtered)
         } catch (t: Throwable) {
             Log.w("BeamLogs", "logcat failed", t)
             "(não consegui ler o logcat neste aparelho: ${t.message})"
         }
+    }
+
+    /** Drops logcat lines older than the last "clear logs" (timestamp prefixes compare lexically). */
+    private fun afterCleared(text: String): String {
+        val cutoff = clearedAt() ?: return text
+        val len = LOGCAT_TIME_FORMAT.length
+        var keep = true
+        return text.lineSequence().filter { line ->
+            if (line.length > len && line[2] == '-' && line[5] == ' ') keep = line.substring(0, len) > cutoff
+            keep
+        }.joinToString("\n")
     }
 
     private fun readTextOrEmpty(f: File): String =

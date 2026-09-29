@@ -3,8 +3,9 @@ package ru.ytkab0bp.beamklipper.update
 // Klipper/Moonraker: informational only, no update button ever possible (see
 // docs/klipper-vendor-update-procedure — native chelper needs recompiling,
 // and the Android source patches are literal String.replace() calls that
-// silently no-op if upstream text drifts). "bundled" is a short commit SHA,
-// or null if the local marker is missing/unreadable.
+// silently no-op if upstream text drifts). "bundled" and "latest" are version
+// tags (e.g. v0.13.0), or null if the marker is missing/unreadable or the
+// check failed.
 data class VersionStatus(
     val bundled: String?,
     val latest: String?,
@@ -29,11 +30,26 @@ object VersionCompare {
     fun tagDiffers(active: String, latest: String?): Boolean =
         latest != null && latest != active
 
-    // Klipper/Moonraker: bundled is a short SHA, latest is the full SHA the
-    // commits API returns. A missing/unknown bundled marker never claims the
-    // component is behind — there is nothing to compare against.
-    fun commitDiffers(bundledShortSha: String?, latestFullSha: String?): Boolean =
-        !bundledShortSha.isNullOrBlank() &&
-            !latestFullSha.isNullOrBlank() &&
-            !latestFullSha.startsWith(bundledShortSha)
+    private val TAG_RE = Regex("""^v?(\d+)\.(\d+)\.(\d+)$""")
+
+    private fun tagKey(tag: String): Triple<Int, Int, Int>? =
+        TAG_RE.matchEntire(tag.trim())?.destructured?.let { (a, b, c) ->
+            Triple(a.toInt(), b.toInt(), c.toInt())
+        }
+
+    // Highest plain vX.Y.Z tag; anything else (release candidates, odd names)
+    // is ignored.
+    fun highestTag(tags: List<String>): String? =
+        tags.mapNotNull { t -> tagKey(t)?.let { t to it } }
+            .maxWithOrNull(compareBy({ it.second.first }, { it.second.second }, { it.second.third }))
+            ?.first
+
+    // Klipper/Moonraker: both sides are version tags. A missing/unknown
+    // bundled marker never claims the component is behind — there is nothing
+    // to compare against. Only a strictly newer upstream tag counts.
+    fun tagBehind(bundled: String?, latest: String?): Boolean {
+        val b = bundled?.let { tagKey(it) } ?: return false
+        val l = latest?.let { tagKey(it) } ?: return false
+        return compareBy<Triple<Int, Int, Int>>({ it.first }, { it.second }, { it.third }).compare(l, b) > 0
+    }
 }

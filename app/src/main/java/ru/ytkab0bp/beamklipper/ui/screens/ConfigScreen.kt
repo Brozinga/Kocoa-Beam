@@ -204,7 +204,7 @@ fun ConfigScreen(
         Spacer(Modifier.height(28.dp))
         BrutalSectionHeader(stringResource(R.string.SoftwareVersions))
         BrutalInfoRow(
-            title = stringResource(R.string.Klipper),
+            title = stringResource(R.string.KlipperApp),
             value = versionStatusText(klipperVersion.bundled, klipperVersion.latest)
         )
         Spacer(Modifier.height(8.dp))
@@ -784,8 +784,8 @@ private fun BrutalUpdatableRow(
 @Composable
 private fun versionStatusText(bundled: String?, latest: String?): String {
     if (bundled == null) return stringResource(R.string.FrontendVersionUnknown)
-    return if (VersionCompare.commitDiffers(bundled, latest)) {
-        stringResource(R.string.FrontendVersionAvailable, bundled, latest?.take(8) ?: "?")
+    return if (VersionCompare.tagBehind(bundled, latest)) {
+        stringResource(R.string.FrontendVersionAvailable, bundled, latest ?: "?")
     } else {
         stringResource(R.string.FrontendVersionUpToDate, bundled)
     }
@@ -902,7 +902,7 @@ private fun FrontendUpdateProgressDialog(
 }
 
 @Composable
-private fun BrutalAlertDialog(
+internal fun BrutalAlertDialog(
     onDismissRequest: () -> Unit,
     title: @Composable () -> Unit,
     text: @Composable () -> Unit,

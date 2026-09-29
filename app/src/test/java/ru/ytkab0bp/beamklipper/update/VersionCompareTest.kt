@@ -1,6 +1,8 @@
 package ru.ytkab0bp.beamklipper.update
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -22,23 +24,36 @@ class VersionCompareTest {
     }
 
     @Test
-    fun `commitDiffers is false when the bundled marker is unknown`() {
-        assertFalse(VersionCompare.commitDiffers(null, "abcdef0123456789"))
-        assertFalse(VersionCompare.commitDiffers("", "abcdef0123456789"))
+    fun `tagBehind is false when the bundled marker is unknown`() {
+        assertFalse(VersionCompare.tagBehind(null, "v0.13.0"))
+        assertFalse(VersionCompare.tagBehind("", "v0.13.0"))
     }
 
     @Test
-    fun `commitDiffers is false when the remote check failed`() {
-        assertFalse(VersionCompare.commitDiffers("abcdef0", null))
+    fun `tagBehind is false when the remote check failed`() {
+        assertFalse(VersionCompare.tagBehind("v0.13.0", null))
     }
 
     @Test
-    fun `commitDiffers is false when the full sha starts with the bundled short sha`() {
-        assertFalse(VersionCompare.commitDiffers("3a1f884d", "3a1f884dc83c44714bfc93238525cb57f4474588"))
+    fun `tagBehind is false for the same tag`() {
+        assertFalse(VersionCompare.tagBehind("v0.13.0", "v0.13.0"))
     }
 
     @Test
-    fun `commitDiffers is true when the shas disagree`() {
-        assertTrue(VersionCompare.commitDiffers("3a1f884d", "1cfb0c41e468645951a371621f06d32777b6107c"))
+    fun `tagBehind is true only when upstream is strictly newer`() {
+        assertTrue(VersionCompare.tagBehind("v0.13.0", "v0.14.0"))
+        assertTrue(VersionCompare.tagBehind("v0.11.0", "v0.11.1"))
+        assertFalse(VersionCompare.tagBehind("v0.13.0", "v0.12.9"))
+    }
+
+    @Test
+    fun `tagBehind compares numerically not lexically`() {
+        assertTrue(VersionCompare.tagBehind("v0.9.0", "v0.10.0"))
+    }
+
+    @Test
+    fun `highestTag picks the highest plain version and ignores the rest`() {
+        assertEquals("v0.13.0", VersionCompare.highestTag(listOf("v0.9.1", "v0.13.0", "v0.12.0", "v0.14.0-rc1", "latest")))
+        assertNull(VersionCompare.highestTag(listOf("latest", "nightly")))
     }
 }

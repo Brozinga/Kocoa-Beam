@@ -26,6 +26,16 @@ object GitHubReleases {
     internal fun parseReleaseTag(json: String): String? = gson.fromJson(json, ReleaseInfo::class.java)?.tagName
     internal fun parseCommitSha(json: String): String? = gson.fromJson(json, CommitInfo::class.java)?.sha
 
+    internal data class TagInfo(@SerializedName("name") val name: String?)
+
+    // Klipper and Moonraker publish plain git tags (vX.Y.Z), not GitHub
+    // releases, so "latest" is the highest such tag. The tags endpoint isn't
+    // ordered by version, hence the explicit max instead of taking the first.
+    internal fun parseLatestVersionTag(json: String): String? {
+        val tags = gson.fromJson(json, Array<TagInfo>::class.java) ?: return null
+        return VersionCompare.highestTag(tags.mapNotNull { it.name })
+    }
+
     private fun get(urlStr: String): String {
         val conn = URL(urlStr).openConnection() as HttpURLConnection
         conn.connectTimeout = TIMEOUT_MS
@@ -43,6 +53,9 @@ object GitHubReleases {
 
     fun latestReleaseTag(owner: String, repo: String): String? =
         parseReleaseTag(get("https://api.github.com/repos/$owner/$repo/releases/latest"))
+
+    fun latestVersionTag(owner: String, repo: String): String? =
+        parseLatestVersionTag(get("https://api.github.com/repos/$owner/$repo/tags?per_page=100"))
 
     fun latestCommitSha(owner: String, repo: String, branch: String = "master"): String? =
         parseCommitSha(get("https://api.github.com/repos/$owner/$repo/commits/$branch"))

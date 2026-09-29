@@ -163,6 +163,11 @@
     <string name="LogsSaveFailed">Falha ao salvar</string>
     <string name="LogsShare">Compartilhar</string>
     <string name="LogsShareTitle">Compartilhar logs</string>
+    <string name="LogsClear">Limpar</string>
+    <string name="LogsClearTitle">Limpar logs?</string>
+    <string name="LogsClearMessage">Isso exclui os logs atuais para que qualquer erro novo se destaque. Não dá para desfazer.</string>
+    <string name="LogsCleared">Logs limpos</string>
+    <string name="LogsClearFailed">Não foi possível limpar alguns logs</string>
 
     <string name="SoftwareVersions">Versões dos softwares</string>
     <string name="FrontendUpdateAction">Atualizar</string>

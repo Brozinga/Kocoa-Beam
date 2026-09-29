@@ -174,6 +174,12 @@
     <string name="LogsSaveFailed">Failed to save</string>
     <string name="LogsShare">Share</string>
     <string name="LogsShareTitle">Share logs</string>
+    <string name="LogsClear">Clear</string>
+    <string name="LogsClearTitle">Clear logs?</string>
+    <string name="LogsClearMessage">This deletes the current logs so any new error stands out. It can\'t be undone.</string>
+    <string name="LogsCleared">Logs cleared</string>
+    <string name="LogsClearFailed">Couldn\'t clear some logs</string>
+    <string name="KlipperApp" translatable="false">Klipper App</string>
 
     <string name="SoftwareVersions">Software versions</string>
     <string name="FrontendUpdateAction">Update</string>

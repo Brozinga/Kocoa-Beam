@@ -87,9 +87,9 @@ object FrontendUpdateChecker {
     }
 
     private fun checkKlipper() {
-        val bundled = readAsset("klipper_commit")
+        val bundled = readAsset("klipper_version")
         try {
-            val latest = GitHubReleases.latestCommitSha(FrontendRepos.KLIPPER_OWNER, FrontendRepos.KLIPPER_REPO)
+            val latest = GitHubReleases.latestVersionTag(FrontendRepos.KLIPPER_OWNER, FrontendRepos.KLIPPER_REPO)
             _klipperStatus.value = VersionStatus(bundled, latest, System.currentTimeMillis())
         } catch (_: Exception) {
             _klipperStatus.value = _klipperStatus.value.copy(bundled = bundled, checkedAtMs = System.currentTimeMillis(), error = true)
@@ -97,13 +97,9 @@ object FrontendUpdateChecker {
     }
 
     private fun checkMoonraker() {
-        // moonraker_version is a separate, semver-style display marker
-        // (stamped into moonraker's own __version__.py) — moonraker_commit
-        // is the actual vendored upstream commit, needed here because
-        // Moonraker, like Klipper, is a rolling repo with no real releases.
-        val bundled = readAsset("moonraker_commit")
+        val bundled = readAsset("moonraker_version")
         try {
-            val latest = GitHubReleases.latestCommitSha(FrontendRepos.MOONRAKER_OWNER, FrontendRepos.MOONRAKER_REPO)
+            val latest = GitHubReleases.latestVersionTag(FrontendRepos.MOONRAKER_OWNER, FrontendRepos.MOONRAKER_REPO)
             _moonrakerStatus.value = VersionStatus(bundled, latest, System.currentTimeMillis())
         } catch (_: Exception) {
             _moonrakerStatus.value = _moonrakerStatus.value.copy(bundled = bundled, checkedAtMs = System.currentTimeMillis(), error = true)
